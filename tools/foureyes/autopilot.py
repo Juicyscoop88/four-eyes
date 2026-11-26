@@ -121,7 +121,8 @@ class Pilot:
     def finish(self, equivalent: dict[str, str]) -> Path:
         root = self.f.root
         final = check(self.f, self.base, self.task(), False, equivalent, log=lambda m: None)
-        proposal = self.propose(final) if final.counted and final.caught("invariants") < len(final.counted) / 2 else None
+        uncovered = final.counted and final.caught("invariants") < len(final.counted) / 2
+        proposal = self.propose(final) if self.f.invariants and uncovered else None
 
         final = check(self.f, self.base, self.task(), True, equivalent, log=lambda m: None)
         final.proposal = proposal

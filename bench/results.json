@@ -1,0 +1,22 @@
+[
+  {
+    "pr": 334,
+    "issue": "pr334-naturaldelta-inf",
+    "cost_usd": null,
+    "minutes": null,
+    "gate_passed": null,
+    "blind_files": [
+      "tests/blind/test_pr334_naturaldelta_inf.py"
+    ],
+    "author_files": [
+      "tests/unit/test_naturaldelta_infinity.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": false,
+    "tester_disagreements": 3
+  }
+]
