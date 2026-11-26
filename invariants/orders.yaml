@@ -2,6 +2,7 @@
 # Every invariant names the property test that proves it. The gate fails a merge
 # request that changes this file or those tests without an owner's approval.
 domain: orders
+paths: ["src/orders/**"]   # the code these invariants hold for
 owners: ["@trading-platform-leads"]
 invariants:
   - id: ORD-1
