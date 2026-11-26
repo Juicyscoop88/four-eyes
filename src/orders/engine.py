@@ -1,3 +1,4 @@
+from dataclasses import replace
 from decimal import Decimal
 
 from orders.model import TERMINAL, Fill, Order, OrderStatus, Side
@@ -34,7 +35,18 @@ def apply_execution(order: Order, execution_id: str, qty: Decimal, price: Decima
     if the id is empty, if an applied id arrives with a different qty or price, or if
     apply_fill would reject a new execution.
     """
-    raise NotImplementedError
+    if not execution_id:
+        raise OrderRejected("execution id must not be empty")
+    # Looked up before apply_fill's checks: a redelivery is also accepted on a finished order.
+    applied = next((f for f in order.fills if f.execution_id == execution_id), None)
+    if applied is not None:
+        if (applied.qty, applied.price) != (qty, price):
+            raise OrderRejected(f"execution {execution_id!r} redelivered with different content")
+        return order
+
+    apply_fill(order, qty, price)
+    order.fills[-1] = replace(order.fills[-1], execution_id=execution_id)
+    return order
 
 
 def cancel(order: Order) -> Order:
