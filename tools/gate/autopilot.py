@@ -18,7 +18,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from gate import agents, mutation
-from gate.check import check, facts, report
+from gate.check import author_of, check, facts, report
 from gate.config import Factory
 from gate.diff import changed_lines, diff_text, git
 from gate.tests import checkout_copy, run_suites
@@ -31,7 +31,7 @@ class Pilot:
         self.name = self.slug.replace("-", "_")
         self.issue = issue_path.read_text() if issue_path.exists() else ""
         self.task_path = f".factory/tasks/{self.slug}.md"
-        self.requested_by = os.environ.get("FACTORY_REQUESTED_BY") or git(factory.root, "config", "user.name").strip() or "unknown"
+        self.requested_by = author_of(factory.root)
         self.runs: list[agents.AgentRun] = []
         self.steps: list[dict] = []
         self.started = time.monotonic()
