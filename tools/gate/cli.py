@@ -45,6 +45,12 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("--bugs", type=int, default=5)
     e.add_argument("--testers", default="haiku,sonnet,opus")
 
+    d = sub.add_parser("decide", help="a person answers a decision card; it becomes a test, then code")
+    d.add_argument("slug", help="the task, as in factory/<slug>")
+    d.add_argument("card", type=int)
+    d.add_argument("answer", nargs="+")
+    d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
+
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
     h.add_argument("event", choices=["pre-tool-use", "stop"])
 
@@ -59,6 +65,15 @@ def main(argv: list[str] | None = None) -> int:
 
         path = Pilot(factory, Path(args.issue).resolve(), log=lambda m: print(m, flush=True)).run(args.rounds)
         print(f"autopilot: report in {path.relative_to(factory.root)}")
+        return 0
+
+    if args.cmd == "decide":
+        from gate.autopilot import Pilot
+
+        who = args.by or git(factory.root, "config", "user.name").strip()
+        pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=lambda m: print(m, flush=True))
+        path = pilot.decide(args.card, " ".join(args.answer), who)
+        print(f"decide: report in {path.relative_to(factory.root)}")
         return 0
 
     if args.cmd == "eval":
