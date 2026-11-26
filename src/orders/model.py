@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
 from enum import Enum
+from fractions import Fraction
 
 
 class Side(Enum):
@@ -47,4 +48,10 @@ class Order:
 
         Reported to 6 decimal places, rounding half to even.
         """
-        raise NotImplementedError
+        if not self.fills:
+            return None
+        # Fractions are exact and ignore the caller's decimal context, so we round only once.
+        notional = sum(Fraction(f.qty) * Fraction(f.price) for f in self.fills)
+        average = notional / sum(Fraction(f.qty) for f in self.fills)
+        millionths = round(average * 10**6)  # round() on a Fraction is half to even
+        return Decimal(f"{millionths}E-6")  # building from a string is exact
