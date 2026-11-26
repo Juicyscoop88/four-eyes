@@ -30,8 +30,7 @@ class Factory:
     suites: dict[str, str]
     tiers: list[Tier]
     invariants: list[Invariant]
-    model: str
-    author_model: str
+    models: dict[str, str]  # role -> model; the tester differs from the author on purpose
 
     def is_owned(self, path: str) -> bool:
         return any(matches(path, p) for p in self.owned)
@@ -75,6 +74,5 @@ def load(root: Path) -> Factory:
         suites=raw["suites"],
         tiers=tiers,
         invariants=invariants,
-        model=raw.get("agents", {}).get("model", "sonnet"),
-        author_model=raw.get("agents", {}).get("author_model", "sonnet"),
+        models={"author": "sonnet", "tester": "opus", "reviewer": "sonnet", **raw.get("agents", {})},
     )

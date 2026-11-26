@@ -81,7 +81,7 @@ def json_block(text: str) -> dict:
 def author(factory: Factory, prompt: str) -> AgentRun:
     """The author in the repo itself, under the plugin's hooks. It may run the tests, nothing else."""
     return claude(
-        "author", prompt, factory.root, factory.author_model, "Read,Glob,Grep,Write,Edit,Bash",
+        "author", prompt, factory.root, factory.models["author"], "Read,Glob,Grep,Write,Edit,Bash",
         allowed=("Bash(uv run pytest:*)",), hooks=True, timeout=1500,
     )
 
@@ -144,7 +144,7 @@ def write_blind_tests(factory: Factory, task: str, name: str, gaps: list[str] = 
         "The implementation is not in this workspace; the files in `src/` show only the interface. "
         "Read them and the invariants, then write the tests."
     )
-    run = claude("tester", prompt, ws, factory.model, "Read,Glob,Grep,Write,Edit")
+    run = claude("tester", prompt, ws, factory.models["tester"], "Read,Glob,Grep,Write,Edit")
     written = copy_back(ws, factory.root, folder)
     shutil.rmtree(ws, ignore_errors=True)
     return run, written
@@ -165,7 +165,7 @@ def propose_invariant_tests(factory: Factory, task: str, name: str) -> tuple[Age
         "operation to the random steps so that every invariant is checked after it too. Keep the "
         "invariant ids in the assertion messages. Change nothing else."
     )
-    run = claude("tester", prompt, ws, factory.model, "Read,Glob,Grep,Write,Edit")
+    run = claude("tester", prompt, ws, factory.models["tester"], "Read,Glob,Grep,Write,Edit")
     proposals = {}
     for path in owned_tests:
         f = ws / "proposal" / path
@@ -197,7 +197,7 @@ def review(factory: Factory, task: str, diff: str, gate_facts: str) -> Review:
         f"## What the gate measured\n\n{gate_facts}\n\n## The diff\n\n```diff\n{diff}\n```\n"
     )
     ws = Path(tempfile.mkdtemp(prefix="gate-review-"))
-    run = claude("reviewer", prompt, ws, factory.model, "")
+    run = claude("reviewer", prompt, ws, factory.models["reviewer"], "")
     shutil.rmtree(ws, ignore_errors=True)
     data = json_block(run.result)
     return Review(run, data.get("map", [])[:3], data.get("findings", []), data.get("summary", ""))
@@ -218,7 +218,7 @@ def explain_gaps(factory: Factory, task: str, diff: str, survivors: list[str]) -
         '{"id": "M5", "equivalent": true, "why": "..."}]}'
     )
     ws = Path(tempfile.mkdtemp(prefix="gate-gaps-"))
-    run = claude("reviewer", prompt, ws, factory.model, "")
+    run = claude("reviewer", prompt, ws, factory.models["reviewer"], "")
     shutil.rmtree(ws, ignore_errors=True)
     data = json_block(run.result)
     return Review(run, [], [], "", data.get("gaps", []))
