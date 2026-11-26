@@ -1,6 +1,6 @@
 """What applies to a file: the one answer an agent needs before it changes it."""
 
-from gate.config import Factory, matches
+from foureyes.config import Factory, matches
 
 
 def rules_for(factory: Factory, path: str) -> str:

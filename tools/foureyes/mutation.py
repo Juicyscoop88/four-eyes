@@ -10,8 +10,8 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from gate.config import Factory
-from gate.tests import run_suites
+from foureyes.config import Factory
+from foureyes.tests import run_suites
 
 SWAP_COMPARE = {
     ast.Gt: ast.GtE, ast.GtE: ast.Gt, ast.Lt: ast.LtE, ast.LtE: ast.Lt,

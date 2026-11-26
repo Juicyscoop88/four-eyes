@@ -40,9 +40,9 @@ Everything else is what they already have: GitLab, Claude Code, Claude on Vertex
 
 ## Three parts, each once (keep it light)
 
-1. **The rule:** `gate check` in CI, deterministic. Code decides; a model never gives the verdict.
-2. **The path:** `gate autopilot` (issue → plan → blind tests → code → gate → gaps closed → pull request with
-   decision cards) and `gate decide` (an answer becomes a blind test, then code). CI from an issue label and
+1. **The rule:** `foureyes check` in CI, deterministic. Code decides; a model never gives the verdict.
+2. **The path:** `foureyes autopilot` (issue → plan → blind tests → code → gate → gaps closed → pull request with
+   decision cards) and `foureyes decide` (an answer becomes a blind test, then code). CI from an issue label and
    `/decide` comments; a laptop through `/ship`. One path, not two.
 3. **The guide:** plugin `four-eyes` (arrives with the repo): hooks, `/ship`, FourEyes MCP with `rules_for`
    and `why`. MCP is for people and agents in Claude; CLI is only for what has no chat (CI, the eval).
@@ -59,8 +59,8 @@ src/orders/              synthetic order handling: the code the factory protects
 tests/invariants/        property tests that prove the invariants (owned like them)
 tests/blind/             the tester's tests, written without seeing the code
 tests/unit/              the author's own tests (measured, never counted)
-tests/gate/              tests of the gate itself
-tools/gate/              the gate, autopilot, roles, MCP, eval (owned)
+tests/foureyes/          tests of the factory itself
+tools/foureyes/          the CLI `foureyes`: the gate, autopilot, roles, MCP, eval (owned)
 plugin/                  the Claude Code plugin: roles, hooks, /ship, MCP config (owned)
 issues/                  issues as people write them
 .factory/                per task: the task, progress, runs and reports, proposals for owners

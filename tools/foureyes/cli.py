@@ -5,10 +5,10 @@ import os
 import sys
 from pathlib import Path
 
-from gate import hooks
-from gate.check import check, report
-from gate.config import load
-from gate.diff import git
+from foureyes import hooks
+from foureyes.check import check, report
+from foureyes.config import load
+from foureyes.diff import git
 
 
 def repo_root() -> Path:
@@ -23,7 +23,7 @@ def read_task(arg: str | None) -> str | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(prog="gate")
+    p = argparse.ArgumentParser(prog="foureyes")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     c = sub.add_parser("check", help="what this change must prove before it merges")
@@ -57,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
     factory = load(repo_root())
 
     if args.cmd == "mcp":
-        from gate.mcp_server import main as serve
+        from foureyes.mcp_server import main as serve
 
         serve()
         return 0
@@ -66,20 +66,20 @@ def main(argv: list[str] | None = None) -> int:
         return hooks.handle(factory, args.event, sys.stdin.read())
 
     if args.cmd == "autopilot":
-        from gate.autopilot import Pilot
+        from foureyes.autopilot import Pilot
 
         path = Pilot(factory, Path(args.issue).resolve(), log=lambda m: print(m, flush=True)).run(args.rounds)
         print(f"autopilot: report in {path.relative_to(factory.root)}")
         return 0
 
     if args.cmd == "decide":
-        from gate.autopilot import Pilot
+        from foureyes.autopilot import Pilot
 
-        from gate.check import author_of
+        from foureyes.check import author_of
 
         who = args.by or author_of(factory.root)
         pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=lambda m: print(m, flush=True))
-        from gate.check import cards_from
+        from foureyes.check import cards_from
 
         cards = cards_from(Path(args.comment).read_text()) if args.comment else None
         path = pilot.decide(args.card, " ".join(args.answer), who, cards)
@@ -89,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "eval":
         import json as _json
 
-        from gate.eval import evaluate, summary
+        from foureyes.eval import evaluate, summary
 
         testers = args.testers.split(",")
         results = [evaluate(factory, t, args.bugs, testers, log=lambda m: print(m, flush=True)) for t in args.tasks]

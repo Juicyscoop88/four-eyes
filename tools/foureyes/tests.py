@@ -9,8 +9,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
-from gate.config import Factory
-from gate.diff import git
+from foureyes.config import Factory
+from foureyes.diff import git
 
 
 @dataclass(frozen=True)

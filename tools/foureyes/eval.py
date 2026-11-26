@@ -12,11 +12,11 @@ For each finished task (a factory/<slug> branch):
 import shutil
 from pathlib import Path
 
-from gate import agents, mutation
-from gate.check import facts, Result
-from gate.config import Factory
-from gate.diff import changed_files, changed_lines, diff_text, git
-from gate.tests import checkout_copy, run_suites
+from foureyes import agents, mutation
+from foureyes.check import facts, Result
+from foureyes.config import Factory
+from foureyes.diff import changed_files, changed_lines, diff_text, git
+from foureyes.tests import checkout_copy, run_suites
 
 
 def _apply(root: Path, bug: dict) -> str | None:
