@@ -8,6 +8,7 @@ from decimal import Decimal
 import pytest
 
 from orders import (
+    ExecutionConflict,
     Fill,
     Order,
     OrderRejected,
@@ -211,3 +212,113 @@ def test_rejected_execution_leaves_no_trace():
     order = apply_execution(order, "e-2", Decimal("4"), Decimal("100"))
     assert order.fills[-1] == Fill(Decimal("4"), Decimal("100"), "e-2")
     assert order.status is OrderStatus.FILLED
+
+
+# Decision: conflicting redelivery raises ExecutionConflict(OrderRejected)
+
+
+def _carried_values(exc: BaseException) -> list:
+    """Flatten everything an exception carries (args and attributes), without assuming field names."""
+    out: list = []
+
+    def walk(value, depth=0):
+        if depth > 4:
+            return
+        out.append(value)
+        if isinstance(value, (tuple, list, set, frozenset)):
+            for v in value:
+                walk(v, depth + 1)
+        elif isinstance(value, dict):
+            for v in value.values():
+                walk(v, depth + 1)
+        elif isinstance(value, Fill):
+            walk(value.qty, depth + 1)
+            walk(value.price, depth + 1)
+            walk(value.execution_id, depth + 1)
+
+    walk(exc.args)
+    walk(dict(vars(exc)))
+    return out
+
+
+def _contains(values: list, wanted) -> bool:
+    return any(type(v) is type(wanted) and v == wanted for v in values)
+
+
+def test_execution_conflict_is_exported_subclass_of_order_rejected():
+    """Decision: raise an exported ExecutionConflict(OrderRejected)."""
+    import orders
+
+    assert "ExecutionConflict" in orders.__all__
+    assert issubclass(ExecutionConflict, OrderRejected)
+    assert ExecutionConflict is not OrderRejected
+
+
+@pytest.mark.parametrize(
+    "qty, price",
+    [(Decimal("5"), Decimal("99")), (Decimal("4"), Decimal("98.99")), (Decimal("3"), Decimal("99"))],
+    ids=["qty-one-more", "price-differs", "qty-one-less"],
+)
+def test_conflicting_redelivery_raises_execution_conflict(qty, price):
+    """Decision: same id with different qty or price raises ExecutionConflict, order unchanged."""
+    order = apply_execution(buy(), "e-1", Decimal("4"), Decimal("99"))
+    before = snapshot(order)
+    with pytest.raises(ExecutionConflict):
+        apply_execution(order, "e-1", qty, price)
+    assert snapshot(order) == before
+
+
+def test_execution_conflict_carries_ids_applied_and_received_values():
+    """Decision: ExecutionConflict carries the order id, execution id, applied values and received values."""
+    order = Order(id="o-77", side=Side.BUY, qty=Decimal("10"), limit_price=Decimal("100"))
+    order = apply_execution(order, "e-42", Decimal("4"), Decimal("99"))
+    with pytest.raises(ExecutionConflict) as info:
+        apply_execution(order, "e-42", Decimal("6"), Decimal("97.5"))
+    carried = _carried_values(info.value)
+    assert _contains(carried, "o-77"), "order id not carried"
+    assert _contains(carried, "e-42"), "execution id not carried"
+    assert _contains(carried, Decimal("4")), "applied qty not carried"
+    assert _contains(carried, Decimal("99")), "applied price not carried"
+    assert _contains(carried, Decimal("6")), "received qty not carried"
+    assert _contains(carried, Decimal("97.5")), "received price not carried"
+
+
+def test_conflict_on_filled_order_is_execution_conflict():
+    """Assumption 2 and decision: duplicate check precedes status check, so a conflict on a filled order is ExecutionConflict."""
+    order = apply_execution(buy(), "e-1", Decimal("10"), Decimal("100"))
+    before = snapshot(order)
+    with pytest.raises(ExecutionConflict):
+        apply_execution(order, "e-1", Decimal("9"), Decimal("100"))
+    assert snapshot(order) == before
+    assert order.status is OrderStatus.FILLED
+
+
+def test_conflict_on_canceled_order_is_execution_conflict():
+    """Assumption 2 and decision: a conflicting redelivery to a canceled order raises ExecutionConflict, order unchanged."""
+    order = cancel(apply_execution(buy(), "e-1", Decimal("4"), Decimal("100")))
+    before = snapshot(order)
+    with pytest.raises(ExecutionConflict):
+        apply_execution(order, "e-1", Decimal("4"), Decimal("99"))
+    assert snapshot(order) == before
+    assert order.status is OrderStatus.CANCELED
+
+
+def test_numerically_equal_redelivery_does_not_raise_conflict():
+    """Assumption 3 and decision: Decimal("100") equals Decimal("100.0"), so no ExecutionConflict."""
+    order = apply_execution(buy(), "e-1", Decimal("4"), Decimal("100"))
+    before = snapshot(order)
+    order = apply_execution(order, "e-1", Decimal("4.0"), Decimal("100.00"))
+    assert snapshot(order) == before
+
+
+@pytest.mark.parametrize(
+    "execution_id, qty, price",
+    [("", Decimal("1"), Decimal("100")), ("e-2", Decimal("5"), Decimal("100")), ("e-2", Decimal("1"), Decimal("100.01"))],
+    ids=["empty-id", "over-remaining", "through-limit"],
+)
+def test_other_rejections_are_not_execution_conflict(execution_id, qty, price):
+    """Decision ("distinct"): only a conflicting redelivery is ExecutionConflict; other rejections stay plain OrderRejected."""
+    order = apply_execution(buy(), "e-1", Decimal("6"), Decimal("100"))
+    with pytest.raises(OrderRejected) as info:
+        apply_execution(order, execution_id, qty, price)
+    assert not isinstance(info.value, ExecutionConflict)
