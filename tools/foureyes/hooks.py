@@ -77,7 +77,7 @@ def stop(factory: Factory, data: dict) -> int:
         base = git(factory.root, "merge-base", "HEAD", "main").strip()
     except subprocess.CalledProcessError:
         base = "HEAD"
-    if not any(f.startswith("src/") for f in changed_files(factory.root, base)):
+    if not any(factory.is_source(f) for f in changed_files(factory.root, base)):
         return 0
     failures, _ = run_suites(factory, factory.root, only=("invariants",))
     if not failures:

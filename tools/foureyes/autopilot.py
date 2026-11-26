@@ -80,7 +80,7 @@ class Pilot:
             self.step("implementation", agents.author(self.f, (
                 f"Implement the task in `{self.task_path}`. The tester's tests for it are in "
                 f"`{self.f.suites['tester']}/` (read them, never edit them). Write your own tests in "
-                f"`{self.f.suites['author']}/`. Run `uv run pytest` until everything is green."
+                f"`{self.f.suites['author']}/`. Run `{self.f.test_command}` until everything is green."
             )))
             self.commit("author", f"Implement {self.slug}")
 
@@ -179,7 +179,7 @@ class Pilot:
             self.step(f"{len(failures)} tests fail against the decision, the author changes the code", agents.author(self.f, (
                 f"A person decided, for the task in `{self.task_path}`: {question} Answer: {chosen}. "
                 f"The tester's tests in `{self.f.suites['tester']}/` now pin it and fail. Change the code (and your own "
-                "tests where they assumed otherwise) until `uv run pytest` is green. Never edit the tester's tests."
+                f"tests where they assumed otherwise) until `{self.f.test_command}` is green. Never edit the tester's tests."
             )))
             self.commit("author", f"Implement the decision ({self.slug}, card {card})")
         return self.finish(self.close_gaps(dict(record.get("equivalent", {})), max_rounds))
@@ -215,7 +215,7 @@ class Pilot:
                 self.step("the proposal fails on the current code, dropped", failures=[f.message for f in failures][:3])
                 return None
             targets = {f: changed_lines(self.f.root, self.base, f) for f in res.files
-                       if f.startswith("src/") and f.endswith(".py") and (self.f.root / f).exists()}
+                       if self.f.is_source(f) and (self.f.root / f).exists()}
             after = [m for m in mutation.run(self.f, work, targets) if m.id not in res.equivalent]
         finally:
             shutil.rmtree(work, ignore_errors=True)

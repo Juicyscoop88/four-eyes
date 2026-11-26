@@ -104,7 +104,7 @@ def check(
         targets = {
             f: changed_lines(factory.root, base, f)
             for f in files
-            if f.startswith("src/") and f.endswith(".py") and (factory.root / f).exists()
+            if factory.is_source(f) and (factory.root / f).exists()
         }
         if not res.failures and targets and tier.mutation_min > 0:
             log("gate: mutation testing the changed lines")

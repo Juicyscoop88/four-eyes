@@ -39,6 +39,12 @@ class Factory:
     invariants: list[Invariant]
     models: dict[str, str]  # role -> model; the tester differs from the author on purpose
     standards: list[Standard]
+    source: str = "src"                 # the code the factory protects (stubbed for the tester, mutated by the gate)
+    test_command: str = "uv run pytest" # what the author runs
+    python: str = ""                    # the interpreter for the suites; empty: the one running foureyes
+
+    def is_source(self, path: str) -> bool:
+        return path.startswith(self.source.rstrip("/") + "/") and path.endswith(".py")
 
     def is_owned(self, path: str) -> bool:
         return any(matches(path, p) for p in self.owned)
@@ -50,10 +56,10 @@ class Factory:
         return self.tiers[-1]
 
     def suite_of(self, test_path: str) -> str | None:
-        for name, folder in self.suites.items():
-            if test_path == folder or test_path.startswith(folder.rstrip("/") + "/"):
-                return name
-        return None
+        """The suite a test file belongs to; the most specific folder wins (tests/blind before tests)."""
+        hits = [(len(f), n) for n, f in self.suites.items()
+                if test_path == f or test_path.startswith(f.rstrip("/") + "/")]
+        return max(hits)[1] if hits else None
 
     def invariant(self, inv_id: str) -> Invariant | None:
         return next((i for i in self.invariants if i.id == inv_id), None)
@@ -84,5 +90,8 @@ def load(root: Path) -> Factory:
         tiers=tiers,
         invariants=invariants,
         standards=[Standard(tuple(x["paths"]), x["file"]) for x in raw.get("standards", [])],
+        source=raw.get("source", "src"),
+        test_command=raw.get("test_command", "uv run pytest"),
+        python=raw.get("python", ""),
         models={"author": "sonnet", "tester": "opus", "reviewer": "sonnet", **raw.get("agents", {})},
     )

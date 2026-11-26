@@ -37,13 +37,16 @@ def run_suites(
 ) -> tuple[list[Failure], int]:
     """Run every suite present in workdir (or only the named ones). Returns the failures and how many tests ran."""
     folders = [f for n, f in factory.suites.items() if (workdir / f).exists() and (not only or n in only)]
+    nested = [f for f in factory.suites.values() if any(f != g and f.startswith(g.rstrip("/") + "/") for g in folders)]
+    ignore = [f"--ignore={f}" for f in nested if f not in folders]
+    folders = [f for f in folders if not any(f != g and f.startswith(g.rstrip("/") + "/") for g in folders)]
     if not folders:
         return [], 0
     report = workdir / ".gate-junit.xml"
-    env = {**os.environ, "PYTHONPATH": str(workdir / "src"), "PYTHONDONTWRITEBYTECODE": "1"}
+    env = {**os.environ, "PYTHONPATH": str(workdir / factory.source), "PYTHONDONTWRITEBYTECODE": "1"}
     try:
         subprocess.run(
-            [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={report}", *folders],
+            [factory.python or sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={report}", *ignore, *folders],
             cwd=workdir, env=env, capture_output=True, text=True, timeout=timeout,
         )
     except subprocess.TimeoutExpired:
@@ -59,7 +62,7 @@ def run_suites(
         if problem is None:
             continue
         path = case.get("classname", "").replace(".", "/")
-        suite = next((n for n, f in factory.suites.items() if path.startswith(f.rstrip("/"))), "other")
+        suite = factory.suite_of(path + ".py") or "other"
         message = (problem.get("message") or problem.text or "").strip().splitlines()
         failures.append(Failure(suite, case.get("name", "?"), message[0] if message else ""))
     report.unlink()

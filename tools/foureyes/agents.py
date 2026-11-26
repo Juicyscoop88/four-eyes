@@ -85,7 +85,7 @@ def author(factory: Factory, prompt: str) -> AgentRun:
     """The author in the repo itself, under the plugin's hooks. It may run the tests, nothing else."""
     return claude(
         "author", prompt, factory.root, factory.models["author"], "Read,Glob,Grep,Write,Edit,Bash",
-        allowed=("Bash(uv run pytest:*)",), hooks=True, timeout=1500,
+        allowed=(f"Bash({factory.test_command}:*)",), hooks=True, timeout=1500,
     )
 
 
@@ -106,7 +106,7 @@ def stub_source(source: str) -> str:
 
 def tester_workspace(factory: Factory) -> Path:
     ws = checkout_copy(factory.root)
-    for path in (ws / "src").rglob("*.py"):
+    for path in (ws / factory.source).rglob("*.py"):
         path.write_text(stub_source(path.read_text()))
     author_tests = factory.suites["author"]
     for hidden in (author_tests, "docs", ".claude", ".claude-plugin", "plugin", "tools", ".factory"):
