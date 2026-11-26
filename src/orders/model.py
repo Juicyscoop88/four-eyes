@@ -22,6 +22,7 @@ TERMINAL = {OrderStatus.FILLED, OrderStatus.CANCELED}
 class Fill:
     qty: Decimal
     price: Decimal
+    execution_id: str | None = None  # the venue's id, set by apply_execution
 
 
 @dataclass
