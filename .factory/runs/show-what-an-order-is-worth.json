@@ -1,0 +1,99 @@
+{
+  "issue": "show-what-an-order-is-worth",
+  "requested_by": "Juicyscoop88",
+  "passed": true,
+  "score": 1.0,
+  "mutants": 3,
+  "equivalent": {},
+  "base": "02b94c28e42c9f71ab16f0c10e62ff9310bc8f3f",
+  "caught": {
+    "author": 3,
+    "tester": 3,
+    "invariants": 0
+  },
+  "proposal": {
+    "file": ".factory/proposals/show-what-an-order-is-worth/tests/invariants/test_orders.py",
+    "target": "tests/invariants/test_orders.py",
+    "before": 0,
+    "after": 0,
+    "n": 3
+  },
+  "cost_usd": 0.574,
+  "minutes": 3.4,
+  "steps": [
+    {
+      "step": "plan",
+      "role": "author",
+      "cost_usd": 0.08685670000000001,
+      "seconds": 29.6
+    },
+    {
+      "step": "blind tests",
+      "role": "tester",
+      "cost_usd": 0.2013868,
+      "seconds": 56.8,
+      "files": [
+        "tests/blind/test_show_what_an_order_is_worth.py"
+      ]
+    },
+    {
+      "step": "implementation",
+      "role": "author",
+      "cost_usd": 0.051989400000000005,
+      "seconds": 20.2
+    },
+    {
+      "step": "round 1: score 100%, 0 faults survived",
+      "score": 1.0,
+      "survivors": 0
+    },
+    {
+      "step": "tester proposes an extension of the owned invariant tests",
+      "role": "tester",
+      "cost_usd": 0.20444020000000002,
+      "seconds": 57.9
+    },
+    {
+      "step": "gate with the reviewer: passed",
+      "role": "reviewer",
+      "cost_usd": 0.029735499999999998,
+      "seconds": 7.5
+    }
+  ],
+  "cards": [
+    {
+      "where": "src/orders/engine.py:36",
+      "why": "A canceled order still reports its full qty as notional (A5), so the risk team's exposure sums would count the unfilled remainder that can no longer trade, and no test can say whether that is what they want.",
+      "question": "Should a canceled order's notional include the unfilled quantity?",
+      "options": [
+        "keep: canceled orders report the full qty * limit_price",
+        "filled-only: for CANCELED orders notional returns filled_notional (the canceled remainder counts as 0)",
+        "split: keep notional as is and add a separate open_notional that is 0 for canceled orders"
+      ],
+      "id": "1"
+    },
+    {
+      "where": "src/orders/engine.py:42",
+      "why": "The result is an exact Decimal with no rounding (A3), and the limit checks and exports the risk team compares against may use a fixed number of decimals, so the sums could differ from theirs by sub-cent amounts.",
+      "question": "Should the returned amounts be rounded to a fixed precision?",
+      "options": [
+        "keep: exact Decimal, no rounding",
+        "round-2: quantize to 2 decimals with ROUND_HALF_EVEN",
+        "round-per-fill: quantize each fill's qty * price to 2 decimals before summing"
+      ],
+      "id": "2"
+    }
+  ],
+  "findings": [
+    {
+      "severity": "warn",
+      "where": "src/orders/engine.py:34",
+      "what": "Mutation result: the invariants tests caught 0 of the 3 injected faults. The author and tester tests caught all 3, so the changed lines are covered, but the owned invariant tests do not constrain notional or filled_notional. The invariant tests only call them as read-only operations and check no value. This is acceptable because the invariants do not concern worth, but it means the formulas rely on the non-owned tests."
+    },
+    {
+      "severity": "warn",
+      "where": "src/orders/engine.py:34",
+      "what": "Notional is a bare Decimal with no currency, and for a market-type order or a limit price of 0 it silently returns 0. If the platform trades in more than one currency, summing these values across orders would mix currencies."
+    }
+  ]
+}
