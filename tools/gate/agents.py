@@ -51,13 +51,16 @@ def claude(
         "--permission-mode", "acceptEdits",
         "--output-format", "json",
         "--no-session-persistence",
-        "--strict-mcp-config",
     ]
+    if hooks:
+        # The author works under the plugin's hooks and may ask its MCP what applies to a file.
+        cmd += ["--plugin-dir", str(PLUGIN)]
+        allowed = (*allowed, "mcp__plugin_four-eyes_foureyes__rules_for", "mcp__plugin_four-eyes_foureyes__check")
+    else:
+        cmd.append("--strict-mcp-config")  # tester and reviewer: no MCP, nothing that could show them more
     if allowed:
         cmd += ["--allowedTools", *allowed]
-    if hooks:
-        cmd += ["--plugin-dir", str(PLUGIN)]  # the author works under the plugin's hooks
-    elif os.environ.get("ANTHROPIC_API_KEY"):
+    if not hooks and os.environ.get("ANTHROPIC_API_KEY"):
         cmd.append("--bare")  # CI checkers: no hooks, no plugins, no keychain; only the API key
     started = time.monotonic()
     out = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)

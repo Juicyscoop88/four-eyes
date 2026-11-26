@@ -13,6 +13,16 @@ owned:
 invariants:
   - invariants/orders.yaml
 
+# Standards: how things are done here. Softer than invariants: the agent gets them as advice
+# (rules_for in the MCP server), the reviewer checks them, and what can be measured is measured.
+standards:
+  - paths: ["apps/**"]
+    file: standards/design-system.md
+  - paths: ["apps/**"]
+    file: standards/optimistic-ui.md
+  - paths: ["src/**"]
+    file: standards/money.md
+
 # The three kinds of tests. The gate measures each one separately.
 suites:
   author: tests/unit          # written by whoever wrote the code
