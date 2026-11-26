@@ -1,0 +1,106 @@
+{
+  "issue": "record-why-an-order-was-canceled",
+  "requested_by": "Juicyscoop88",
+  "passed": true,
+  "score": 1.0,
+  "mutants": 2,
+  "equivalent": {},
+  "base": "24d0215c2bef99cdb5bdce58f9073050b0ff376d",
+  "caught": {
+    "author": 2,
+    "tester": 2,
+    "invariants": 0
+  },
+  "proposal": {
+    "file": ".factory/proposals/record-why-an-order-was-canceled/tests/invariants/test_orders.py",
+    "target": "tests/invariants/test_orders.py",
+    "before": 0,
+    "after": 0,
+    "n": 2
+  },
+  "cost_usd": 0.491,
+  "minutes": 2.9,
+  "steps": [
+    {
+      "step": "plan",
+      "role": "author",
+      "cost_usd": 0.0964559,
+      "seconds": 36.8
+    },
+    {
+      "step": "blind tests",
+      "role": "tester",
+      "cost_usd": 0.16546239999999998,
+      "seconds": 44.5,
+      "files": [
+        "tests/blind/test_record_why_an_order_was_canceled.py"
+      ]
+    },
+    {
+      "step": "implementation",
+      "role": "author",
+      "cost_usd": 0.05448270000000001,
+      "seconds": 18.9
+    },
+    {
+      "step": "round 1: score 100%, 0 faults survived",
+      "score": 1.0,
+      "survivors": 0
+    },
+    {
+      "step": "tester proposes an extension of the owned invariant tests",
+      "role": "tester",
+      "cost_usd": 0.1394486,
+      "seconds": 39.3
+    },
+    {
+      "step": "gate with the reviewer: passed",
+      "role": "reviewer",
+      "cost_usd": 0.0347855,
+      "seconds": 9.4
+    }
+  ],
+  "cards": [
+    {
+      "where": "src/orders/engine.py:30",
+      "why": "cancel(order) is unchanged and still produces a CANCELED order with cancel_reason None, so the requirement 'reason set on every cancel' is not met and compliance will still see unexplained cancels; the invariants tests (which have 0 mutation catches) call this path, so no test forces a decision.",
+      "question": "What should happen to the reason-less cancel(order)?",
+      "options": [
+        "keep: leave cancel() as is, cancels without a reason remain possible",
+        "deprecate: cancel() emits a DeprecationWarning and callers migrate to cancel_with_reason",
+        "require: make cancel() take a mandatory reason and update the owned invariant tests to pass one"
+      ]
+    },
+    {
+      "where": "src/orders/engine.py:44",
+      "why": "Immutability of the reason relies only on cancel() rejecting terminal orders; Order is a mutable dataclass, so any code doing order.cancel_reason = x (or order.status = ...) bypasses it, and the compliance audit trail is only as strong as that convention.",
+      "question": "Should the reason be protected against direct assignment, not just by the engine path?",
+      "options": [
+        "keep: engine-only enforcement, direct assignment unguarded",
+        "guard: add __setattr__ on Order that raises if cancel_reason is already set to a different value",
+        "freeze: make Order immutable and have the engine return replaced copies (larger change, touches all callers)"
+      ]
+    },
+    {
+      "where": "src/orders/model.py:24",
+      "why": "The mutation run injected 2 faults and the owned invariants tests caught 0 of them: the invariants (ORD-1..4) say nothing about cancel_reason, so nothing owned covers the new state. The rule 'only a canceled order has a reason, and a canceled one via this path always has one' is protected only by author and tester tests.",
+      "question": "Should the cancel-reason rule become an owned invariant with a property test?",
+      "options": [
+        "yes: add an invariant (reason set iff canceled via cancel_with_reason, never changes once set) and a property test in the owned suite",
+        "no: leave it covered by the author and tester tests only"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "severity": "warn",
+      "where": "src/orders/model.py:24",
+      "what": "Unrelated formatting change `TERMINAL ={...}` (missing space before the brace) in a money-tier file; harmless at runtime but noise in the diff."
+    },
+    {
+      "severity": "warn",
+      "where": "src/orders/engine.py:44",
+      "what": "Not a defect today: the reason is validated before cancel() runs, and cancel() raises on terminal orders before the reason is assigned, so rejected calls leave the order untouched. This ordering is not guarded by an owned test, so a refactor that sets the reason first would silently break it."
+    }
+  ]
+}
