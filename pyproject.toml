@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "A merge gate for agent-written changes in a regulated trading codebase (case study prototype)"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["pyyaml>=6"]
+dependencies = [
+    "mcp>=1",
+    "pyyaml>=6",
+]
 
 [project.scripts]
 gate = "gate.cli:main"
