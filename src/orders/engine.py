@@ -25,6 +25,18 @@ def apply_fill(order: Order, qty: Decimal, price: Decimal) -> Order:
     return order
 
 
+def amend_quantity(order: Order, new_qty: Decimal) -> Order:
+    """Change the total quantity (filled plus remaining) of a working order, up or down.
+
+    The order is changed in place and returned; its id, side, limit price and fills are kept.
+    If new_qty equals the filled quantity, the order becomes FILLED. Otherwise the status stays.
+
+    Raises OrderRejected, leaving the order unchanged, if the order is FILLED or CANCELED, or if
+    new_qty is not finite, not positive, or below the filled quantity.
+    """
+    raise NotImplementedError
+
+
 def cancel(order: Order) -> Order:
     if order.status in TERMINAL:
         raise OrderRejected(f"order {order.id} is {order.status.value}")
