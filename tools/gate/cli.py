@@ -52,11 +52,36 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
     d.add_argument("--comment", help="a file with the gate comment the person answered (its cards are used)")
 
+    w = sub.add_parser("why", help="why a line exists: issue, who asked, decisions, tests that pin it, approval")
+    w.add_argument("where", help="path:line")
+
+    sub.add_parser("rules", help="what applies to a path").add_argument("path")
+    sub.add_parser("mcp", help="run the FourEyes MCP server on stdio (Claude Code starts it from the plugin)")
+
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
     h.add_argument("event", choices=["pre-tool-use", "stop"])
 
     args = p.parse_args(argv)
     factory = load(repo_root())
+
+    if args.cmd == "why":
+        from gate.why import why
+
+        path, line = args.where.rsplit(":", 1)
+        print(why(factory, path, int(line)))
+        return 0
+
+    if args.cmd == "rules":
+        from gate.rules import rules_for
+
+        print(rules_for(factory, args.path))
+        return 0
+
+    if args.cmd == "mcp":
+        from gate.mcp_server import main as serve
+
+        serve()
+        return 0
 
     if args.cmd == "hook":
         return hooks.handle(factory, args.event, sys.stdin.read())
