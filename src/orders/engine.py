@@ -34,9 +34,9 @@ def cancel(order: Order) -> Order:
 
 def notional(order: Order) -> Decimal:
     """Worth of the whole order at its limit price: qty * limit_price."""
-    raise NotImplementedError
+    return order.qty * order.limit_price
 
 
 def filled_notional(order: Order) -> Decimal:
     """Worth of what is filled so far: the sum of fill.qty * fill.price."""
-    raise NotImplementedError
+    return sum((f.qty * f.price for f in order.fills), Decimal(0))
