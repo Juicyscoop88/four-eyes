@@ -30,3 +30,13 @@ def cancel(order: Order) -> Order:
         raise OrderRejected(f"order {order.id} is {order.status.value}")
     order.status = OrderStatus.CANCELED
     return order
+
+
+def notional(order: Order) -> Decimal:
+    """Worth of the whole order at its limit price: qty * limit_price."""
+    raise NotImplementedError
+
+
+def filled_notional(order: Order) -> Decimal:
+    """Worth of what is filled so far: the sum of fill.qty * fill.price."""
+    raise NotImplementedError
