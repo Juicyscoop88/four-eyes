@@ -1,0 +1,103 @@
+{
+  "issue": "duplicate-fills",
+  "requested_by": "Jakub Schinko",
+  "passed": true,
+  "score": 1.0,
+  "mutants": 6,
+  "equivalent": {},
+  "caught": {
+    "author": 5,
+    "tester": 6,
+    "invariants": 0
+  },
+  "proposal": {
+    "file": ".factory/proposals/duplicate-fills/tests/invariants/test_orders.py",
+    "target": "tests/invariants/test_orders.py",
+    "before": 0,
+    "after": 1,
+    "n": 6
+  },
+  "cost_usd": 0.807,
+  "minutes": 3.8,
+  "steps": [
+    {
+      "step": "plan",
+      "role": "author",
+      "cost_usd": 0.16438429999999998,
+      "seconds": 44.6
+    },
+    {
+      "step": "blind tests",
+      "role": "tester",
+      "cost_usd": 0.234059,
+      "seconds": 51.2,
+      "files": [
+        "tests/blind/test_duplicate_fills.py"
+      ]
+    },
+    {
+      "step": "implementation",
+      "role": "author",
+      "cost_usd": 0.1296431,
+      "seconds": 32.5
+    },
+    {
+      "step": "round 1: score 100%, 0 faults survived",
+      "score": 1.0,
+      "survivors": 0
+    },
+    {
+      "step": "tester proposes an extension of the owned invariant tests",
+      "role": "tester",
+      "cost_usd": 0.1898632,
+      "seconds": 39.9
+    },
+    {
+      "step": "gate with the reviewer: passed",
+      "role": "reviewer",
+      "cost_usd": 0.0888077,
+      "seconds": 26.8
+    }
+  ],
+  "cards": [
+    {
+      "where": "src/orders/engine.py:41",
+      "why": "Duplicates are found only through ids stored on fills. A fill applied earlier through `apply_fill`, or reloaded without its `execution_id`, is applied again on redelivery if the order is still open and the quantity and price checks pass; the repo shows neither the gateway nor storage.",
+      "question": "Can this ship before the gateway and storage are ready, including for open orders whose fills have no id?",
+      "options": [
+        "ship: merge the engine change only. Gateway switch, storage of `execution_id` and handling of open orders stay outside this change, and the incident is not considered fixed by this merge.",
+        "gate: before release, require linked work that sends all venue reports through `apply_execution`, stores and reloads `Fill.execution_id`, and backfills or reconciles ids on open orders before any redelivery can reach them."
+      ]
+    },
+    {
+      "where": "src/orders/engine.py:44",
+      "why": "A known id with a different quantity or price could be a venue correction or corrupted data. It raises the same `OrderRejected` type as an ordinary rejection, so callers get no distinct type for escalating a possible position mismatch; the task puts corrections out of scope but does not say how to escalate one.",
+      "question": "Is a plain `OrderRejected` enough for a conflicting redelivery?",
+      "options": [
+        "keep: raise plain `OrderRejected` with a message and leave the order unchanged.",
+        "distinct: raise an exported `ExecutionConflict(OrderRejected)` carrying the order id, execution id, applied values and received values, and leave the order unchanged."
+      ]
+    },
+    {
+      "where": ".factory/proposals/duplicate-fills/tests/invariants/test_orders.py:22",
+      "why": "The current invariant tests caught none of the 6 faults. The proposed replacement generates redeliveries but asserts only ORD-1 to ORD-4, none of which says that an execution is applied at most once; a double-applied partial fill within quantity and limit can satisfy all four. Only the invariant owners can change this.",
+      "question": "Should at-most-once execution become an owned invariant?",
+      "options": [
+        "defer: add no new invariant. The proposal stays unadopted unless the owners apply it, and duplicate protection rests on the blind and unit tests.",
+        "add: the owners add ORD-5, 'an execution id is applied at most once per order', adopt the proposed tests, and add a property that redelivering an applied execution leaves status and fills unchanged and that non-null ids on an order's fills are unique."
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "severity": "warn",
+      "where": "src/orders/engine.py:45",
+      "what": "As assumption 1 specifies, a duplicate returns the same order, just as a newly applied execution does. A gateway that books positions or publishes a fill event after each successful call could count the duplicate downstream. It would need to detect duplicates another way, for example by checking the order's fills before the call. No gateway code is in this repo to check."
+    },
+    {
+      "severity": "warn",
+      "where": "src/orders/engine.py:43",
+      "what": "From reading the code (not run): redelivering an applied id with `Decimal(\"sNaN\")` as quantity or price should raise `decimal.InvalidOperation` in this comparison instead of `OrderRejected`. The order stays unchanged, but a caller that catches only `OrderRejected` would not handle the error."
+    }
+  ]
+}
