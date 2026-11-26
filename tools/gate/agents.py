@@ -125,13 +125,19 @@ def copy_back(ws: Path, root: Path, folder: str, dest_folder: str | None = None)
     return written
 
 
-def write_blind_tests(factory: Factory, task: str, name: str, gaps: list[str] = ()) -> tuple[AgentRun, list[str]]:
+def write_blind_tests(
+    factory: Factory, task: str, name: str, gaps: list[str] = (),
+    model: str | None = None, dest_root: Path | None = None, fresh: bool = False,
+) -> tuple[AgentRun, list[str]]:
     """The tester writes tests for the task without seeing the code. Returns the files it wrote.
 
-    gaps: behaviors no independent test checks yet, in words (from the reviewer, never code)."""
+    gaps: behaviors no independent test checks yet, in words (from the reviewer, never code).
+    model, dest_root, fresh: for the eval, another tester model writing from scratch into a copy."""
     ws = tester_workspace(factory)
     folder = factory.suites["tester"]
     target = f"{folder}/test_{name}.py"
+    if fresh:
+        (ws / target).unlink(missing_ok=True)
     prompt = f"The task:\n\n{task}\n\n"
     if gaps:
         prompt += (
@@ -144,8 +150,8 @@ def write_blind_tests(factory: Factory, task: str, name: str, gaps: list[str] = 
         "The implementation is not in this workspace; the files in `src/` show only the interface. "
         "Read them and the invariants, then write the tests."
     )
-    run = claude("tester", prompt, ws, factory.models["tester"], "Read,Glob,Grep,Write,Edit")
-    written = copy_back(ws, factory.root, folder)
+    run = claude("tester", prompt, ws, model or factory.models["tester"], "Read,Glob,Grep,Write,Edit")
+    written = copy_back(ws, dest_root or factory.root, folder)
     shutil.rmtree(ws, ignore_errors=True)
     return run, written
 
@@ -222,3 +228,24 @@ def explain_gaps(factory: Factory, task: str, diff: str, survivors: list[str]) -
     shutil.rmtree(ws, ignore_errors=True)
     data = json_block(run.result)
     return Review(run, [], [], "", data.get("gaps", []))
+
+
+# ---- adversary (the eval only) --------------------------------------------------------------
+
+
+def seed_bugs(factory: Factory, task: str, files: dict[str, str], k: int) -> tuple[AgentRun, list[dict]]:
+    """An adversary who sees the finished code plants realistic bugs, to measure the factory."""
+    shown = "\n\n".join(f"### {p}\n\n```python\n{t}\n```" for p, t in files.items())
+    prompt = (
+        f"## Task\n\n{task}\n\n## Owned invariants\n\n{_invariants(factory)}\n\n## The code\n\n{shown}\n\n"
+        f"Plant {k} different bugs in the code that implements this task. Each is one small edit, the kind a "
+        "rushed engineer or agent really makes: a wrong boundary, a forgotten case, a wrong rounding, state "
+        "changed before a check, a check in the wrong place. Not syntax errors, not obvious sabotage, and the "
+        "code must still import. Answer with one JSON block: "
+        '{"bugs": [{"file": "src/...", "find": "exact text that occurs once", "replace": "...", '
+        '"why": "what goes wrong, for which input"}]}'
+    )
+    ws = Path(tempfile.mkdtemp(prefix="gate-adversary-"))
+    run = claude("adversary", prompt, ws, factory.models["reviewer"], "")
+    shutil.rmtree(ws, ignore_errors=True)
+    return run, json_block(run.result).get("bugs", [])

@@ -39,6 +39,11 @@ def main(argv: list[str] | None = None) -> int:
     a.add_argument("issue", help="the issue as a Markdown file")
     a.add_argument("--rounds", type=int, default=4)
 
+    e = sub.add_parser("eval", help="plant realistic bugs in finished tasks, see what catches them")
+    e.add_argument("tasks", nargs="+", help="slugs of factory/<slug> branches")
+    e.add_argument("--bugs", type=int, default=5)
+    e.add_argument("--testers", default="haiku,sonnet,opus")
+
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
     h.add_argument("event", choices=["pre-tool-use", "stop"])
 
@@ -53,6 +58,19 @@ def main(argv: list[str] | None = None) -> int:
 
         path = Pilot(factory, Path(args.issue).resolve(), log=lambda m: print(m, flush=True)).run(args.rounds)
         print(f"autopilot: report in {path.relative_to(factory.root)}")
+        return 0
+
+    if args.cmd == "eval":
+        import json as _json
+
+        from gate.eval import evaluate, summary
+
+        testers = args.testers.split(",")
+        results = [evaluate(factory, t, args.bugs, testers, log=lambda m: print(m, flush=True)) for t in args.tasks]
+        out = factory.root / "docs" / "eval.md"
+        out.write_text(summary(results, testers))
+        (factory.root / "docs" / "eval.json").write_text(_json.dumps(results, indent=2))
+        print(out.read_text())
         return 0
 
     if args.cmd == "tests":
