@@ -107,3 +107,13 @@ def test_rules_for_names_owners_invariants_and_standards():
     app = rules_for(factory, "apps/recon/page.tsx")
     assert "design-system" in app and "optimistic-ui" in app and "ORD-1" not in app
     assert "Owned by people" in rules_for(factory, "invariants/orders.yaml")
+
+
+def test_assumptions_become_cards():
+    from foureyes.check import Result, assumptions_of
+
+    task = "# T\n\n## Assumptions\n\n1. **Total.** With 4 of 10\n   filled, 12 leaves 8.\n2. NaN is rejected.\n\n## Decisions\n"
+    assert assumptions_of(task) == ["**Total.** With 4 of 10 filled, 12 leaves 8.", "NaN is rejected."]
+    res = Result("b", [], "money")
+    res.assumptions = assumptions_of(task)
+    assert [c["id"] for c in res.cards()] == ["A1", "A2"]

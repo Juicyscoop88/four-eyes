@@ -140,13 +140,13 @@ class Pilot:
             "caught": {s: final.caught(s) for s in ("author", "tester", "invariants")},
             "proposal": proposal, "cost_usd": round(sum(r.cost_usd for r in final.agent_runs), 3),
             "minutes": round((time.monotonic() - self.started) / 60, 1), "steps": self.steps,
-            "cards": final.review.map if final.review else [],
+            "cards": final.cards(),
             "findings": final.review.findings if final.review else [],
         }, indent=2))
         self.commit("factory", f"Gate report for {self.slug}: " + ("passed" if final.passed else "blocked"))
         return out / f"{self.slug}.md"
 
-    def decide(self, card: int, answer: str, decided_by: str, cards: list[dict] | None = None, max_rounds: int = 4) -> Path:
+    def decide(self, card: str, answer: str, decided_by: str, cards: list[dict] | None = None, max_rounds: int = 4) -> Path:
         """A person answered a decision card. The answer becomes a blind test first, then code.
 
         cards: the cards as the person saw them (from the gate's last comment); else the autopilot's own."""
@@ -154,7 +154,12 @@ class Pilot:
         git(root, "checkout", "-q", f"factory/{self.slug}")
         record = json.loads((root / ".factory" / "runs" / f"{self.slug}.json").read_text())
         self.base = git(root, "merge-base", "HEAD", "main").strip()
-        q = (cards or record["cards"])[card - 1]
+        pool = cards or record["cards"]
+        q = next((c for c in pool if c.get("id") == card), None)
+        if q is None and card.isdigit() and "id" not in pool[0]:
+            q = pool[int(card) - 1]  # cards recorded before they had ids
+        if q is None:
+            raise SystemExit(f"decide: no card {card}")
         chosen = next((o for o in q.get("options", []) if o == answer or o.split(":")[0].strip() == answer), answer)
         question = q.get("question") or q["why"]
         task = (root / self.task_path).read_text().rstrip()

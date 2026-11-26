@@ -40,6 +40,13 @@ class Result:
     blocks: list[str] = field(default_factory=list)
     equivalent: dict[str, str] = field(default_factory=dict)  # mutant id -> why no input tells it apart
     proposal: dict | None = None  # an extension of the owned invariant tests, for their owners
+    assumptions: list[str] = field(default_factory=list)  # what the plan assumed where the issue was silent
+
+    def cards(self) -> list[dict]:
+        """Every decision a person can make on this change, with ids: 1, 2, 3 from the reviewer, A1.. from the plan."""
+        out = [{**c, "id": str(i)} for i, c in enumerate(self.review.map if self.review else [], 1)]
+        out += [{"id": f"A{i}", "question": a, "options": ["keep"]} for i, a in enumerate(self.assumptions, 1)]
+        return out
 
     @property
     def passed(self) -> bool:
@@ -76,6 +83,7 @@ def check(
     tier = strictest(factory, files)
     res = Result(base=base, files=files, tier=tier.name, mutation_min=tier.mutation_min)
     res.equivalent = dict(equivalent or {})
+    res.assumptions = assumptions_of(task or "")
     log(f"gate: {len(files)} changed files, tier {tier.name}")
 
     res.owned_changed = [f for f in files if factory.is_owned(f)]
@@ -118,6 +126,21 @@ def check(
             for f in res.review.findings if f.get("severity") == "block"
         ]
     return res
+
+
+def assumptions_of(task: str) -> list[str]:
+    """The numbered items of the task's `## Assumptions` section, one string each."""
+    if "## Assumptions" not in task:
+        return []
+    section = task.split("## Assumptions", 1)[1].split("\n## ", 1)[0]
+    items: list[str] = []
+    for line in section.splitlines():
+        m = re.match(r"^\s*\d+\.\s+(.*)", line)
+        if m:
+            items.append(m.group(1).strip())
+        elif items and line.strip():
+            items[-1] += " " + line.strip()
+    return items
 
 
 def first_sentence(text: str) -> str:
@@ -165,6 +188,12 @@ def report(factory: Factory, res: Result, head: str) -> str:
             out.append("")
     if res.review and res.review.summary:
         out += [f"> {res.review.summary}\n"]
+
+    if res.assumptions:
+        out.append(f"<details><summary>The plan made {len(res.assumptions)} assumptions where the issue was silent. "
+                   "Change any with <code>/decide A3 what it should be</code></summary>\n")
+        out += [f"- **A{i}** {a}" for i, a in enumerate(res.assumptions, 1)]
+        out.append("\n</details>\n")
 
     out.append(f"### Tests\n\n{res.tests_run} tests ran, {len(res.failures)} failed.\n")
     for f in res.failures:
@@ -220,9 +249,9 @@ def report(factory: Factory, res: Result, head: str) -> str:
     if res.owned_changed:
         out.append(f"- owned files touched: {', '.join(res.owned_changed)}")
     out.append(f"- gate run: {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC")
-    if res.review and res.review.map:
+    if res.cards():
         # The cards as data, so an answer (`/decide 1 keep`) refers to exactly the card the person saw.
-        out.append(f"\n<!-- four-eyes-cards {json.dumps(res.review.map)} -->")
+        out.append(f"\n<!-- four-eyes-cards {json.dumps(res.cards())} -->")
     return "\n".join(out) + "\n"
 
 

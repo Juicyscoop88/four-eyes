@@ -43,7 +43,7 @@ def main(argv: list[str] | None = None) -> int:
 
     d = sub.add_parser("decide", help="a person answers a decision card; it becomes a test, then code")
     d.add_argument("slug", help="the task, as in factory/<slug>")
-    d.add_argument("card", type=int)
+    d.add_argument("card", help="1, 2, 3 for the reviewer's cards, A1, A2.. for the plan's assumptions")
     d.add_argument("answer", nargs="+")
     d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
     d.add_argument("--comment", help="a file with the gate comment the person answered (its cards are used)")
