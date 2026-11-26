@@ -1,0 +1,6 @@
+{
+  "name": "four-eyes",
+  "version": "0.1.0",
+  "description": "Four eyes for agents: nobody, human or agent, checks their own work. Hooks that keep agents off owned invariants and secrets, and /ship: blind tests, implementation, gate, review map.",
+  "author": { "name": "Four Eyes case study" }
+}

@@ -1,0 +1,34 @@
+# The factory's one file per repo: what people own, and how strict the gate is per path.
+# Owned paths are changed only by their owners (CODEOWNERS approval). Agents never edit them.
+
+owned:
+  - factory.yaml
+  - invariants/**
+  - tests/invariants/**
+  - tools/**        # the gate itself: an agent never edits what judges it
+  - plugin/**
+  - .gitlab-ci.yml
+
+invariants:
+  - invariants/orders.yaml
+
+# The three kinds of tests. The gate measures each one separately.
+suites:
+  author: tests/unit          # written by whoever wrote the code
+  tester: tests/blind         # written by the tester, who never saw the code
+  invariants: tests/invariants  # owned by people
+
+tiers:
+  money:
+    paths: ["src/orders/**"]
+    mutation_min: 0.8     # share of injected faults the tester and invariant tests must catch
+    approver: senior      # CODEOWNERS group that approves
+  standard:
+    paths: ["src/**"]
+    mutation_min: 0.5
+  low:
+    paths: ["**"]
+    mutation_min: 0.0
+
+agents:
+  model: sonnet           # tester and reviewer; cheaper than the author on purpose
