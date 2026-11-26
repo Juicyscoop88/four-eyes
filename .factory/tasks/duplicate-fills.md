@@ -45,3 +45,7 @@ execution_id: str | None = None
    also stores `Fill.execution_id`. Storage and concurrent delivery are out of scope.
 10. **Out of scope:** repairing orders that already counted a fill twice, and venue corrections or busts of
     an earlier execution.
+
+## Decisions
+
+- **Is a plain `OrderRejected` enough for a conflicting redelivery?** distinct: raise an exported `ExecutionConflict(OrderRejected)` carrying the order id, execution id, applied values and received values, and leave the order unchanged. (decided by Juicyscoop88)
