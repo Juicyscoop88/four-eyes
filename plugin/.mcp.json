@@ -1,5 +1,5 @@
 {
   "mcpServers": {
-    "foureyes": { "command": "uv", "args": ["run", "--quiet", "gate", "mcp"] }
+    "foureyes": { "command": "uv", "args": ["run", "--quiet", "foureyes", "mcp"] }
   }
 }

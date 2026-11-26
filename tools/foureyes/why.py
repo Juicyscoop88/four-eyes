@@ -10,10 +10,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from gate import mutation
-from gate.config import Factory
-from gate.diff import git
-from gate.tests import checkout_copy, run_suites
+from foureyes import mutation
+from foureyes.config import Factory
+from foureyes.diff import git
+from foureyes.tests import checkout_copy, run_suites
 
 
 def _trailers(message: str) -> dict[str, str]:

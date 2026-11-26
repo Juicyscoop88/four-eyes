@@ -1,4 +1,4 @@
-# The gate on every pull request. The same command as on a laptop: `uv run gate check --agents`.
+# The gate on every pull request. The same command as on a laptop: `uv run foureyes check --agents`.
 # On GitLab the same job is .gitlab-ci.yml; the gate does not care where it runs.
 name: four-eyes
 
@@ -33,7 +33,7 @@ jobs:
           FACTORY_TASK: ${{ github.event.pull_request.body }}
           FACTORY_REQUESTED_BY: ${{ github.event.pull_request.user.login }}
         # Without the key the reviewer does not run, and the report says so.
-        run: uv run gate check --base "origin/${{ github.base_ref }}" ${{ secrets.ANTHROPIC_API_KEY != '' && '--agents' || '' }}
+        run: uv run foureyes check --base "origin/${{ github.base_ref }}" ${{ secrets.ANTHROPIC_API_KEY != '' && '--agents' || '' }}
       - name: report on the pull request
         if: always()
         env:
