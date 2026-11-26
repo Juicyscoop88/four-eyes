@@ -55,3 +55,11 @@ The factory is mostly conventions and glue on top of these. What is genuinely mi
 - **Invariants are owned by humans, enforced by machines.** A file of invariants per domain (order handling) that agents can read but never edit (hook blocks it). Property tests generated from it gate every PR. Answers the senior engineer directly.
 - **The review map.** Each PR states which lines need human judgment and why, everything else is proven by checks. Review time goes down, which is the senior's actual complaint.
 - **Risk tiers.** Paths and change types decide the gate: docs and internal tools ship with one reviewer, order handling needs owned invariants plus a senior. Efficient where cheap, responsible where money moves.
+
+## 2026-11-26: converging
+
+- Core principle candidate: **four eyes for agents.** Nobody checks their own work. Author, tester and reviewer are always different contexts, human or agent. Tester sees only spec and invariants, never the author's code or reasoning; reviewer sees diff and spec, never the author's chat. Finance already knows the rule.
+- Minimal system: one rule (four eyes), one place (the merge request), one file per repo (invariants and risk tiers). Everything else is what they have: GitLab, Claude Code, Vertex, Grafana.
+- Shadow agent costs tokens: only risky paths, a sample of tickets, a cheaper model, and it switches itself off per module once the agent has a track record ("shadow until trusted").
+- Plugin = files only (CLAUDE.md, skills, hooks), from an internal git marketplace. Telemetry is Claude Code's own OpenTelemetry, turned on in managed settings, into their Grafana. Nothing custom.
+- UC5 is about where the agent works and with which rights before a MR exists, not production deploys.
