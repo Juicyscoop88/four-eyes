@@ -23,15 +23,16 @@ def test_rejects_fill_after_cancel():
         apply_fill(o, D("1"), D("100"))
 
 
-def test_amend_to_filled_compares_value_across_several_fractional_fills():
+def test_rejects_amend_to_filled_comparing_value_across_several_fractional_fills():
     o = buy("1")
     apply_fill(o, D("0.1"), D("100"))
     apply_fill(o, D("0.2"), D("100"))
-    amend_quantity(o, D("0.300"))
-    assert o.status is OrderStatus.FILLED
+    with pytest.raises(OrderRejected):
+        amend_quantity(o, D("0.300"))
+    assert (o.qty, o.status) == (D("1"), OrderStatus.PARTIALLY_FILLED)
 
 
-@pytest.mark.parametrize("bad", ["NaN", "sNaN", "Infinity", "0", "3.999"])
+@pytest.mark.parametrize("bad", ["NaN", "sNaN", "Infinity", "0", "3.999", "4"])
 def test_rejected_amend_changes_nothing(bad):
     o = apply_fill(buy(), D("4"), D("100"))
     with pytest.raises(OrderRejected):
