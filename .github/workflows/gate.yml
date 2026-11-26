@@ -1,0 +1,40 @@
+# The gate on every pull request. The same command as on a laptop: `uv run gate check --agents`.
+# On GitLab the same job is .gitlab-ci.yml; the gate does not care where it runs.
+name: four-eyes
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: curl -fsSL https://claude.ai/install.sh | bash && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: gate
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FACTORY_TASK: ${{ github.event.pull_request.body }}
+        # Without the key the reviewer does not run, and the report says so.
+        run: uv run gate check --base "origin/${{ github.base_ref }}" ${{ secrets.ANTHROPIC_API_KEY != '' && '--agents' || '' }}
+      - name: report on the pull request
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment ${{ github.event.pull_request.number }} --body-file gate-report.md --edit-last --create-if-none

@@ -18,7 +18,8 @@ def repo_root() -> Path:
 def read_task(arg: str | None) -> str | None:
     if arg:
         return Path(arg).read_text()
-    return os.environ.get("CI_MERGE_REQUEST_DESCRIPTION") or None
+    # In CI the task is the merge request or pull request description.
+    return os.environ.get("FACTORY_TASK") or os.environ.get("CI_MERGE_REQUEST_DESCRIPTION") or None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -27,7 +28,7 @@ def main(argv: list[str] | None = None) -> int:
 
     c = sub.add_parser("check", help="what this change must prove before it merges")
     c.add_argument("--base", default=os.environ.get("CI_MERGE_REQUEST_DIFF_BASE_SHA", "main"))
-    c.add_argument("--task", help="the task as a file (in CI: the merge request description)")
+    c.add_argument("--task", help="the task as a file (in CI: the merge request or pull request description)")
     c.add_argument("--agents", action="store_true", help="also run the reviewer agent")
     c.add_argument("--report", default="gate-report.md")
 

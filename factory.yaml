@@ -8,6 +8,7 @@ owned:
   - tools/**        # the gate itself: an agent never edits what judges it
   - plugin/**
   - .gitlab-ci.yml
+  - .github/**
 
 invariants:
   - invariants/orders.yaml

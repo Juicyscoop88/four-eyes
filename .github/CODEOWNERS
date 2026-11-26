@@ -1,0 +1,8 @@
+# Owned paths (factory.yaml: owned). A change needs one of their owners; an agent never edits them.
+/factory.yaml        @Juicyscoop88
+/invariants/         @Juicyscoop88
+/tests/invariants/   @Juicyscoop88
+/tools/              @Juicyscoop88
+/plugin/             @Juicyscoop88
+/.github/            @Juicyscoop88
+/.gitlab-ci.yml      @Juicyscoop88
