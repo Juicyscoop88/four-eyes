@@ -35,3 +35,16 @@ def test_new_execution_needs_a_positive_quantity(qty):
     with pytest.raises(OrderRejected):
         apply_execution(order, "e-1", Decimal(qty), Decimal("101"))
     assert order.fills == []
+
+
+def test_conflict_exposes_fields():
+    from orders import ExecutionConflict
+
+    order = Order(id="o-9", side=Side.BUY, qty=Decimal("10"), limit_price=Decimal("100"))
+    apply_execution(order, "e-1", Decimal("4"), Decimal("99"))
+    with pytest.raises(ExecutionConflict) as info:
+        apply_execution(order, "e-1", Decimal("5"), Decimal("98"))
+    exc = info.value
+    assert (exc.order_id, exc.execution_id) == ("o-9", "e-1")
+    assert exc.applied == (Decimal("4"), Decimal("99"))
+    assert exc.received == (Decimal("5"), Decimal("98"))

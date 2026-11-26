@@ -8,6 +8,26 @@ class OrderRejected(Exception):
     pass
 
 
+class ExecutionConflict(OrderRejected):
+    """An applied execution id was redelivered with a different qty or price."""
+
+    def __init__(
+        self,
+        order_id: str,
+        execution_id: str,
+        applied: tuple[Decimal, Decimal],
+        received: tuple[Decimal, Decimal],
+    ):
+        self.order_id = order_id
+        self.execution_id = execution_id
+        self.applied = applied
+        self.received = received
+        super().__init__(
+            f"order {order_id}: execution {execution_id!r} applied as (qty, price) {applied}, "
+            f"redelivered as {received}"
+        )
+
+
 def apply_fill(order: Order, qty: Decimal, price: Decimal) -> Order:
     """Apply one execution report to an order."""
     if order.status in TERMINAL:
@@ -31,9 +51,9 @@ def apply_execution(order: Order, execution_id: str, qty: Decimal, price: Decima
 
     A new execution id is validated like apply_fill, and the appended Fill carries the id.
     Redelivery of an applied id with equal qty and price returns the order unchanged, also
-    when the order is filled or canceled. Raises OrderRejected, leaving the order unchanged,
-    if the id is empty, if an applied id arrives with a different qty or price, or if
-    apply_fill would reject a new execution.
+    when the order is filled or canceled. Raises ExecutionConflict (an OrderRejected) if an
+    applied id arrives with a different qty or price. Raises OrderRejected if the id is empty
+    or apply_fill would reject a new execution. The order is unchanged in every case.
     """
     if not execution_id:
         raise OrderRejected("execution id must not be empty")
@@ -41,7 +61,7 @@ def apply_execution(order: Order, execution_id: str, qty: Decimal, price: Decima
     applied = next((f for f in order.fills if f.execution_id == execution_id), None)
     if applied is not None:
         if (applied.qty, applied.price) != (qty, price):
-            raise OrderRejected(f"execution {execution_id!r} redelivered with different content")
+            raise ExecutionConflict(order.id, execution_id, (applied.qty, applied.price), (qty, price))
         return order
 
     apply_fill(order, qty, price)
