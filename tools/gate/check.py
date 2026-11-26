@@ -7,6 +7,7 @@
 4. The reviewer, who never saw the author's conversation, writes a review map: where a person must look.
 """
 
+import os
 import re
 import shutil
 import subprocess
@@ -210,6 +211,8 @@ def report(factory: Factory, res: Result, head: str) -> str:
     out.append(f"- change: `{res.base[:10]}..{head[:10]}`, {len(res.files)} files")
     out.append(f"- requested by: {author_of(factory.root)}; approver must be someone else")
     out.append(f"- agents that checked it: {roles}; total ${cost:.3f}")
+    if not res.review:
+        out.append("- the reviewer did not run on this change, so there is no review map")
     if res.owned_changed:
         out.append(f"- owned files touched: {', '.join(res.owned_changed)}")
     out.append(f"- gate run: {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC")
@@ -217,6 +220,9 @@ def report(factory: Factory, res: Result, head: str) -> str:
 
 
 def author_of(root: Path) -> str:
+    """Who asked for the change: in CI the pull request's author, locally the git user."""
+    if os.environ.get("FACTORY_REQUESTED_BY"):
+        return os.environ["FACTORY_REQUESTED_BY"]
     try:
         return git(root, "config", "user.name").strip() or "unknown"
     except subprocess.CalledProcessError:
