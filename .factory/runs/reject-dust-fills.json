@@ -1,0 +1,87 @@
+{
+  "issue": "reject-dust-fills",
+  "requested_by": "Juicyscoop88",
+  "passed": true,
+  "score": 1.0,
+  "mutants": 5,
+  "equivalent": {},
+  "base": "96334800d53f73c0efeae229e08ca64eb5dd4c6b",
+  "caught": {
+    "author": 5,
+    "tester": 5,
+    "invariants": 1
+  },
+  "proposal": {
+    "file": ".factory/proposals/reject-dust-fills/tests/invariants/test_orders.py",
+    "target": "tests/invariants/test_orders.py",
+    "before": 1,
+    "after": 1,
+    "n": 5
+  },
+  "cost_usd": 0.546,
+  "minutes": 3.3,
+  "steps": [
+    {
+      "step": "plan",
+      "role": "author",
+      "cost_usd": 0.0636414,
+      "seconds": 29.1
+    },
+    {
+      "step": "blind tests",
+      "role": "tester",
+      "cost_usd": 0.1628496,
+      "seconds": 41.1,
+      "files": [
+        "tests/blind/test_reject_dust_fills.py"
+      ]
+    },
+    {
+      "step": "implementation",
+      "role": "author",
+      "cost_usd": 0.0538203,
+      "seconds": 18.0
+    },
+    {
+      "step": "round 1: score 100%, 0 faults survived",
+      "score": 1.0,
+      "survivors": 0
+    },
+    {
+      "step": "tester proposes an extension of the owned invariant tests",
+      "role": "tester",
+      "cost_usd": 0.236322,
+      "seconds": 67.6
+    },
+    {
+      "step": "gate with the reviewer: passed",
+      "role": "reviewer",
+      "cost_usd": 0.029330499999999995,
+      "seconds": 6.5
+    }
+  ],
+  "cards": [
+    {
+      "where": "src/orders/engine.py:14",
+      "why": "A minimum larger than the order's own qty, or a remainder that can never be reached (e.g. qty 10, min 5, after an 8 fill with 2 left), is accepted silently; the order can then only complete via an exact-remaining fill, so a venue sending slightly different partials leaves it stuck PARTIALLY_FILLED. Tests cannot decide whether this is acceptable.",
+      "question": "Should an order whose min_fill_qty exceeds its total qty be allowed, and should a non-positive min_fill_qty be validated?",
+      "options": [
+        "keep: no validation, as the task assumes; stuck-order risk accepted",
+        "reject: raise ValueError in Order.__post_init__ when min_fill_qty is not None and (min_fill_qty <= 0 or min_fill_qty > qty)",
+        "clamp: treat min_fill_qty above qty as qty in is_dust, leave non-positive as no minimum"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "severity": "warn",
+      "where": ".factory/proposals/reject-dust-fills/tests/invariants/test_orders.py:1",
+      "what": "The gate shows the invariants tests caught only 1 of 5 injected faults in the changed lines. The dust check itself is covered by author and tester tests, not by the invariant properties. The invariants appear safe here because the check only adds rejections before any state change, but this rests on reading the code, not on the invariant tests."
+    },
+    {
+      "severity": "warn",
+      "where": "src/orders/engine.py:14",
+      "what": "is_dust compares with Decimal ordering and equality, so equal values with different exponents (5 vs 5.00) behave correctly. However, a venue fill with excess precision (e.g. 4.9999999) is rejected as dust with no log or metric, so rejected fills are silently dropped upstream unless the caller handles OrderRejected. Confirm the caller records the rejection."
+    }
+  ]
+}
