@@ -18,13 +18,20 @@ SWAP_COMPARE = {
     ast.Eq: ast.NotEq, ast.NotEq: ast.Eq, ast.Is: ast.IsNot, ast.IsNot: ast.Is,
     ast.In: ast.NotIn, ast.NotIn: ast.In,
 }
-SWAP_BINOP = {ast.Add: ast.Sub, ast.Sub: ast.Add}
+SWAP_BINOP = {ast.Add: ast.Sub, ast.Sub: ast.Add, ast.Mult: ast.Div, ast.Div: ast.Mult, ast.FloorDiv: ast.Div}
 SWAP_BOOL = {ast.And: ast.Or, ast.Or: ast.And}
 SYMBOL = {
     ast.Gt: ">", ast.GtE: ">=", ast.Lt: "<", ast.LtE: "<=", ast.Eq: "==", ast.NotEq: "!=",
     ast.Is: "is", ast.IsNot: "is not", ast.In: "in", ast.NotIn: "not in",
-    ast.Add: "+", ast.Sub: "-", ast.And: "and", ast.Or: "or",
+    ast.Add: "+", ast.Sub: "-", ast.Mult: "*", ast.Div: "/", ast.FloorDiv: "//",
+    ast.And: "and", ast.Or: "or",
 }
+SWAP_NAME = {
+    "min": "max", "max": "min", "True": "False", "False": "True",
+    "ROUND_HALF_EVEN": "ROUND_HALF_UP", "ROUND_HALF_UP": "ROUND_HALF_EVEN",
+    "ROUND_DOWN": "ROUND_UP", "ROUND_UP": "ROUND_DOWN", "ROUND_FLOOR": "ROUND_CEILING", "ROUND_CEILING": "ROUND_FLOOR",
+}
+UNWRAP_CALL = {"round", "abs", "int", "float"}
 
 
 @dataclass
@@ -80,6 +87,35 @@ class _Apply(ast.NodeTransformer):
         if self._hit(node):
             self.done = (node.lineno, "a `raise` was removed (a guard that no longer guards)")
             return ast.copy_location(ast.Pass(), node)
+        return node
+
+    def visit_Constant(self, node):
+        if isinstance(node.value, int) and not isinstance(node.value, bool) and self._hit(node):
+            self.done = (node.lineno, f"`{node.value}` became `{node.value + 1}`")
+            return ast.copy_location(ast.Constant(node.value + 1), node)
+        return node
+
+    def visit_Name(self, node):
+        new = SWAP_NAME.get(node.id)
+        if new and self._hit(node):
+            self.done = (node.lineno, f"`{node.id}` became `{new}`")
+            return ast.copy_location(ast.Name(new, node.ctx), node)
+        return node
+
+    def visit_Attribute(self, node):
+        self.generic_visit(node)
+        new = SWAP_NAME.get(node.attr)
+        if new and self._hit(node):
+            self.done = (node.lineno, f"`{node.attr}` became `{new}`")
+            node.attr = new
+        return node
+
+    def visit_Call(self, node):
+        self.generic_visit(node)
+        name = node.func.id if isinstance(node.func, ast.Name) else None
+        if name in UNWRAP_CALL and len(node.args) >= 1 and self._hit(node):
+            self.done = (node.lineno, f"the call to `{name}()` was removed")
+            return node.args[0]
         return node
 
     def visit_UnaryOp(self, node):

@@ -65,20 +65,25 @@ class Pilot:
         root = self.f.root
         if git(root, "status", "--porcelain").strip():
             raise SystemExit("autopilot: the working tree is not clean")
-        self.base = git(root, "rev-parse", "HEAD").strip()
-        git(root, "checkout", "-q", "-b", f"factory/{self.slug}")
-
-        self.plan()
-        run, written = agents.write_blind_tests(self.f, self.task(), self.name)
-        self.commit("tester", f"Blind tests for {self.slug} (the tester never saw an implementation)")
-        self.step("blind tests", run, files=written)
-
-        self.step("implementation", agents.author(self.f, (
-            f"Implement the task in `{self.task_path}`. The tester's tests for it are in "
-            f"`{self.f.suites['tester']}/` (read them, never edit them). Write your own tests in "
-            f"`{self.f.suites['author']}/`. Run `uv run pytest` until everything is green."
-        )))
-        self.commit("author", f"Implement {self.slug}")
+        branch = f"factory/{self.slug}"
+        if git(root, "branch", "--list", branch).strip():
+            # Handing it back: someone took the wheel on this branch, the factory goes on from there.
+            git(root, "checkout", "-q", branch)
+            self.base = git(root, "merge-base", "HEAD", "main").strip()
+            self.step("continue on the existing branch")
+        else:
+            self.base = git(root, "rev-parse", "HEAD").strip()
+            git(root, "checkout", "-q", "-b", branch)
+            self.plan()
+            run, written = agents.write_blind_tests(self.f, self.task(), self.name)
+            self.commit("tester", f"Blind tests for {self.slug} (the tester never saw an implementation)")
+            self.step("blind tests", run, files=written)
+            self.step("implementation", agents.author(self.f, (
+                f"Implement the task in `{self.task_path}`. The tester's tests for it are in "
+                f"`{self.f.suites['tester']}/` (read them, never edit them). Write your own tests in "
+                f"`{self.f.suites['author']}/`. Run `uv run pytest` until everything is green."
+            )))
+            self.commit("author", f"Implement {self.slug}")
 
         equivalent: dict[str, str] = {}
         for rnd in range(1, max_rounds + 1):
@@ -146,11 +151,16 @@ class Pilot:
         self.commit("author", f"Plan {self.slug}: the task and its interface")
 
     def propose(self, res) -> dict | None:
-        run, proposals = agents.propose_invariant_tests(self.f, self.task(), self.name)
-        self.step("tester proposes an extension of the owned invariant tests", run)
-        if not proposals:
-            return None
-        path, text = next(iter(proposals.items()))
+        existing = sorted((self.f.root / ".factory" / "proposals" / self.slug).rglob("*.py"))
+        if existing:
+            folder = self.f.root / ".factory" / "proposals" / self.slug
+            path, text = existing[0].relative_to(folder).as_posix(), existing[0].read_text()
+        else:
+            run, proposals = agents.propose_invariant_tests(self.f, self.task(), self.name)
+            self.step("tester proposes an extension of the owned invariant tests", run)
+            if not proposals:
+                return None
+            path, text = next(iter(proposals.items()))
         work = checkout_copy(self.f.root)
         try:
             (work / path).write_text(text)

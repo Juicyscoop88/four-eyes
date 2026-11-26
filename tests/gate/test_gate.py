@@ -79,3 +79,11 @@ def test_hook_blocks_secrets(capsys):
     assert decision(capsys, {"file_path": str(ROOT / "src/x.py"), "new_string": pem}) == "deny"
     ref = "KEY = secret('trading-api')"
     assert decision(capsys, {"file_path": str(ROOT / "src/x.py"), "new_string": ref}) == "allow"
+
+
+def test_mutants_reach_arithmetic_constants_and_rounding():
+    code = "x = round(a * b / 10**6, ROUND_HALF_EVEN)\n"
+    found = {m.description for m in mutants_of("x.py", code, {1})}
+    assert {"`*` became `/`", "`/` became `*`", "`10` became `11`", "`ROUND_HALF_EVEN` became `ROUND_HALF_UP`",
+            "the call to `round()` was removed"} <= found
+    assert mutants_of("x.py", '"""Doc 6."""\n', {1}) == []
