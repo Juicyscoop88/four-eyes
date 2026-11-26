@@ -97,8 +97,16 @@ def check(factory: Factory, base: str, task: str | None, with_agents: bool, log=
         log("gate: the reviewer reads the diff")
         res.review = agents.review(factory, task or "(no task given)", diff_text(factory.root, base), facts(res))
         res.agent_runs.append(res.review.run)
-        res.blocks += [f"reviewer: {f['what']} ({f['where']})" for f in res.review.findings if f.get("severity") == "block"]
+        res.blocks += [
+            f"reviewer at `{f.get('where', '')}`: {first_sentence(f.get('what', ''))}"
+            for f in res.review.findings if f.get("severity") == "block"
+        ]
     return res
+
+
+def first_sentence(text: str) -> str:
+    m = re.match(r"(.+?[.!?])(\s|$)", text, re.S)
+    return m.group(1) if m else text
 
 
 def invariant_of(factory: Factory, failure: Failure):
