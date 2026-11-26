@@ -18,5 +18,6 @@ changed lines; your own tests are measured but do not count.
 - Keep `.factory/progress.md` short and current: done, next, open questions. Another session may continue
   from it.
 - Secrets never go into code; reference them by name.
+- Leave `docs/` alone: the build log and the design are the person's. Your record is `.factory/progress.md`.
 
 End with three lines at most: what you changed, and anything a person must decide.
