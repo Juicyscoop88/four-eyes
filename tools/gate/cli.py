@@ -50,6 +50,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("card", type=int)
     d.add_argument("answer", nargs="+")
     d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
+    d.add_argument("--comment", help="a file with the gate comment the person answered (its cards are used)")
 
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
     h.add_argument("event", choices=["pre-tool-use", "stop"])
@@ -70,9 +71,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "decide":
         from gate.autopilot import Pilot
 
-        who = args.by or git(factory.root, "config", "user.name").strip()
+        from gate.check import author_of
+
+        who = args.by or author_of(factory.root)
         pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=lambda m: print(m, flush=True))
-        path = pilot.decide(args.card, " ".join(args.answer), who)
+        from gate.check import cards_from
+
+        cards = cards_from(Path(args.comment).read_text()) if args.comment else None
+        path = pilot.decide(args.card, " ".join(args.answer), who, cards)
         print(f"decide: report in {path.relative_to(factory.root)}")
         return 0
 

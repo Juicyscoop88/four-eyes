@@ -1,0 +1,46 @@
+# People write issues. Label one `autopilot` and the factory does the rest: plan, blind tests, code, gate,
+# its own gaps closed, a pull request with decision cards. Only people who can label issues can start it.
+name: autopilot
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  autopilot:
+    if: github.event.label.name == 'autopilot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: curl -fsSL https://claude.ai/install.sh | bash && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: autopilot
+        id: pilot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FACTORY_REQUESTED_BY: ${{ github.event.issue.user.login }}
+          TITLE: ${{ github.event.issue.title }}
+          BODY: ${{ github.event.issue.body }}
+        run: |
+          slug="$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-|-$//g' | cut -c1-40)"
+          mkdir -p "$RUNNER_TEMP/issues"
+          printf '# %s\n\n%s\n' "$TITLE" "$BODY" > "$RUNNER_TEMP/issues/$slug.md"
+          uv run gate autopilot "$RUNNER_TEMP/issues/$slug.md"
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+      - name: pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SLUG: ${{ steps.pilot.outputs.slug }}
+        run: |
+          git push origin "factory/$SLUG"
+          { echo "Closes #${{ github.event.issue.number }}"; echo; cat ".factory/tasks/$SLUG.md"; } > "$RUNNER_TEMP/body.md"
+          gh pr create --head "factory/$SLUG" --base main --title "${{ github.event.issue.title }}" --body-file "$RUNNER_TEMP/body.md"
+          gh pr comment "factory/$SLUG" --body-file gate-report.md

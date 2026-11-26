@@ -1,0 +1,51 @@
+# A person answers a decision card on a factory pull request: `/decide 1 reject`. The answer becomes a blind
+# test first, then code, then the gate runs again. Only people with write access are heard; the agent acts
+# for them, never for anyone else.
+name: decide
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  decide:
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/decide ') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: the pull request's branch
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "ref=$(gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} --json headRefName -q .headRefName)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with: { ref: "${{ steps.pr.outputs.ref }}", fetch-depth: 0 }
+      - run: git branch main origin/main
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: curl -fsSL https://claude.ai/install.sh | bash && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: decide
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ steps.pr.outputs.ref }}
+          COMMENT: ${{ github.event.comment.body }}
+          WHO: ${{ github.event.comment.user.login }}
+          FACTORY_REQUESTED_BY: ${{ github.event.issue.user.login }}
+        run: |
+          slug="${REF#factory/}"
+          # The cards the person saw: the last gate comment on this pull request.
+          gh api "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" --paginate \
+            --jq '[.[] | select(.body | contains("four-eyes-cards"))] | last | .body' > "$RUNNER_TEMP/cards.md"
+          echo "$COMMENT" | grep '^/decide ' | while read -r _ card answer; do
+            uv run gate decide "$slug" "$card" $answer --by "$WHO" --comment "$RUNNER_TEMP/cards.md"
+          done
+          git push origin "HEAD:$REF"
+          gh pr comment ${{ github.event.issue.number }} --body-file gate-report.md
