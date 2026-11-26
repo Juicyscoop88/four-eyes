@@ -1,10 +1,10 @@
 # Progress
 
 ## Done
-- Task `reject-dust-fills`: spec and assumptions in `.factory/tasks/reject-dust-fills.md`; stub `is_dust` and field `Order.min_fill_qty` added.
+- Task `reject-dust-fills`: `is_dust` implemented, check added to `apply_fill` after existing checks. Unit tests in `tests/unit/test_dust.py`.
 
 ## Next
-- Tester writes blind tests from the task file; then implement `is_dust` and the check in `apply_fill`.
+- Review and merge.
 
 ## Open questions
-- See Assumptions in the task file (e.g. non-positive minimum is not validated).
+- Non-positive `min_fill_qty` is not validated (per task assumptions).
