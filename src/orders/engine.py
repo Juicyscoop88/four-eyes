@@ -34,7 +34,20 @@ def amend_quantity(order: Order, new_qty: Decimal) -> Order:
     Raises OrderRejected, leaving the order unchanged, if the order is FILLED or CANCELED, or if
     new_qty is not finite, not positive, or below the filled quantity.
     """
-    raise NotImplementedError
+    if order.status in TERMINAL:
+        raise OrderRejected(f"order {order.id} is {order.status.value}")
+    # Checked first: comparing a NaN raises InvalidOperation, not OrderRejected.
+    if not new_qty.is_finite():
+        raise OrderRejected("order quantity must be finite")
+    if new_qty <= 0:
+        raise OrderRejected("order quantity must be positive")
+    if new_qty < order.filled_qty:
+        raise OrderRejected("order quantity below filled quantity")
+
+    order.qty = new_qty
+    if order.remaining_qty == 0:
+        order.status = OrderStatus.FILLED
+    return order
 
 
 def cancel(order: Order) -> Order:
