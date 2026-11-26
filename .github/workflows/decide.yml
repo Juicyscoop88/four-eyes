@@ -45,7 +45,7 @@ jobs:
           gh api "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" --paginate \
             --jq '[.[] | select(.body | contains("four-eyes-cards"))] | last | .body' > "$RUNNER_TEMP/cards.md"
           echo "$COMMENT" | grep '^/decide ' | while read -r _ card answer; do
-            uv run gate decide "$slug" "$card" $answer --by "$WHO" --comment "$RUNNER_TEMP/cards.md"
+            uv run foureyes decide "$slug" "$card" $answer --by "$WHO" --comment "$RUNNER_TEMP/cards.md"
           done
           git push origin "HEAD:$REF"
           gh pr comment ${{ github.event.issue.number }} --body-file gate-report.md

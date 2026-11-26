@@ -17,8 +17,8 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from gate.config import Factory
-from gate.tests import checkout_copy
+from foureyes.config import Factory
+from foureyes.tests import checkout_copy
 
 PLUGIN = Path(__file__).resolve().parents[2] / "plugin"
 
