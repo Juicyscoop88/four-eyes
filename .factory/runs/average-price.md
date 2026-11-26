@@ -4,11 +4,11 @@
 
 ### Review map: decide only these
 
-**1. Should the owners adopt this proposed invariant test file?**  
-`.factory/proposals/average-price/tests/invariants/test_orders.py:20`: Only the owners can change their invariant tests. This unapplied full-file proposal adds average-price reads to the random steps, but no invariant or assertion for the average's value or rounding. The diff doesn't show how it differs from the current owned file, so compare the two for weakened checks before adopting it.
-Answer with one: `keep: leave it as an unapplied proposal; the owned invariants and their tests stay unchanged` · `adopt: after comparing it with the current file, the owners replace tests/invariants/test_orders.py with it, adding only the average-read step` · `extend: the owners add an invariant to invariants/orders.yaml for the exact VWAP, rounded once, half to even, to 6 places (None without fills), and add a matching assertion to this test before adopting it`
+**1. Should the average fill price and its rounding become an owned invariant?**  
+`.factory/proposals/average-price/tests/invariants/test_orders.py:19`: No owned invariant covers the average or its rounding, and the owned tests caught 0 of 7 faults. The proposed file reads the average but never asserts its value, so adopting it would not detect a wrong price or rounding mode, and only the owners can decide what to guarantee to risk and client reporting.
+Answer with one: `keep: leave invariants/orders.yaml and the owned tests unchanged and the proposal unapplied, so only the non-owned tests check the value` · `extend: the owners add an invariant (exact VWAP of the fills, rounded once, half to even, to 6 places, None without fills) and a property test in tests/invariants/test_orders.py that compares the result with an independent exact calculation` · `reads-only: after comparing the proposal with the current owned test file to rule out weakened checks, the owners adopt it as a check that random average reads don't break ORD-1 to ORD-4, not as a check of the value`
 
-> This adds a read-only `Order.average_fill_price` that computes with exact fractions and rounds once, half to even. I found no blocking defect for realistic prices; a person mainly needs to decide on the proposed change to the people-owned invariant tests.
+> Adds a read-only `Order.average_fill_price` that uses exact fractions and rounds once, half to even, to 6 places. All 7 injected faults were caught by the tester's tests and I found no blocking defect, so the main decision is whether this number gets owned protection.
 
 ### Tests
 
@@ -16,27 +16,27 @@ Answer with one: `keep: leave it as an unapplied proposal; the owned invariants 
 
 ### Do the tests prove anything?
 
-1 small faults were injected into the changed lines, one at a time.
+7 small faults were injected into the changed lines, one at a time.
 
 | Tests | Written by | Caught | Counts |
 |---|---|---|---|
-| author | whoever wrote the code | 1 of 1 | no, nobody checks their own work |
-| tester | the tester, who never saw the code | 1 of 1 | yes |
-| invariants | people (owned) | 0 of 1 | yes |
-| **tester + invariants** | | **1 of 1** (100%, needs 80%) | |
+| author | whoever wrote the code | 7 of 7 | no, nobody checks their own work |
+| tester | the tester, who never saw the code | 7 of 7 | yes |
+| invariants | people (owned) | 0 of 7 | yes |
+| **tester + invariants** | | **7 of 7** (100%, needs 80%) | |
 
 ### For the owners of the invariants
 
-The owned invariant tests caught 0 of 1 faults in this change: they do not exercise it yet. The tester (blind) proposes an extension in `.factory/proposals/average-price/tests/invariants/test_orders.py`. With it, the invariants catch **1 of 1**, and it passes on the current code. Only an owner can accept it.
+The owned invariant tests caught 0 of 7 faults in this change: they do not exercise it yet. The tester (blind) proposes an extension in `.factory/proposals/average-price/tests/invariants/test_orders.py`. With it, the invariants catch **2 of 7**, and it passes on the current code. Only an owner can accept it.
 
 ### Reviewer findings
 
-- **warn** `src/orders/model.py:58`: On Python versions with the default 4300-digit limit for int-to-string conversion, formatting `millionths` raises ValueError if it exceeds that limit. For example, a directly stored fill with qty 1 and finite price Decimal('1E+4300') gets an error instead of an average. Extreme finite exponents such as 1E+100000000 or 1E-100000000 also make the Fraction arithmetic at line 55 build huge integers, which can make a read very slow or use a lot of memory. No realistic price is this large or small. `apply_fill` isn't in the diff, so I couldn't check whether it accepts such values. If it does, price magnitude and precision should be bounded where fills are accepted.
-- **warn** `src/orders/model.py:55`: The property relies on every stored fill being valid. `Fraction` silently accepts a float and uses its exact binary value, which can change a half-even result compared with the intended decimal value. Fills whose quantities total zero raise ZeroDivisionError. The task leaves validation out of scope, and the diff doesn't show whether every path that creates or loads fills enforces Decimal values and positive quantities.
+- **warn** `src/orders/model.py:57`: With Python's default 4300-digit limit on int-to-string conversion, a finite fill with qty 1 and price Decimal('1E+4300') should raise ValueError here instead of returning an average. Extreme exponents such as 1E+100000000 or 1E-100000000 can also make the Fraction arithmetic very slow or memory-hungry. These are not realistic prices, so I don't block on them. `apply_fill` is not in the diff, so I couldn't check whether it accepts them. If it does, bound price and quantity magnitude and precision where fills are accepted.
+- **warn** `.factory/runs/average-price.json:6`: The committed run record reports 1 injected fault (author 1, tester 1, invariants 0, proposal 0 to 1). The measurement supplied for this review has 7 faults (author 7, tester 7, invariants 0). Don't use the committed record, or its claim about what the proposal catches, as evidence for this change unless you can tie it to the exact revision and gate run. The diff doesn't explain the mismatch.
 
 ### Provenance
 
-- change: `fc8174a9d4..7b2b7d5d73`, 7 files
+- change: `8c8f9d30a1..c6ce811b04`, 9 files
 - requested by: Jakub Schinko; approver must be someone else
-- agents that checked it: author (sonnet, $0.116), tester (opus, $0.278), author (sonnet, $0.136), tester (opus, $0.153), reviewer (sonnet, $0.082); total $0.765
-- gate run: 2026-11-26 13:27 UTC
+- agents that checked it: reviewer (sonnet, $0.090); total $0.090
+- gate run: 2026-11-26 13:29 UTC
