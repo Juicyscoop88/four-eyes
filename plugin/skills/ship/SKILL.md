@@ -13,12 +13,12 @@ without seeing the conversation, and the gate measures it all.
 1. **Issue.** Write the request as `issues/<short-name>.md`: a title line and two to four sentences in the
    person's words, what should change and why. Show it to the person and wait for their go; this is where
    they steer. Then commit it.
-2. **Autopilot.** Run `uv run gate autopilot issues/<short-name>.md`. It works on the branch
+2. **Autopilot.** Run `uv run foureyes autopilot issues/<short-name>.md`. It works on the branch
    `factory/<short-name>` and takes a few minutes.
 3. **Report.** Read `.factory/runs/<short-name>.md`. Tell the person in a few lines whether the gate passed
    and what the tests caught, then show each decision card with its answers.
 4. **Decisions.** For each card the person answers, run
-   `uv run gate decide <short-name> <card> <answer>`. Their answer becomes a blind test first, then code.
+   `uv run foureyes decide <short-name> <card> <answer>`. Their answer becomes a blind test first, then code.
 5. **Wheel.** If the person wants to change something by hand, they can: the branch is theirs. Running step 2
    again continues from where they left it.
 

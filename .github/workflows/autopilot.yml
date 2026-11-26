@@ -33,7 +33,7 @@ jobs:
           slug="$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-|-$//g' | cut -c1-40)"
           mkdir -p "$RUNNER_TEMP/issues"
           printf '# %s\n\n%s\n' "$TITLE" "$BODY" > "$RUNNER_TEMP/issues/$slug.md"
-          uv run gate autopilot "$RUNNER_TEMP/issues/$slug.md"
+          uv run foureyes autopilot "$RUNNER_TEMP/issues/$slug.md"
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
       - name: pull request
         env:

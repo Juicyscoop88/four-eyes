@@ -15,11 +15,11 @@ import subprocess
 import time
 from pathlib import Path
 
-from gate import agents, mutation
-from gate.check import author_of, check, facts, report
-from gate.config import Factory
-from gate.diff import changed_lines, diff_text, git
-from gate.tests import checkout_copy, run_suites
+from foureyes import agents, mutation
+from foureyes.check import author_of, check, facts, report
+from foureyes.config import Factory
+from foureyes.diff import changed_lines, diff_text, git
+from foureyes.tests import checkout_copy, run_suites
 
 
 class Pilot:
