@@ -1,10 +1,90 @@
 [
   {
+    "pr": 295,
+    "issue": "pr295-naturaldelta-years",
+    "cost_usd": 3.274,
+    "minutes": 2.6,
+    "gate_passed": true,
+    "blind_files": [
+      "tests/blind/test_pr295_naturaldelta_years.py"
+    ],
+    "author_files": [
+      "tests/test_time.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": true,
+    "tester_disagreements": 0
+  },
+  {
+    "pr": 320,
+    "issue": "pr320-fractional-negative",
+    "cost_usd": 3.008,
+    "minutes": 3.8,
+    "gate_passed": true,
+    "blind_files": [
+      "tests/blind/test_pr320_fractional_negative.py"
+    ],
+    "author_files": [
+      "tests/unit/test_fractional_sign.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": true,
+    "tester_disagreements": 0
+  },
+  {
+    "pr": 328,
+    "issue": "pr328-metric-prefix",
+    "cost_usd": 3.169,
+    "minutes": 3.3,
+    "gate_passed": true,
+    "blind_files": [
+      "tests/blind/test_pr328_metric_prefix.py"
+    ],
+    "author_files": [
+      "tests/unit/test_metric_rollover.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": false,
+    "tester_disagreements": 1
+  },
+  {
+    "pr": 329,
+    "issue": "pr329-naturalsize-rollover",
+    "cost_usd": 3.342,
+    "minutes": 5.0,
+    "gate_passed": true,
+    "blind_files": [
+      "tests/blind/test_pr329_naturalsize_rollover.py"
+    ],
+    "author_files": [
+      "tests/test_filesize.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": false,
+    "tester_disagreements": 1
+  },
+  {
     "pr": 334,
     "issue": "pr334-naturaldelta-inf",
-    "cost_usd": null,
-    "minutes": null,
-    "gate_passed": null,
+    "cost_usd": 0.088,
+    "minutes": 0.7,
+    "gate_passed": false,
     "blind_files": [
       "tests/blind/test_pr334_naturaldelta_inf.py"
     ],
@@ -18,5 +98,99 @@
     "author_caught": true,
     "tester_agrees_with_maintainers": false,
     "tester_disagreements": 3
+  },
+  {
+    "pr": 346,
+    "issue": "pr346-intword-carry",
+    "cost_usd": null,
+    "minutes": null,
+    "gate_passed": null,
+    "blind_files": [],
+    "author_files": [],
+    "fixed": false,
+    "hidden_failures": 1,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": false,
+    "author_caught": false,
+    "tester_agrees_with_maintainers": true,
+    "tester_disagreements": 0
+  },
+  {
+    "pr": 354,
+    "issue": "pr354-fractional-whole",
+    "cost_usd": 2.814,
+    "minutes": 3.1,
+    "gate_passed": true,
+    "blind_files": [
+      "tests/blind/test_pr354_fractional_whole.py"
+    ],
+    "author_files": [
+      "tests/unit/test_fractional_rounding.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": true,
+    "tester_disagreements": 0
+  },
+  {
+    "pr": 359,
+    "issue": "pr359-metric-digits",
+    "cost_usd": 2.827,
+    "minutes": 3.9,
+    "gate_passed": true,
+    "blind_files": [
+      "tests/blind/test_pr359_metric_digits.py"
+    ],
+    "author_files": [
+      "tests/test_number.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": false,
+    "tester_disagreements": 1
+  },
+  {
+    "pr": 392,
+    "issue": "pr392-intcomma-big-int",
+    "cost_usd": null,
+    "minutes": null,
+    "gate_passed": null,
+    "blind_files": [
+      "tests/blind/test_pr392_intcomma_big_int.py"
+    ],
+    "author_files": [
+      "tests/unit/test_intcomma_big_int.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": false,
+    "tester_disagreements": 9
+  },
+  {
+    "pr": 479,
+    "issue": "pr479-far-future",
+    "cost_usd": null,
+    "minutes": null,
+    "gate_passed": null,
+    "blind_files": [
+      "tests/blind/test_pr479_far_future.py"
+    ],
+    "author_files": [],
+    "fixed": false,
+    "hidden_failures": 3,
+    "hidden_fail_on_buggy": true,
+    "tester_caught": true,
+    "author_caught": false,
+    "tester_agrees_with_maintainers": false,
+    "tester_disagreements": 21
   }
 ]
