@@ -10,11 +10,9 @@ commit: check out the branch, go on by hand, run the gate.
 """
 
 import json
-import os
 import shutil
 import subprocess
 import time
-from dataclasses import asdict
 from pathlib import Path
 
 from gate import agents, mutation
