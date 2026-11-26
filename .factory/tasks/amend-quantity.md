@@ -36,3 +36,7 @@ place and returns it, like `apply_fill` and `cancel`. A rejection raises `OrderR
 13. **No in-flight handling:** there is no pending or venue-confirmed state. The amend applies at once.
     After a reduction, a fill larger than the new remaining quantity is rejected by `apply_fill`, even if
     it was executed before the amend.
+
+## Decisions
+
+- **Should an amend down to exactly the filled quantity end the order as FILLED?** reject: raise OrderRejected when new_qty <= filled_qty on an order with fills, so the trader must use cancel (decided by Jakub Schinko)
