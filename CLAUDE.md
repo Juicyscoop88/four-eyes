@@ -60,7 +60,7 @@ tests/invariants/        property tests that prove the invariants (owned like th
 tests/blind/             the tester's tests, written without seeing the code
 tests/unit/              the author's own tests (measured, never counted)
 tests/foureyes/          tests of the factory itself
-tools/foureyes/              the gate, autopilot, roles, MCP, eval (owned)
+tools/foureyes/          the CLI `foureyes`: the gate, autopilot, roles, MCP, eval (owned)
 plugin/                  the Claude Code plugin: roles, hooks, /ship, MCP config (owned)
 issues/                  issues as people write them
 .factory/                per task: the task, progress, runs and reports, proposals for owners
