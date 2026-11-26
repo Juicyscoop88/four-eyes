@@ -21,6 +21,13 @@ class Invariant:
     statement: str
     why: str
     test: str
+    paths: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class Standard:
+    paths: tuple[str, ...]
+    file: str
 
 
 @dataclass(frozen=True)
@@ -31,6 +38,7 @@ class Factory:
     tiers: list[Tier]
     invariants: list[Invariant]
     models: dict[str, str]  # role -> model; the tester differs from the author on purpose
+    standards: list[Standard]
 
     def is_owned(self, path: str) -> bool:
         return any(matches(path, p) for p in self.owned)
@@ -67,12 +75,14 @@ def load(root: Path) -> Factory:
     invariants = []
     for file in raw.get("invariants", []):
         doc = yaml.safe_load((root / file).read_text())
-        invariants += [Invariant(i["id"], i["statement"], i["why"], i["test"]) for i in doc["invariants"]]
+        paths = tuple(doc.get("paths", []))
+        invariants += [Invariant(i["id"], i["statement"], i["why"], i["test"], paths) for i in doc["invariants"]]
     return Factory(
         root=root,
         owned=raw.get("owned", []),
         suites=raw["suites"],
         tiers=tiers,
         invariants=invariants,
+        standards=[Standard(tuple(x["paths"]), x["file"]) for x in raw.get("standards", [])],
         models={"author": "sonnet", "tester": "opus", "reviewer": "sonnet", **raw.get("agents", {})},
     )
