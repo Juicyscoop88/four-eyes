@@ -96,3 +96,14 @@ def test_cards_travel_in_the_comment():
     comment = "## Four Eyes gate\n...\n<!-- four-eyes-cards " + json.dumps(cards) + " -->\n"
     assert cards_from(comment) == cards
     assert cards_from("no cards") == []
+
+
+def test_rules_for_names_owners_invariants_and_standards():
+    from gate.rules import rules_for
+
+    money = rules_for(factory, "src/orders/engine.py")
+    assert "tier **money**" in money and "ORD-1" in money and "Money in code" not in money.split("##")[0]
+    assert "standards/money.md" in money
+    app = rules_for(factory, "apps/recon/page.tsx")
+    assert "design-system" in app and "optimistic-ui" in app and "ORD-1" not in app
+    assert "Owned by people" in rules_for(factory, "invariants/orders.yaml")
