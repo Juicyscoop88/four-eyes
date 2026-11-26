@@ -83,14 +83,35 @@ def test_same_quantity_on_working_order_changes_nothing():
 # Boundaries around the filled quantity
 
 
-def test_equal_to_filled_quantity_becomes_filled():
-    """Assumption 5 (ORD-4): new_qty equal to the filled quantity makes the order FILLED."""
+def test_equal_to_filled_quantity_is_rejected_and_unchanged():
+    """Decision: new_qty equal to filled_qty on an order with fills raises OrderRejected, changes nothing."""
     order = partially_filled("10", "4")
-    amend_quantity(order, Decimal("4"))
-    assert order.qty == Decimal("4")
-    assert order.remaining_qty == Decimal("0")
-    assert order.status is OrderStatus.FILLED
-    assert order.fills == [Fill(Decimal("4"), LIMIT)]
+    before = snapshot(order)
+    with pytest.raises(OrderRejected):
+        amend_quantity(order, Decimal("4"))
+    assert snapshot(order) == before
+    assert order.status is OrderStatus.PARTIALLY_FILLED
+    assert order.remaining_qty == Decimal("6")
+
+
+def test_equal_to_filled_quantity_over_several_fills_is_rejected():
+    """Decision: the bound is the total filled_qty across all fills, equal to it is rejected."""
+    order = new_order("10")
+    apply_fill(order, Decimal("1.5"), LIMIT)
+    apply_fill(order, Decimal("2.5"), LIMIT)
+    before = snapshot(order)
+    with pytest.raises(OrderRejected):
+        amend_quantity(order, Decimal("4.0"))
+    assert snapshot(order) == before
+
+
+def test_smallest_step_above_filled_quantity_is_accepted():
+    """Decision: only new_qty <= filled_qty is rejected, so just above it is accepted and stays partial."""
+    order = partially_filled("10", "4")
+    amend_quantity(order, Decimal("4.0001"))
+    assert order.qty == Decimal("4.0001")
+    assert order.remaining_qty == Decimal("0.0001")
+    assert order.status is OrderStatus.PARTIALLY_FILLED
 
 
 def test_one_above_filled_quantity_stays_partially_filled():
@@ -111,20 +132,25 @@ def test_one_below_filled_quantity_is_rejected_and_unchanged():
     assert snapshot(order) == before
 
 
-def test_closing_by_amend_is_final():
-    """Assumption 5 (ORD-3): the FILLED order from an amend never changes again."""
+def test_rejected_close_by_amend_leaves_cancel_as_the_way_out():
+    """Decision: after the rejected amend to filled_qty the trader must use cancel, which still works."""
     order = partially_filled("10", "4")
-    amend_quantity(order, Decimal("4"))
-    before = snapshot(order)
     with pytest.raises(OrderRejected):
-        apply_fill(order, Decimal("1"), LIMIT)
+        amend_quantity(order, Decimal("4"))
+    cancel(order)
+    assert order.status is OrderStatus.CANCELED
+    assert order.qty == Decimal("10")
+    assert order.fills == [Fill(Decimal("4"), LIMIT)]
+
+
+def test_rejected_close_by_amend_keeps_order_working():
+    """Decision and Assumption 9: after the rejected amend, later fills are checked against the old quantity."""
+    order = partially_filled("10", "4")
     with pytest.raises(OrderRejected):
-        amend_quantity(order, Decimal("10"))
-    try:
-        cancel(order)
-    except OrderRejected:
-        pass
-    assert snapshot(order) == before
+        amend_quantity(order, Decimal("4"))
+    apply_fill(order, Decimal("6"), LIMIT)
+    assert order.status is OrderStatus.FILLED
+    assert order.filled_qty == order.qty == Decimal("10")
 
 
 # Rejections of the input
