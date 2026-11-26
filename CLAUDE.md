@@ -6,6 +6,23 @@ Take-home for the AI Engineer role (Hiring Sprint #1). Brief: [brief.md](brief.m
 
 **Four eyes for agents.** We do not change how anyone writes code. We change what every change must prove before it merges, and nobody, human or agent, checks their own work.
 
+## People write issues, the factory does the rest
+
+**Autopilot by default, the wheel always within reach.** A person writes the issue (what and why). The factory
+takes it from there on its own: plan, blind tests, code, gate, closing its own gaps, merge request. A person
+is asked only for what only a person can decide, as decision cards in the merge request, answered in a word.
+Anyone can take the wheel at any step (check out the branch, go on by hand, the factory keeps testing and
+reviewing) and hand it back ("finish it"). Opting out is a label, not a setup.
+
+- **The factory closes its own gaps:** faults no independent test caught go back to the tester (blind
+  again) until the tier's score is met; when the owned invariants do not cover new code, an agent proposes
+  the extension as a merge request to their owners.
+- **Decision cards:** each point of the review map is a thread in the merge request with a few answers; the
+  answer becomes a change, tested and gated again. The merge request is the whole interface.
+- **Free tests for people:** a person who writes by hand gets blind tests and a review map on their merge
+  request. Four eyes works both ways.
+- **Custom without a fork:** `factory.yaml` per repo, the team's own skills, each person's own CLAUDE.md.
+
 ## Where we sit on their range
 
 In the middle, on purpose. A person decides at the start (what and why) and at the end (merge). Everything between is automated. The author may be a person or an agent; the factory does not care.
