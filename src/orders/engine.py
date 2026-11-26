@@ -38,4 +38,8 @@ def cancel_with_reason(order: Order, reason: CancelReason) -> Order:
     Raises OrderRejected if the order is already filled or canceled, or if reason is
     not a CancelReason. Sets status and cancel_reason together; the reason never changes.
     """
-    raise NotImplementedError
+    if not isinstance(reason, CancelReason):
+        raise OrderRejected("cancel reason must be a CancelReason")
+    cancel(order)
+    order.cancel_reason = reason
+    return order

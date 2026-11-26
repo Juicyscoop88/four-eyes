@@ -1,11 +1,10 @@
 # Progress
 
 ## Done
-- Task file `.factory/tasks/record-why-an-order-was-canceled.md` (interface, assumptions).
-- Stubs: `CancelReason`, `Order.cancel_reason`, `cancel_with_reason` (raises NotImplementedError), exported.
+- Task file, stubs, blind tests, `cancel_with_reason` implemented, unit tests in `tests/unit/test_cancel_reason.py`.
 
 ## Next
-- Tester writes blind tests from the task file; then implement `cancel_with_reason`.
+- Gate and review.
 
 ## Open questions
 - Keep, deprecate or change `cancel(order)` (owned tests call it without a reason)?
