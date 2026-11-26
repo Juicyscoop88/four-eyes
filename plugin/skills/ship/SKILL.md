@@ -1,31 +1,25 @@
 ---
 name: ship
-description: Ship a change through the four-eyes factory - the tester writes blind tests first, you implement, the gate checks, the reviewer writes a review map, and a merge request opens. Use when the person asks to ship, implement or build a task in this repo.
-argument-hint: "<the task, or a path to it>"
+description: Ship a change through the FourEyes factory - the person's request becomes an issue, the autopilot does the rest (plan, blind tests, code, gate) and comes back with decision cards. Use when the person asks to ship, implement or build something in this repo.
+argument-hint: "<what should change and why>"
 ---
 
-You are the **author**. Two other roles check your work, and you never do their part: the **tester** writes
-the tests without seeing your code, the **reviewer** reads your diff without seeing this conversation. The gate
-runs the same checks in CI, so nothing here is optional, only earlier.
+The person's request: $ARGUMENTS
 
-The task: $ARGUMENTS
+You do not implement this yourself. The factory does, and nobody checks their own work: an author agent
+writes the code, a tester on another model writes the tests without seeing it, a reviewer reads the diff
+without seeing the conversation, and the gate measures it all.
 
-1. **Task.** Write the task to `.factory/tasks/<short-name>.md`: what should change and why, in the person's
-   words, plus the interface you will add (function names and signatures) so the tester can write against it.
-   If the interface needs new names, add them now in `src/` as stubs (signature, docstring,
-   `raise NotImplementedError`) and nothing more. Show the person the task and the interface; wait for their
-   go. This is the moment a person steers.
-2. **Blind tests.** Run `uv run gate tests --task .factory/tasks/<short-name>.md`. The tester works in a copy
-   of the repo without any implementation and writes `tests/blind/`. Read what it wrote, never edit it. If it
-   names an open question, ask the person.
-3. **Implement.** Write the code until `uv run pytest` is green: your own tests in `tests/unit/`, the
-   tester's tests and the invariants. Keep a short `.factory/progress.md` (done, next, open), so another
-   session can continue. You may not edit owned files (`factory.yaml: owned`); the hooks stop you. If an
-   invariant or a blind test looks wrong, stop and tell the person: they decide, not you.
-4. **Gate.** Run `uv run gate check --task .factory/tasks/<short-name>.md --agents`. It runs every suite,
-   injects faults into your changed lines to see whether the independent tests catch them, and asks the
-   reviewer for a review map. If it blocks, fix the cause and run it again. If faults survive, ask the tester
-   for the missing case by running step 2 again with the survivor added to the task; never write those tests
-   yourself.
-5. **Merge request.** Commit on a branch and open a merge request whose description is the task followed by
-   `gate-report.md`. Tell the person the review map in two or three lines. A different person approves it.
+1. **Issue.** Write the request as `issues/<short-name>.md`: a title line and two to four sentences in the
+   person's words, what should change and why. Show it to the person and wait for their go; this is where
+   they steer. Then commit it.
+2. **Autopilot.** Run `uv run gate autopilot issues/<short-name>.md`. It works on the branch
+   `factory/<short-name>` and takes a few minutes.
+3. **Report.** Read `.factory/runs/<short-name>.md`. Tell the person in a few lines whether the gate passed
+   and what the tests caught, then show each decision card with its answers.
+4. **Decisions.** For each card the person answers, run
+   `uv run gate decide <short-name> <card> <answer>`. Their answer becomes a blind test first, then code.
+5. **Wheel.** If the person wants to change something by hand, they can: the branch is theirs. Running step 2
+   again continues from where they left it.
+
+Opening the pull request and approving it are the person's: an agent never approves.

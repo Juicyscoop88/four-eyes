@@ -38,39 +38,37 @@ In the middle, on purpose. A person decides at the start (what and why) and at t
 
 Everything else is what they already have: GitLab, Claude Code, Claude on Vertex AI, Grafana. We do not build what exists.
 
-## Delivery (start here)
+## Three parts, each once (keep it light)
 
-The factory is a **Claude Code plugin** that arrives with the repo: listed in the repo's `.claude/settings.json`, so opening the repo in Claude Code offers to install it (or the company enables it in managed settings). No download, no manual.
+1. **The rule:** `gate check` in CI, deterministic. Code decides; a model never gives the verdict.
+2. **The path:** `gate autopilot` (issue → plan → blind tests → code → gate → gaps closed → pull request with
+   decision cards) and `gate decide` (an answer becomes a blind test, then code). CI from an issue label and
+   `/decide` comments; a laptop through `/ship`. One path, not two.
+3. **The guide:** plugin `four-eyes` (arrives with the repo): hooks, `/ship`, FourEyes MCP with `rules_for`
+   and `why`. MCP is for people and agents in Claude; CLI is only for what has no chat (CI, the eval).
 
-The plugin holds:
-- subagent `tester`, subagent `reviewer` (the four eyes);
-- hooks: an agent never edits invariants; invariant tests run before an agent says it is done;
-- skill `/ship`: author, then tester, then reviewer, then a merge request with a review map;
-- later: an MCP server for live knowledge (how to use the factory, gate results, track record of a module).
-
-The **same** tester and reviewer run headless (`claude -p`) in GitLab CI on every merge request. Locally it is faster feedback; in CI it is the rule. Whoever skips `/ship` meets the same gate later.
-
-## Parts on top of the core (decided, not yet built)
-
-- **Shadow agent** for skeptical seniors: solves the same ticket in parallel, the gate compares. Only risky paths, a sample of tickets, a cheaper model; switches itself off per module once the agent has a track record.
-- **Mutation score:** the gate injects bugs and measures how many the tests catch. Quality beyond "it looks right".
-- **Review map:** the merge request says which few lines need human judgment and why.
-- **Provenance:** who asked, which agent and model, what it touched, which checks passed, who approved (never the author).
-- **Incidents become invariants:** a postmortem ends with a new owned invariant and its test.
+Nothing exists twice. Before adding a surface, ask whether an existing one already does it.
 
 ## This repo
 
 ```
-brief.md                 the assignment, transcribed
-invariants/orders.yaml   owned invariants of the sample domain
+factory.yaml             owned paths, invariants, standards, suites, risk tiers, models per role
+invariants/orders.yaml   owned invariants of the sample domain (with the paths they hold for)
+standards/               how things are done here: design system, optimistic UI, money
 src/orders/              synthetic order handling: the code the factory protects
-src/gate/                the gate (in progress)
 tests/invariants/        property tests that prove the invariants (owned like them)
-tests/unit/              ordinary tests
-docs/                    thinking, use cases, build log
+tests/blind/             the tester's tests, written without seeing the code
+tests/unit/              the author's own tests (measured, never counted)
+tests/gate/              tests of the gate itself
+tools/gate/              the gate, autopilot, roles, MCP, eval (owned)
+plugin/                  the Claude Code plugin: roles, hooks, /ship, MCP config (owned)
+issues/                  issues as people write them
+.factory/                per task: the task, progress, runs and reports, proposals for owners
+.github/                 workflows gate, autopilot, decide; CODEOWNERS
+docs/                    design, eval, build log, thinking, use cases (the person's; agents leave it alone)
 ```
 
-Run: `uv sync`, `uv run pytest`.
+Run: `uv sync`, `uv run pytest`. Remote: private GitHub repo `Juicyscoop88/four-eyes`.
 
 ## Rules
 

@@ -55,7 +55,7 @@ def claude(
     if hooks:
         # The author works under the plugin's hooks and may ask its MCP what applies to a file.
         cmd += ["--plugin-dir", str(PLUGIN)]
-        allowed = (*allowed, "mcp__plugin_four-eyes_foureyes__rules_for", "mcp__plugin_four-eyes_foureyes__check")
+        allowed = (*allowed, "mcp__plugin_four-eyes_foureyes__rules_for")
     else:
         cmd.append("--strict-mcp-config")  # tester and reviewer: no MCP, nothing that could show them more
     if allowed:
