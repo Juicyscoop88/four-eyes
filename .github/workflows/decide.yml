@@ -38,6 +38,7 @@ jobs:
           REF: ${{ steps.pr.outputs.ref }}
           COMMENT: ${{ github.event.comment.body }}
           WHO: ${{ github.event.comment.user.login }}
+          FACTORY_REQUESTED_BY: ${{ github.event.issue.user.login }}
         run: |
           slug="${REF#factory/}"
           echo "$COMMENT" | grep '^/decide ' | while read -r _ card answer; do

@@ -70,7 +70,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "decide":
         from gate.autopilot import Pilot
 
-        who = args.by or git(factory.root, "config", "user.name").strip()
+        from gate.check import author_of
+
+        who = args.by or author_of(factory.root)
         pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=lambda m: print(m, flush=True))
         path = pilot.decide(args.card, " ".join(args.answer), who)
         print(f"decide: report in {path.relative_to(factory.root)}")
