@@ -10,6 +10,7 @@ commit: check out the branch, go on by hand, run the gate.
 """
 
 import json
+import os
 import shutil
 import subprocess
 import time
@@ -28,9 +29,9 @@ class Pilot:
         self.f, self.log = factory, log
         self.slug = issue_path.stem
         self.name = self.slug.replace("-", "_")
-        self.issue = issue_path.read_text()
+        self.issue = issue_path.read_text() if issue_path.exists() else ""
         self.task_path = f".factory/tasks/{self.slug}.md"
-        self.requested_by = git(factory.root, "config", "user.name").strip() or "unknown"
+        self.requested_by = os.environ.get("FACTORY_REQUESTED_BY") or git(factory.root, "config", "user.name").strip() or "unknown"
         self.runs: list[agents.AgentRun] = []
         self.steps: list[dict] = []
         self.started = time.monotonic()
@@ -85,7 +86,11 @@ class Pilot:
             )))
             self.commit("author", f"Implement {self.slug}")
 
-        equivalent: dict[str, str] = {}
+        return self.finish(self.close_gaps({}, max_rounds))
+
+    def close_gaps(self, equivalent: dict[str, str], max_rounds: int) -> dict[str, str]:
+        """Until the score is met: failing tests back to the author, surviving faults (in words) to the tester."""
+        root = self.f.root
         for rnd in range(1, max_rounds + 1):
             res = check(self.f, self.base, self.task(), False, equivalent, log=lambda m: None)
             if res.failures:
@@ -113,7 +118,10 @@ class Pilot:
                 run, written = agents.write_blind_tests(self.f, self.task(), self.name, behaviors)
                 self.commit("tester", f"Blind tests for what the gate found untested ({self.slug}, round {rnd})")
                 self.step("tester adds tests, blind again", run, files=written)
+        return equivalent
 
+    def finish(self, equivalent: dict[str, str]) -> Path:
+        root = self.f.root
         final = check(self.f, self.base, self.task(), False, equivalent, log=lambda m: None)
         proposal = self.propose(final) if final.counted and final.caught("invariants") < len(final.counted) / 2 else None
 
@@ -130,6 +138,7 @@ class Pilot:
         (out / f"{self.slug}.json").write_text(json.dumps({
             "issue": self.slug, "requested_by": self.requested_by, "passed": final.passed,
             "score": final.score, "mutants": len(final.counted), "equivalent": final.equivalent,
+            "base": self.base,
             "caught": {s: final.caught(s) for s in ("author", "tester", "invariants")},
             "proposal": proposal, "cost_usd": round(sum(r.cost_usd for r in final.agent_runs), 3),
             "minutes": round((time.monotonic() - self.started) / 60, 1), "steps": self.steps,
@@ -138,6 +147,37 @@ class Pilot:
         }, indent=2))
         self.commit("factory", f"Gate report for {self.slug}: " + ("passed" if final.passed else "blocked"))
         return out / f"{self.slug}.md"
+
+    def decide(self, card: int, answer: str, decided_by: str, max_rounds: int = 4) -> Path:
+        """A person answered a decision card. The answer becomes a blind test first, then code."""
+        root = self.f.root
+        git(root, "checkout", "-q", f"factory/{self.slug}")
+        record = json.loads((root / ".factory" / "runs" / f"{self.slug}.json").read_text())
+        self.base = git(root, "merge-base", "HEAD", "main").strip()
+        q = record["cards"][card - 1]
+        chosen = next((o for o in q.get("options", []) if o == answer or o.split(":")[0].strip() == answer), answer)
+        question = q.get("question") or q["why"]
+        task = (root / self.task_path).read_text().rstrip()
+        if "## Decisions" not in task:
+            task += "\n\n## Decisions\n"
+        (root / self.task_path).write_text(f"{task}\n- **{question}** {chosen} (decided by {decided_by})\n")
+        self.commit("factory", f"Decision by {decided_by}: {question}\n\nAnswer: {chosen}\nDecided-by: {decided_by}")
+        self.step(f"decision {card}: {chosen}")
+
+        run, written = agents.write_blind_tests(self.f, self.task(), self.name, [
+            f"A person decided: {question} Answer: {chosen}. Pin exactly this behavior (it may differ from your earlier assumption)."
+        ])
+        self.commit("tester", f"Blind tests that pin the decision ({self.slug}, card {card})")
+        self.step("tester pins the decision, blind", run, files=written)
+        failures, _ = run_suites(self.f, root)
+        if failures:
+            self.step(f"{len(failures)} tests fail against the decision, the author changes the code", agents.author(self.f, (
+                f"A person decided, for the task in `{self.task_path}`: {question} Answer: {chosen}. "
+                f"The tester's tests in `{self.f.suites['tester']}/` now pin it and fail. Change the code (and your own "
+                "tests where they assumed otherwise) until `uv run pytest` is green. Never edit the tester's tests."
+            )))
+            self.commit("author", f"Implement the decision ({self.slug}, card {card})")
+        return self.finish(self.close_gaps(dict(record.get("equivalent", {})), max_rounds))
 
     def plan(self) -> None:
         self.step("plan", agents.author(self.f, (

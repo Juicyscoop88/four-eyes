@@ -153,11 +153,14 @@ def report(factory: Factory, res: Result, head: str) -> str:
         out += ["### What blocks it\n"] + [f"- {b}" for b in res.blocks] + [""]
 
     if res.review and res.review.map:
-        out.append("### Review map: decide only these\n")
+        out.append("### Decide only these\n")
+        out.append("Reply with one line per card, for example `/decide 1 keep`, or `/decide 1 <your own answer>`. "
+                   "Each answer becomes a blind test first, then code.\n")
         for i, p in enumerate(res.review.map, 1):
             out.append(f"**{i}. {p.get('question') or p['why']}**  \n`{p['where']}`: {p['why']}")
-            if p.get("options"):
-                out.append("Answer with one: " + " · ".join(f"`{o}`" for o in p["options"]))
+            for o in p.get("options", []):
+                key = o.split(":")[0].strip()
+                out.append(f"- `/decide {i} {key}`: {o.split(':', 1)[1].strip() if ':' in o else o}")
             out.append("")
     if res.review and res.review.summary:
         out += [f"> {res.review.summary}\n"]
