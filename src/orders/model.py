@@ -40,3 +40,11 @@ class Order:
     @property
     def remaining_qty(self) -> Decimal:
         return self.qty - self.filled_qty
+
+    @property
+    def average_fill_price(self) -> Decimal | None:
+        """Volume-weighted average price of the fills, None if there are no fills.
+
+        Reported to 6 decimal places, rounding half to even.
+        """
+        raise NotImplementedError
