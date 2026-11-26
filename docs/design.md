@@ -52,7 +52,7 @@ The issue, as a person wrote it (UC8 from our use cases):
 | Gaps | reviewer → tester | Faults nobody caught go to the reviewer, who rewrites them as behaviors in words; the tester adds tests, blind again. Loops until the tier's score is met |
 | Invariants | tester → owners | The owned invariants caught 0 of 6: the tester proposed an extension; the gate measured it before an owner sees it |
 | Review | **reviewer**, empty workspace | **Proposed a new owned invariant on its own: "an execution is applied at most once"** |
-| Decide | **person** | Three decision cards in the pull request, each answered in a word |
+| Decide | **person** | Three decision cards in the pull request comment, each with answers to pick *(turning an answer into a change: being built)* |
 | Merge | **another person** | CODEOWNERS for money paths; then their own pipeline |
 
 ### The protocol: isolation is physical
