@@ -35,6 +35,10 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--task", required=True)
     t.add_argument("--name", help="test file name (default: the task file name)")
 
+    a = sub.add_parser("autopilot", help="a person wrote the issue; the factory does the rest, on a branch")
+    a.add_argument("issue", help="the issue as a Markdown file")
+    a.add_argument("--rounds", type=int, default=4)
+
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
     h.add_argument("event", choices=["pre-tool-use", "stop"])
 
@@ -43,6 +47,13 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.cmd == "hook":
         return hooks.handle(factory, args.event, sys.stdin.read())
+
+    if args.cmd == "autopilot":
+        from gate.autopilot import Pilot
+
+        path = Pilot(factory, Path(args.issue).resolve(), log=lambda m: print(m, flush=True)).run(args.rounds)
+        print(f"autopilot: report in {path.relative_to(factory.root)}")
+        return 0
 
     if args.cmd == "tests":
         name = args.name or Path(args.task).stem.replace("-", "_")

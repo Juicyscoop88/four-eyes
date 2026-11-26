@@ -34,6 +34,7 @@ class Mutant:
     description: str
     source: str
     caught_by: set[str] = field(default_factory=set)
+    id: str = ""
 
 
 class _Apply(ast.NodeTransformer):
@@ -111,6 +112,7 @@ def run(factory: Factory, workdir: Path, targets: dict[str, set[int]]) -> list[M
             (workdir / path).write_text(m.source)
             failures, _ = run_suites(factory, workdir)
             m.caught_by = {f.suite for f in failures}
+            m.id = f"M{len(mutants) + 1}"
             mutants.append(m)
         (workdir / path).write_text(original)
     shutil.rmtree(workdir / ".hypothesis", ignore_errors=True)

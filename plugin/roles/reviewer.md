@@ -16,8 +16,10 @@ assumption the code makes silently.
 
 Rules:
 
-- A review map has at most three places. Fewer is better. Each one names `path:line` from the diff and,
-  in one sentence, what the person must decide there.
+- A review map has at most three places. Fewer is better. Each one names `path:line` from the diff, in one
+  sentence why a person must judge it, the decision as a short question, and two or three answers the
+  person can reply with in a word (the first is what the code does now). An answer becomes a change: make
+  each one concrete enough to implement.
 - A finding is `block` only for a concrete defect: say the input and the wrong outcome. Everything else is
   `warn`. No style comments.
 - Never claim something is safe because it looks right. If you are unsure, it goes on the map.
@@ -27,7 +29,8 @@ Answer with one JSON block and nothing else:
 ```json
 {
   "summary": "one sentence: what the change does and how much a person needs to look at",
-  "map": [{"where": "src/orders/engine.py:42", "why": "..."}],
+  "map": [{"where": "src/orders/engine.py:42", "why": "...", "question": "Should ...?",
+           "options": ["keep: ...", "reject: ...", "..."]}],
   "findings": [{"severity": "block", "where": "src/orders/engine.py:40", "what": "..."}]
 }
 ```

@@ -36,17 +36,27 @@ class Result:
     review: agents.Review | None = None
     agent_runs: list[agents.AgentRun] = field(default_factory=list)
     blocks: list[str] = field(default_factory=list)
+    equivalent: dict[str, str] = field(default_factory=dict)  # mutant id -> why no input tells it apart
+    proposal: dict | None = None  # an extension of the owned invariant tests, for their owners
 
     @property
     def passed(self) -> bool:
         return not self.blocks
 
+    @property
+    def counted(self) -> list[mutation.Mutant]:
+        return [m for m in self.mutants if m.id not in self.equivalent]
+
     def caught(self, *suites: str) -> int:
-        return sum(1 for m in self.mutants if m.caught_by & set(suites))
+        return sum(1 for m in self.counted if m.caught_by & set(suites))
 
     @property
     def score(self) -> float:
-        return self.caught(*INDEPENDENT) / len(self.mutants) if self.mutants else 1.0
+        return self.caught(*INDEPENDENT) / len(self.counted) if self.counted else 1.0
+
+    @property
+    def survivors(self) -> list[mutation.Mutant]:
+        return [m for m in self.counted if not m.caught_by & set(INDEPENDENT)]
 
 
 def strictest(factory: Factory, files: list[str]):
@@ -55,11 +65,15 @@ def strictest(factory: Factory, files: list[str]):
     return min(tiers, key=lambda t: order.index(t.name))
 
 
-def check(factory: Factory, base: str, task: str | None, with_agents: bool, log=print) -> Result:
+def check(
+    factory: Factory, base: str, task: str | None, with_agents: bool,
+    equivalent: dict[str, str] | None = None, log=print,
+) -> Result:
     base = git(factory.root, "rev-parse", base).strip()
     files = changed_files(factory.root, base)
     tier = strictest(factory, files)
     res = Result(base=base, files=files, tier=tier.name, mutation_min=tier.mutation_min)
+    res.equivalent = dict(equivalent or {})
     log(f"gate: {len(files)} changed files, tier {tier.name}")
 
     res.owned_changed = [f for f in files if factory.is_owned(f)]
@@ -87,7 +101,7 @@ def check(factory: Factory, base: str, task: str | None, with_agents: bool, log=
             res.mutants = mutation.run(factory, work, targets)
             if res.score < tier.mutation_min:
                 res.blocks.append(
-                    f"independent tests caught {res.caught(*INDEPENDENT)} of {len(res.mutants)} injected faults, "
+                    f"independent tests caught {res.caught(*INDEPENDENT)} of {len(res.counted)} injected faults, "
                     f"tier {tier.name} needs {tier.mutation_min:.0%}"
                 )
     finally:
@@ -120,10 +134,11 @@ def facts(res: Result) -> str:
     lines = [f"Tier: {res.tier}. Tests run: {res.tests_run}, failed: {len(res.failures)}."]
     lines += [f"- failed {f.suite}: {f.test}: {f.message}" for f in res.failures]
     if res.mutants:
-        lines.append(f"Mutation: {len(res.mutants)} faults injected into the changed lines.")
+        lines.append(f"Mutation: {len(res.counted)} faults injected into the changed lines.")
         for suite in ("author", "tester", "invariants"):
             lines.append(f"- {suite} tests caught {res.caught(suite)}")
-        lines += [f"- survived: {m.path}:{m.line} {m.description}" for m in res.mutants if not m.caught_by]
+        lines += [f"- {m.id} survived the independent tests: {m.path}:{m.line} {m.description}" for m in res.survivors]
+        lines += [f"- {i} judged equivalent: {why}" for i, why in res.equivalent.items()]
     return "\n".join(lines)
 
 
@@ -137,9 +152,12 @@ def report(factory: Factory, res: Result, head: str) -> str:
         out += ["### What blocks it\n"] + [f"- {b}" for b in res.blocks] + [""]
 
     if res.review and res.review.map:
-        out.append("### Review map: look only here\n")
-        out += [f"{i}. `{p['where']}`: {p['why']}" for i, p in enumerate(res.review.map, 1)]
-        out.append("")
+        out.append("### Review map: decide only these\n")
+        for i, p in enumerate(res.review.map, 1):
+            out.append(f"**{i}. {p.get('question') or p['why']}**  \n`{p['where']}`: {p['why']}")
+            if p.get("options"):
+                out.append("Answer with one: " + " · ".join(f"`{o}`" for o in p["options"]))
+            out.append("")
     if res.review and res.review.summary:
         out += [f"> {res.review.summary}\n"]
 
@@ -152,19 +170,34 @@ def report(factory: Factory, res: Result, head: str) -> str:
         out.append("")
 
     if res.mutants:
-        n = len(res.mutants)
+        n = len(res.counted)
         out.append("### Do the tests prove anything?\n")
-        out.append(f"{n} small faults were injected into the changed lines, one at a time.\n")
+        eq = f" ({len(res.equivalent)} more changed no behavior, see below)" if res.equivalent else ""
+        out.append(f"{n} small faults were injected into the changed lines, one at a time{eq}.\n")
         out.append("| Tests | Written by | Caught | Counts |\n|---|---|---|---|")
         out.append(f"| author | whoever wrote the code | {res.caught('author')} of {n} | no, nobody checks their own work |")
         out.append(f"| tester | the tester, who never saw the code | {res.caught('tester')} of {n} | yes |")
         out.append(f"| invariants | people (owned) | {res.caught('invariants')} of {n} | yes |")
         out.append(f"| **tester + invariants** | | **{res.caught(*INDEPENDENT)} of {n}** ({res.score:.0%}, needs {res.mutation_min:.0%}) | |\n")
-        survivors = [m for m in res.mutants if not m.caught_by & set(INDEPENDENT)]
-        if survivors:
+        if res.survivors:
             out.append("<details><summary>Faults no independent test caught</summary>\n")
-            out += [f"- `{m.path}:{m.line}` {m.description}" for m in survivors]
+            out += [f"- {m.id} `{m.path}:{m.line}` {m.description}" for m in res.survivors]
             out.append("\n</details>\n")
+        if res.equivalent:
+            out.append("<details><summary>Faults judged equivalent by the reviewer (not counted)</summary>\n")
+            out += [f"- {i} `{m.path}:{m.line}` {m.description}: {res.equivalent[i]}"
+                    for m in res.mutants if (i := m.id) in res.equivalent]
+            out.append("\n</details>\n")
+
+    if res.proposal:
+        p = res.proposal
+        out.append("### For the owners of the invariants\n")
+        out.append(
+            f"The owned invariant tests caught {p['before']} of {p['n']} faults in this change: they do not "
+            f"exercise it yet. The tester (blind) proposes an extension in `{p['file']}`. With it, the "
+            f"invariants catch **{p['after']} of {p['n']}**, and it passes on the current code. "
+            "Only an owner can accept it.\n"
+        )
 
     if res.review and res.review.findings:
         out.append("### Reviewer findings\n")

@@ -31,4 +31,5 @@ tiers:
     mutation_min: 0.0
 
 agents:
-  model: sonnet           # tester and reviewer; cheaper than the author on purpose
+  model: sonnet           # tester and reviewer
+  author_model: sonnet    # the author in autopilot (an engineer's own session uses their choice)

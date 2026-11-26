@@ -31,6 +31,7 @@ class Factory:
     tiers: list[Tier]
     invariants: list[Invariant]
     model: str
+    author_model: str
 
     def is_owned(self, path: str) -> bool:
         return any(matches(path, p) for p in self.owned)
@@ -75,4 +76,5 @@ def load(root: Path) -> Factory:
         tiers=tiers,
         invariants=invariants,
         model=raw.get("agents", {}).get("model", "sonnet"),
+        author_model=raw.get("agents", {}).get("author_model", "sonnet"),
     )
