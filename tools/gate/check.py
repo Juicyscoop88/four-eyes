@@ -20,6 +20,7 @@ from gate.diff import changed_files, changed_lines, diff_text, git
 from gate.tests import Failure, checkout_copy, run_suites
 
 INDEPENDENT = ("tester", "invariants")
+SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests"}
 
 
 @dataclass
@@ -55,6 +56,7 @@ def strictest(factory: Factory, files: list[str]):
 
 
 def check(factory: Factory, base: str, task: str | None, with_agents: bool, log=print) -> Result:
+    base = git(factory.root, "rev-parse", base).strip()
     files = changed_files(factory.root, base)
     tier = strictest(factory, files)
     res = Result(base=base, files=files, tier=tier.name, mutation_min=tier.mutation_min)
@@ -68,9 +70,12 @@ def check(factory: Factory, base: str, task: str | None, with_agents: bool, log=
     try:
         log("gate: running the suites")
         res.failures, res.tests_run = run_suites(factory, work)
-        for f in res.failures:
-            inv = invariant_of(factory, f)
-            res.blocks.append(f"{inv.id} broken: {inv.statement}" if inv else f"{f.suite} test failed: {f.test}")
+        broken = {inv.id: inv for f in res.failures if (inv := invariant_of(factory, f))}
+        res.blocks += [f"{inv.id} broken: {inv.statement}" for inv in broken.values()]
+        for suite in ("tester", "author", "other", "collection", "timeout"):
+            n = sum(1 for f in res.failures if f.suite == suite)
+            if n:
+                res.blocks.append(f"{n} {SUITE_NAMES.get(suite, suite)} fail")
 
         targets = {
             f: changed_lines(factory.root, base, f)
