@@ -8,8 +8,8 @@ Design: [docs/design.md](docs/design.md) · Eval: [docs/eval.md](docs/eval.md) �
 
 | Part | What | Where it runs |
 |---|---|---|
-| **The rule** | `gate check`: all suites, broken invariants named in words, faults injected into the changed lines and counted per suite (the author's own tests are measured, never counted), the reviewer's decision cards. Deterministic: the verdict never waits on a model. | CI, on every pull request |
-| **The path** | `gate autopilot`: issue → plan → blind tests → code → gate → its own gaps closed → pull request with decision cards. `gate decide`: an answer becomes a blind test first, then code. Every step is a commit by its role. | CI (issue label, `/decide` comment) or a laptop (`/ship`) |
+| **The rule** | `foureyes check`: all suites, broken invariants named in words, faults injected into the changed lines and counted per suite (the author's own tests are measured, never counted), the reviewer's decision cards. Deterministic: the verdict never waits on a model. | CI, on every pull request |
+| **The path** | `foureyes autopilot`: issue → plan → blind tests → code → gate → its own gaps closed → pull request with decision cards. `foureyes decide`: an answer becomes a blind test first, then code. Every step is a commit by its role. | CI (issue label, `/decide` comment) or a laptop (`/ship`) |
 | **The guide** | Plugin `four-eyes`, arrives with the repo: hooks (no edits to owned files, no secrets, not done while an invariant is broken), `/ship`, and the FourEyes MCP: `rules_for(path)` (owners, tier, invariants, standards) and `why(path, line)` (issue, who asked, decisions, the tests that pin the line, approval). | Claude Code |
 
 The roles, and what each may see:
@@ -40,8 +40,8 @@ production design: no long-lived key).
 ```bash
 uv sync
 uv run pytest                                  # the sample domain, invariants, blind tests, the gate's own tests
-uv run gate autopilot issues/average-price.md  # the whole path on a branch (needs `claude` signed in)
-uv run gate eval amend-quantity duplicate-fills average-price   # plant bugs, see what catches them
+uv run foureyes autopilot issues/average-price.md  # the whole path on a branch (needs `claude` signed in)
+uv run foureyes eval amend-quantity duplicate-fills average-price   # plant bugs, see what catches them
 ```
 
 `factory.yaml` is the one file per repo: owned paths, invariants, standards, test suites, risk tiers, models.

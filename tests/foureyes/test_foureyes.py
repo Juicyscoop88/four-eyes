@@ -3,12 +3,12 @@
 import json
 from pathlib import Path
 
-from gate.agents import stub_source
-from gate.check import invariant_of
-from gate.config import load
-from gate.hooks import pre_tool_use
-from gate.mutation import mutants_of
-from gate.tests import Failure
+from foureyes.agents import stub_source
+from foureyes.check import invariant_of
+from foureyes.config import load
+from foureyes.hooks import pre_tool_use
+from foureyes.mutation import mutants_of
+from foureyes.tests import Failure
 
 ROOT = Path(__file__).resolve().parents[2]
 factory = load(ROOT)
@@ -48,7 +48,7 @@ def test_tiers_and_ownership():
     assert factory.tier_of("README.md").name == "low"
     assert factory.is_owned("invariants/orders.yaml")
     assert factory.is_owned("tests/invariants/test_orders.py")
-    assert factory.is_owned("tools/gate/check.py")
+    assert factory.is_owned("tools/foureyes/check.py")
     assert not factory.is_owned("src/orders/engine.py")
     assert factory.suite_of("tests/blind/test_x.py") == "tester"
 
@@ -90,16 +90,16 @@ def test_mutants_reach_arithmetic_constants_and_rounding():
 
 
 def test_cards_travel_in_the_comment():
-    from gate.check import cards_from
+    from foureyes.check import cards_from
 
     cards = [{"where": "a.py:1", "why": "w", "question": "q?", "options": ["keep: x", "reject: y"]}]
-    comment = "## Four Eyes gate\n...\n<!-- four-eyes-cards " + json.dumps(cards) + " -->\n"
+    comment = "## FourEyes gate\n...\n<!-- four-eyes-cards " + json.dumps(cards) + " -->\n"
     assert cards_from(comment) == cards
     assert cards_from("no cards") == []
 
 
 def test_rules_for_names_owners_invariants_and_standards():
-    from gate.rules import rules_for
+    from foureyes.rules import rules_for
 
     money = rules_for(factory, "src/orders/engine.py")
     assert "tier **money**" in money and "ORD-1" in money and "Money in code" not in money.split("##")[0]

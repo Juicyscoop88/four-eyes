@@ -1,6 +1,6 @@
 """FourEyes MCP: the factory's live facts for people and agents in Claude Code.
 
-The gate's verdict is never decided here: that is deterministic code (`gate check` in CI). These tools
+The gate's verdict is never decided here: that is deterministic code (`foureyes check` in CI). These tools
 advise and explain. Only the author's session gets them: why would show the tester the code it must
 not see, and the reviewer judges the diff on its own.
 """
@@ -10,10 +10,10 @@ from pathlib import Path
 
 from mcp.server.mcpserver import MCPServer
 
-from gate.config import load
-from gate.diff import git
-from gate.rules import rules_for as _rules_for
-from gate.why import why as _why
+from foureyes.config import load
+from foureyes.diff import git
+from foureyes.rules import rules_for as _rules_for
+from foureyes.why import why as _why
 
 server = MCPServer(
     "foureyes",
