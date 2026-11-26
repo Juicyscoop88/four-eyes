@@ -1,0 +1,22 @@
+# Invariants of order handling. Owned by people, never edited by an agent.
+# Every invariant names the property test that proves it. The gate fails a merge
+# request that changes this file or those tests without an owner's approval.
+domain: orders
+owners: ["@trading-platform-leads"]
+invariants:
+  - id: ORD-1
+    statement: An order is never filled beyond its quantity.
+    why: Overfills create positions the trader never asked for. Real money, real exposure.
+    test: tests/invariants/test_orders.py::test_never_overfilled
+  - id: ORD-2
+    statement: A buy is never filled above its limit price, a sell never below it.
+    why: The limit price is the client's instruction. Breaking it is a best-execution breach.
+    test: tests/invariants/test_orders.py::test_limit_price_respected
+  - id: ORD-3
+    statement: A filled or canceled order never changes again.
+    why: Terminal states are reported to the client and to the regulator. They cannot move.
+    test: tests/invariants/test_orders.py::test_terminal_is_final
+  - id: ORD-4
+    statement: Status always matches the fills (no fills is NEW, some is PARTIALLY_FILLED, all is FILLED).
+    why: Downstream risk and reporting read the status, not the fills.
+    test: tests/invariants/test_orders.py::test_status_matches_fills
