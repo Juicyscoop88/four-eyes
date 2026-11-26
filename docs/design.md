@@ -122,6 +122,9 @@ What we learned, and changed:
 - **Mutation scores saturate:** every tester scored 100%, so mutation does not tell a good tester from a weak
   one. It stays in the gate as a cheap floor; quality is measured by planted bugs.
 - **Invariants catch catastrophes, not task details.** That is their job; tasks are covered by blind tests.
+- **So the factory tests its testers.** Once a week an adversary plants bugs in the open factory pull requests
+  and measures what the blind tests catch (`calibrate` workflow). The number says how far a repo's tests can
+  be trusted, and which tester model is worth its cost there.
 
 ### Security
 
@@ -161,6 +164,13 @@ approval. The template is the process; engineering knows the app exists because 
   3 write only issues. Everyone sees the next step.
 - **The skeptical senior** keeps writing money code by hand; the factory tests and reviews it. Over weeks the
   numbers show where an agent would have been fine. Trust comes from their own data.
+
+**Growth, not surveillance** *(designed, not built)*. Reviews hold what a person could learn: a junior on
+the frontend keeps missing loading states, someone new to money code keeps missing boundaries. The factory
+keeps that as a private profile **owned by the person**, built only from findings they confirmed: they see
+it, `rules_for` reminds them at the right moment, and they share it with a mentor if they want. No ranking,
+no score per person. A team lead sees only what the team misses as a whole, which becomes training, not a
+verdict. A senior stops repeating the same review; a junior gets better faster.
 
 ## 9. The first 90 days
 

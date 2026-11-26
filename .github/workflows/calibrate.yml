@@ -1,0 +1,48 @@
+# The factory tests its testers. Mutation scores saturate, so once a week an adversary agent plants
+# realistic bugs in the open factory pull requests and measures what the blind tests catch. The number says
+# how far the tests of this repo can be trusted, and which tester model is worth its cost here.
+name: calibrate
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: "Slugs of factory/<slug> branches (empty: every open factory pull request)"
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  calibrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - run: curl -fsSL https://claude.ai/install.sh | bash && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: tasks
+        id: tasks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WANTED: ${{ inputs.tasks }}
+        run: |
+          tasks="$WANTED"
+          if [ -z "$tasks" ]; then
+            tasks=$(gh pr list --state open --json headRefName -q '.[].headRefName | select(startswith("factory/")) | ltrimstr("factory/")' | tr '\n' ' ')
+          fi
+          for t in $tasks; do git branch -f "factory/$t" "origin/factory/$t"; done
+          echo "list=$tasks" >> "$GITHUB_OUTPUT"
+      - name: plant bugs and measure
+        if: steps.tasks.outputs.list != ''
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          git -c user.name=ci -c user.email=ci@four-eyes.local checkout -q main
+          uv run foureyes eval ${{ steps.tasks.outputs.list }} --bugs 4 --testers haiku,opus
+          cat docs/eval.md >> "$GITHUB_STEP_SUMMARY"
