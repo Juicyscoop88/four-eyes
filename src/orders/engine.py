@@ -7,6 +7,11 @@ class OrderRejected(Exception):
     pass
 
 
+def is_dust(order: Order, qty: Decimal) -> bool:
+    """True when qty is below the order's minimum fill and is not the whole remaining quantity."""
+    raise NotImplementedError
+
+
 def apply_fill(order: Order, qty: Decimal, price: Decimal) -> Order:
     """Apply one execution report to an order."""
     if order.status in TERMINAL:

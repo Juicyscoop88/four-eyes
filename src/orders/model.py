@@ -32,6 +32,7 @@ class Order:
     limit_price: Decimal
     status: OrderStatus = OrderStatus.NEW
     fills: list[Fill] = field(default_factory=list)
+    min_fill_qty: Decimal | None = None
 
     @property
     def filled_qty(self) -> Decimal:
