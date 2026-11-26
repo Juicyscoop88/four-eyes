@@ -117,3 +117,10 @@ def test_assumptions_become_cards():
     res = Result("b", [], "money")
     res.assumptions = assumptions_of(task)
     assert [c["id"] for c in res.cards()] == ["A1", "A2"]
+
+
+def test_assumptions_in_any_list_style():
+    from foureyes.check import assumptions_of
+
+    task = "## Assumptions\n\n- A1. Limit price.\n- A2. No rounding.\n* 3) Zero fills.\n"
+    assert assumptions_of(task) == ["Limit price.", "No rounding.", "Zero fills."]

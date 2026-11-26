@@ -189,7 +189,8 @@ class Pilot:
             f"A person wrote this issue:\n\n{self.issue}\n\n"
             f"Do not implement it yet. Write `{self.task_path}`: the issue in the person's words, then a section "
             "`## Interface` with the exact signatures you will add, then `## Assumptions` for anything the issue "
-            "leaves open, with the choice you take (a person will see them). Add the new names to `src/` as stubs "
+            "leaves open, with the choice you take, as a list `- A1. ...`, `- A2. ...` (a person sees each as a "
+            "card and may change it). Add the new names to `src/` as stubs "
             "(signature, docstring, `raise NotImplementedError`) and export them where the package exports its "
             "other functions. Write no tests and no implementation."
         )))

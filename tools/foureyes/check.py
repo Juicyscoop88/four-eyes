@@ -135,7 +135,7 @@ def assumptions_of(task: str) -> list[str]:
     section = task.split("## Assumptions", 1)[1].split("\n## ", 1)[0]
     items: list[str] = []
     for line in section.splitlines():
-        m = re.match(r"^\s*\d+\.\s+(.*)", line)
+        m = re.match(r"^\s*(?:[-*]\s*)?A?\d+[.)]\s+(.*)", line)
         if m:
             items.append(m.group(1).strip())
         elif items and line.strip():
