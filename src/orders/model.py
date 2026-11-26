@@ -15,7 +15,13 @@ class OrderStatus(Enum):
     CANCELED = "canceled"
 
 
-TERMINAL = {OrderStatus.FILLED, OrderStatus.CANCELED}
+class CancelReason(Enum):
+    TRADER = "trader"
+    RISK_SYSTEM = "risk_system"
+    VENUE = "venue"
+
+
+TERMINAL ={OrderStatus.FILLED, OrderStatus.CANCELED}
 
 
 @dataclass(frozen=True)
@@ -32,6 +38,7 @@ class Order:
     limit_price: Decimal
     status: OrderStatus = OrderStatus.NEW
     fills: list[Fill] = field(default_factory=list)
+    cancel_reason: CancelReason | None = None
 
     @property
     def filled_qty(self) -> Decimal:

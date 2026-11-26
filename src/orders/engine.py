@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from orders.model import TERMINAL, Fill, Order, OrderStatus, Side
+from orders.model import TERMINAL, CancelReason, Fill, Order, OrderStatus, Side
 
 
 class OrderRejected(Exception):
@@ -30,3 +30,12 @@ def cancel(order: Order) -> Order:
         raise OrderRejected(f"order {order.id} is {order.status.value}")
     order.status = OrderStatus.CANCELED
     return order
+
+
+def cancel_with_reason(order: Order, reason: CancelReason) -> Order:
+    """Cancel an order and record why.
+
+    Raises OrderRejected if the order is already filled or canceled, or if reason is
+    not a CancelReason. Sets status and cancel_reason together; the reason never changes.
+    """
+    raise NotImplementedError
