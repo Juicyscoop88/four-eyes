@@ -87,3 +87,12 @@ def test_mutants_reach_arithmetic_constants_and_rounding():
     assert {"`*` became `/`", "`/` became `*`", "`10` became `11`", "`ROUND_HALF_EVEN` became `ROUND_HALF_UP`",
             "the call to `round()` was removed"} <= found
     assert mutants_of("x.py", '"""Doc 6."""\n', {1}) == []
+
+
+def test_cards_travel_in_the_comment():
+    from gate.check import cards_from
+
+    cards = [{"where": "a.py:1", "why": "w", "question": "q?", "options": ["keep: x", "reject: y"]}]
+    comment = "## Four Eyes gate\n...\n<!-- four-eyes-cards " + json.dumps(cards) + " -->\n"
+    assert cards_from(comment) == cards
+    assert cards_from("no cards") == []

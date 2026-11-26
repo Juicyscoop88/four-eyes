@@ -7,6 +7,7 @@
 4. The reviewer, who never saw the author's conversation, writes a review map: where a person must look.
 """
 
+import json
 import os
 import re
 import shutil
@@ -219,7 +220,15 @@ def report(factory: Factory, res: Result, head: str) -> str:
     if res.owned_changed:
         out.append(f"- owned files touched: {', '.join(res.owned_changed)}")
     out.append(f"- gate run: {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC")
+    if res.review and res.review.map:
+        # The cards as data, so an answer (`/decide 1 keep`) refers to exactly the card the person saw.
+        out.append(f"\n<!-- four-eyes-cards {json.dumps(res.review.map)} -->")
     return "\n".join(out) + "\n"
+
+
+def cards_from(comment: str) -> list[dict]:
+    m = re.search(r"<!-- four-eyes-cards (.*?) -->", comment, re.S)
+    return json.loads(m.group(1)) if m else []
 
 
 def author_of(root: Path) -> str:
