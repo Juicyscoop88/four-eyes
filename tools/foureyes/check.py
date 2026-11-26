@@ -16,10 +16,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-from gate import agents, mutation
-from gate.config import Factory
-from gate.diff import changed_files, changed_lines, diff_text, git
-from gate.tests import Failure, checkout_copy, run_suites
+from foureyes import agents, mutation
+from foureyes.config import Factory
+from foureyes.diff import changed_files, changed_lines, diff_text, git
+from foureyes.tests import Failure, checkout_copy, run_suites
 
 INDEPENDENT = ("tester", "invariants")
 SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests"}
@@ -149,7 +149,7 @@ def facts(res: Result) -> str:
 
 def report(factory: Factory, res: Result, head: str) -> str:
     verdict = "✅ **Passed.** A person approves the merge." if res.passed else "⛔ **Blocked.**"
-    out = [f"## Four Eyes gate\n\n{verdict} Tier **{res.tier}**.\n"]
+    out = [f"## FourEyes gate\n\n{verdict} Tier **{res.tier}**.\n"]
     if res.blocks:
         out += ["### What blocks it\n"] + [f"- {b}" for b in res.blocks] + [""]
 

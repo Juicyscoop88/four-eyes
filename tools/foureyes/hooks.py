@@ -11,9 +11,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from gate.config import Factory
-from gate.diff import changed_files, git
-from gate.tests import run_suites
+from foureyes.config import Factory
+from foureyes.diff import changed_files, git
+from foureyes.tests import run_suites
 
 WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
 
