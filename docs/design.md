@@ -1,209 +1,169 @@
 # Four Eyes: a software factory for FTMO & OANDA
 
-*Draft design. Structured by the nine points of the brief. Deep on three: the four-eyes protocol (3), quality and governance (6), and adoption (8). The rest is kept short on purpose.*
+> **People write issues. The factory does the rest, and nobody, human or agent, checks their own work.**
 
----
-
-## The idea
-
-> We do not change how anyone writes code. We change what every change must prove before it merges, and nobody, human or agent, checks their own work.
-
-Finance already has a rule for this: the four-eyes principle. A payment is not approved by the person who entered it. We apply the same rule to code, whoever or whatever wrote it.
+Finance already has the rule: a payment is not approved by the person who entered it (four eyes). The factory
+applies it to code, whoever or whatever wrote it. Structured by the nine points of the brief, deep on three:
+the protocol (3), quality and governance (6), adoption (8). Everything below runs in the prototype unless it
+says *designed, not built*.
 
 ---
 
 ## 1. Definition
 
-**A software factory is the contract every change must meet on its way to main, plus the cheapest path to meeting it.**
+**A software factory is the contract every change must meet on its way to main, plus an autopilot that meets
+it for you.** A person writes the issue (what and why) and makes the decisions only a person can make. The
+factory does everything between: plan, tests, code, review, evidence. The wheel is always within reach: take
+over at any step by hand, hand it back with "finish it".
 
-- **Where it sits on the range:** in the middle, on purpose. A person decides at the start (what and why) and at the end (merge). Between them, everything is automated: tests, review, evidence. The author may be a person or an agent; the factory does not care.
-- **What it is not:**
-  - not a new IDE, chat or portal; engineers keep Claude Code, GitLab and Slack;
-  - not a deploy system; it ends at merge, and their pipelines and environments stay theirs;
-  - not a replacement for human approval on money-moving code;
-  - not a mandate; nobody is told how to write code.
-
----
+On the brief's range it sits **automated by default, human at both ends**. It is not a new IDE, chat or
+portal, not a deploy system (it ends at merge; their pipelines stay theirs), and not a mandate.
 
 ## 2. Problems and people, in order
 
-| Order | Who | Problem | What the factory does |
+| Order | Who | What the factory does |
+|---|---|---|
+| 1 | **Compliance lead** | Approver is never the author; every step is a commit by its role; secrets stopped before they exist |
+| 1 | **Senior engineer** | Owned invariants enforced on every change; a review map of three decisions instead of 2,000 lines |
+| 2 | **Early adopter** | Tests from a tester that never saw the code; measured, so rubber-stamping becomes visible |
+| 3 | **Team lead** | One plugin for the team; honest numbers per change (cost, catches, time) |
+| 3 | **Long tasks** | Progress file and one commit per step; any session or person continues from the branch |
+| 4 | **Platform engineer** | Agents in their own workspaces with their own short-lived identity *(OIDC designed, key in the prototype)* |
+| 5 | **Operations analyst** | The paved road *(designed, not built)* |
+
+Compliance and the senior engineer come first: in a regulated trading firm they can block everything else,
+and one mechanism (the gate) serves both. Left alone: how people write code, IDEs, deploy pipelines.
+
+## 3. The design (deep)
+
+### The path of one change, as the prototype ran it
+
+The issue, as a person wrote it (UC8 from our use cases):
+
+> *Last week the venue gateway redelivered execution reports after a reconnect and some fills were applied
+> twice. Applying the same execution twice must not change the order a second time.*
+
+| Step | Who | What happened (real run, 3.8 min, $0.81) |
+|---|---|---|
+| Plan | author agent | Wrote the task, the interface (`apply_execution`) and its assumptions |
+| Blind tests | **tester**, another model | Wrote tests in a copy of the repo where every function body is `raise NotImplementedError` |
+| Code | author agent | Implemented under the plugin's hooks until all suites were green |
+| Gate | the gate | All suites; 6 faults injected into the changed lines: tester's tests caught 6, author's own 5 |
+| Gaps | reviewer → tester | Faults nobody caught go to the reviewer, who rewrites them as behaviors in words; the tester adds tests, blind again. Loops until the tier's score is met |
+| Invariants | tester → owners | The owned invariants caught 0 of 6: the tester proposed an extension; the gate measured it before an owner sees it |
+| Review | **reviewer**, empty workspace | **Proposed a new owned invariant on its own: "an execution is applied at most once"** |
+| Decide | **person** | Three decision cards in the pull request, each answered in a word |
+| Merge | **another person** | CODEOWNERS for money paths; then their own pipeline |
+
+### The protocol: isolation is physical
+
+| Role | Sees | Never sees | Enforced by |
 |---|---|---|---|
-| 1 | Security and compliance lead | No audit trail, author unclear, secrets and vulnerabilities | Provenance on every MR, approver is never the author, three secret locks |
-| 1 | Senior engineer, trading | Agents quietly break invariants, review is slower than writing | Owned invariants enforced on every MR, review map, shadow agent |
-| 2 | Early adopter | Huge PRs, self-written tests, rubber-stamp review | Tests from a separate tester, mutation score, small MRs |
-| 3 | Platform engineer | Agents on laptops with personal credentials, no record, no cost view | Sandbox, own short-lived identity, cost per MR in Grafana |
-| 3 | Team lead | Setups are personal and leave with people, no idea if faster | Conventions in one plugin, honest weekly numbers |
-| 4 | Engineer with long tasks | Agents lose the thread across sessions | Harness: feature list, progress file, e2e loop |
-| 5 | Operations analyst | Shadow IT on production exports | Paved road (designed, not built) |
+| Author | the repo | owned files as writable | PreToolUse hook denies the edit |
+| Tester | task, invariants, signatures and docstrings | implementation, author's tests and chat | a workspace where they do not exist |
+| Reviewer | task, diff, invariants, gate numbers | the author's conversation, the rest of the repo | an empty workspace |
 
-**Why this order:** compliance and the senior engineer are first because in a regulated trading firm they can block everything else, and because one mechanism (the gate) serves both. Speed without their trust does not ship.
+A prompt that says "do not look at the code" is a wish. A workspace without the code is a guarantee. That is
+also why the tester is **not** a Claude Code subagent: a subagent shares the author's workspace.
 
-**Left alone for now:** how people write code, which models they prefer, IDE choice, deploy pipelines. Those work, or belong to other teams.
+**Different models on purpose.** Same context isolation is not enough: the same model has the same blind
+spots. The tester runs on a different model from the author (in the prototype Opus and Sonnet; at FTMO,
+Gemini on the same Vertex AI account: another vendor, no new data processor).
 
----
+### Three layers
 
-## 3. The design
+1. **Advice** (skills, later an MCP with live facts per file): the agent does the right thing by itself.
+2. **Guards** (hooks, local): it cannot edit an invariant, write a secret, or stop with an invariant broken.
+3. **The rule** (the gate in CI): applies to everyone, plugin or not.
 
-### The whole system
+Efficiency comes from advice; safety comes from the rule.
 
-```
-   person or agent writes code          (unchanged: hand, Claude Code, anything)
-              │
-              ▼
-   ┌───────────────────────────── the plugin (local, optional, faster) ─┐
-   │  /ship:  author ──► tester ──► reviewer ──► merge request + map   │
-   │  hooks:  never edit invariants · never write a secret · gitleaks   │
-   └────────────────────────────────────────────────────────────────────┘
-              │
-              ▼
-   ┌───────────────────────────── the gate (GitLab CI, mandatory) ──────┐
-   │  same tester and reviewer, headless                                 │
-   │  owned invariants · mutation score · SAST and secrets · risk tier   │
-   │  writes: review map · provenance record                             │
-   └────────────────────────────────────────────────────────────────────┘
-              │
-              ▼
-   person approves (never the author) ──► merge ──► their own pipeline
-```
+## 4. People, day to day
 
-Three things are ours. Everything else is what they have.
-
-| Ours | Theirs, reused as is |
-|---|---|
-| The four-eyes protocol (tester and reviewer definitions, isolation) | Claude Code (plugins, subagents, hooks, managed settings, OpenTelemetry) |
-| The gate job and its report | GitLab (MRs, approval rules, CODEOWNERS, secret detection, SAST, OIDC) |
-| `factory.yaml` per repo: invariants and risk tiers | Claude on Vertex AI, GCP Workload Identity, Secret Manager, Grafana |
-
-### One real change, from idea to production (UC2: trailing stop on OANDA's platform)
-
-1. **Idea.** A product owner opens an issue: "trailing stop orders". *(person)*
-2. **Plan.** The engineer runs `/ship` on the issue. The author agent writes a short plan and a feature list; the engineer edits it in two minutes. *(agent drafts, person steers)*
-3. **Tests first, blind.** The tester agent gets the issue, the feature list, `factory.yaml` invariants and the public interface. It does **not** get the implementation, because it runs in a workspace where the implementation does not exist. It writes tests. *(agent)*
-4. **Code.** The author agent implements until its own tests and the tester's tests pass. Hooks stop it from touching invariants or writing secrets. Progress goes to `progress.md`, so a new session continues where the last stopped. *(agent)*
-5. **Review, blind.** The reviewer agent gets the diff, the issue and the invariants, not the author's conversation. It writes findings and a **review map**: the three places a person must judge, and why. *(agent)*
-6. **Merge request.** Opened with the map and a provenance record. *(automatic)*
-7. **Gate in CI.** Same tester and reviewer, headless, plus invariant property tests, mutation score, SAST and secret detection. The order-handling path is tier "money", so it requires a senior approver from CODEOWNERS. *(automatic)*
-8. **Human review.** The senior reads the map, not 2,000 lines. Approves or sends back. *(person: owns the decision)*
-9. **Merge and deploy.** Their existing pipeline takes over. *(theirs)*
-
-### Zoom in: the four-eyes protocol, and why isolation is physical
-
-The risky part of any multi-agent design is that the "independent" checker is not independent: same context, same assumptions, same blind spot. That is exactly the early adopter's problem (tests from the agent that wrote the code).
-
-**Rule: isolation is enforced by what a role can see, not by what it is told.**
-
-| Role | Sees | Never sees | How it is enforced |
-|---|---|---|---|
-| Author | everything in the repo | owned invariant files as writable | PreToolUse hook denies edits to paths in `factory.yaml: owned` |
-| Tester | issue, feature list, invariants, public interface | implementation, author's reasoning | runs headless in a separate worktree where implementation files are removed |
-| Reviewer | diff, issue, invariants | author's conversation | runs headless with a fresh context, gets only the diff and the issue |
-
-A prompt that says "do not look at the code" is a wish. A workspace without the code is a guarantee. That is the line between a demo and something a compliance lead can sign.
-
-**Why the tester's tests are worth more:** they encode what *should* happen, written before the code existed. The author's tests encode what the code *does*. The gate measures the difference with mutation testing: inject faults into the change, count which tests catch them. A typical result we want to show live: "author's tests caught 2 of 10, tester's tests 7 of 10, invariant tests caught the one that matters".
-
----
-
-## 4. The people using it, day to day
-
-- **Senior engineer.** Writes by hand as before. Sees the gate on his MRs (it is fast and quiet when he is right). Gets a review map on others' MRs: review gets shorter. Optional shadow agent shows, over weeks, where an agent would have been fine. Trust comes from his own data.
-- **Early adopter.** Keeps the speed. `/ship` gives him the tester and reviewer locally, so CI rarely surprises him. His MRs get smaller because the harness splits work by feature.
-- **Reviewer.** Starts from the map, not the diff. Approval means "I judged these three points", which is what the audit needs.
-- **Team lead.** One plugin for the team. A weekly summary: what the gate caught, where agents passed, cost, and where AI lost.
-- **Compliance.** Reads provenance records, does not chase people.
-- **When it goes wrong:** a false alarm is overridden by the approver with a written reason (recorded). A missed bug in production becomes a new invariant (see 6). A broken gate fails open only for tier "low", never for "money".
-- **How we know it works:** review time per MR, gate catches that a human confirmed, escaped defects per tier, adoption by ladder level, cost per merged MR. Reported honestly, including the losses.
-
----
+- **Engineer:** writes an issue, answers decision cards. Or writes by hand as today and gets blind tests and
+  a review map on the pull request for free.
+- **Reviewer:** starts from the map. Approval means "I judged these three points": what the audit needs.
+- **When it goes wrong:** a false block is overridden by the approver with a written reason. A bug that
+  escapes becomes a new invariant (the reviewer proposed one unprompted in the run above).
 
 ## 5. Delegate, review, own
 
-| | Delegate to agents | A person reviews | A person owns |
-|---|---|---|---|
-| Plan | feature list, draft plan | the plan (2 minutes) | what and why |
-| Tests | tests from spec, property tests from invariants | new invariant proposals | the invariants |
-| Code | implementation, refactors, migrations | the review map's points | architecture calls |
-| Review | first review, mutation, SAST, secrets | findings the agent is unsure about | the approval |
-| Release | release notes, changelog | | the decision to ship money-moving code |
+Agents draft everything: plan, tests, code, first review, invariant proposals. A person reviews the plan's
+assumptions and the decision cards. A person **owns** what defines correctness (invariants) and what carries
+accountability (approval). **Never handed to an agent:** editing invariants, approving a merge, production
+credentials, rotating keys.
 
-**Why the line sits there:** a person owns what defines correctness (invariants) and what carries accountability (approval). An agent may propose both, never decide them. **Never handed to an agent:** editing invariants, approving a merge, touching production credentials, rotating keys.
+## 6. Quality, security, governance (deep)
 
----
+### Measured, not "looks right": the eval
 
-## 6. Quality, security and governance
+An adversary agent saw the finished code of three tasks and planted 15 realistic bugs. Each ran against
+every suite ([eval.md](eval.md)):
 
-### Quality beyond "it looks right"
-- **Owned invariants** per domain, each proven by a property test. An agent cannot change them; a change by a person needs an owner's approval (CODEOWNERS).
-- **Mutation score** of the change: how many injected faults the tests catch. Reported per MR; a low score on tier "money" blocks.
-- **Incidents become invariants.** Every postmortem ends with a new invariant and its test. The eval suite grows from real failures, not from invented ones.
+| Check | Bugs caught |
+|---|---|
+| author's own tests | **5 of 15** |
+| tester, blind, on Haiku / Sonnet / Opus | 13 / 15 / 14 of 15 |
+| owned invariants | 0 of 15 |
+| **the gate's tests** | **14 of 15** |
+| reviewer, on the one no test caught | 1 of 1 |
+
+What we learned, and changed:
+- **The author's tests are the weak link**, exactly the early adopter's problem. They are measured, never counted.
+- **A blind Haiku tester costs $0.01 to 0.02 and catches almost as much.** The expensive part of the factory
+  does not have to be the checks.
+- **Mutation scores saturate:** every tester scored 100%, so mutation does not tell a good tester from a weak
+  one. It stays in the gate as a cheap floor; quality is measured by planted bugs.
+- **Invariants catch catastrophes, not task details.** That is their job; tasks are covered by blind tests.
 
 ### Security
-- **Secrets, three locks:** the agent never sees values (only Secret Manager references); a hook blocks writing anything that looks like a key, gitleaks runs on commit; GitLab push protection and secret detection on push. If something still leaks, it is burned: the factory opens a rotation ticket with an owner and a deadline.
-- **Where agents run:** a sandbox (Claude Code sandboxing locally, ephemeral runners in CI), with their own short-lived identity (GitLab OIDC to GCP Workload Identity), scoped to one repo. Never the engineer's credentials.
-- **Vulnerabilities:** GitLab SAST and dependency scanning on every MR, plus the reviewer agent's security pass. New dependencies on tier "money" need a person.
+
+- **Secrets:** a hook blocks writing anything that looks like a key; gitleaks on every pull request; values
+  only ever referenced by name. A leaked key is burned and rotated, encrypted or not.
+- **Identity:** the report is posted by the CI bot, never an engineer's account. At FTMO: OIDC to Vertex AI,
+  no long-lived key anywhere *(designed; the prototype uses a spend-limited key)*.
 
 ### Authorship, approval, audit
-- **Author** = the person who asked for the change (accountable for the intent).
-- **Approver** = a different person (accountable for the decision). GitLab approval rules prevent the author approving.
-- **Provenance record** on every MR: who asked, which agent and model, which roles ran, which checks passed with which results, cost, who approved. Signed as a GitLab attestation; queryable when the regulator asks.
+
+Every step is a commit by its role (`author agent`, `tester agent`, …) with `Requested-by`. The requester is
+accountable for intent; a different person approves (CODEOWNERS on money paths). The report records which
+roles ran, on which models, what they caught and what it cost.
 
 ### Risk tiers (`factory.yaml`)
-| Tier | Example paths | Gate |
-|---|---|---|
-| money | order handling, risk rules, payouts | invariants, mutation threshold, senior approver |
-| standard | product features | four eyes, one approver |
-| low | docs, internal tools | four eyes, one approver, gate may fail open |
 
----
+`money` (orders, risk, payouts): invariants, mutation floor 80%, senior approver. `standard`: 50%. `low`: no floor.
 
-## 7. Apps built by non-engineers (designed, not built)
+## 7. Apps by non-engineers *(designed, not built)*
 
-**The paved road.** The analyst starts from a template app that already contains the way to production: CI, the gate, hosting, and data access only through a read-only, masked API. He describes what he needs to an agent in plain words; pushing deploys to an internal sandbox; production needs an engineer's approval. He does not learn the process, the template is the process. Engineering knows the app exists because the factory built it.
+The analyst starts from a template app that already contains the way to production: the gate, hosting, data
+only through a read-only masked API. Pushing deploys to an internal sandbox; production needs an engineer's
+approval. The template is the process; engineering knows the app exists because the factory built it.
 
-We do not know their pipeline and hosting, so this is a design, not an implementation.
+## 8. Adoption without a mandate (deep)
 
----
-
-## 8. Adoption without a mandate
-
-The plugin arrives with the repo: listed in `.claude/settings.json`, Claude Code offers it when the repo is opened. One keypress. Or the company enables it in managed settings.
-
-**The first five minutes sell it:** `/factory` runs the gate over the engineer's last 20 merged MRs: "it would have flagged these 3, here is why". Value shown on his own past work, nothing to change.
-
-**Day 1, invariants are not written from zero:** an agent proposes them from code, tests and bug history; the owner accepts or edits. Agent proposes, person owns.
-
-**The ladder.** Nobody has to climb; everyone sees the next step.
-0. Installs nothing. Meets the gate in CI.
-1. Plugin locally. Same checks, minutes earlier.
-2. `/ship`. The agent is the author.
-3. Long tasks through the harness.
-4. The module is trusted. The shadow switches off.
-
-**The senior who does not see the point** never has to change. The shadow agent works on a sample of his tickets on risky paths, with a cheaper model, and stops once the module has a track record. After a month he has data, not opinions.
-
-**The early adopter's habits** come up to standard without a talk: the gate scores his tests, the harness keeps his MRs small.
-
----
+- **No install:** the plugin arrives with the repo (`.claude/settings.json`); one Enter. The gate is one CI
+  include, or an org-wide policy set by the platform team.
+- **Value before effort:** the first thing a skeptic sees is blind tests and a review map on *their own*
+  hand-written pull request. They changed nothing and got something.
+- **Never slower:** quiet when you are right. The first weeks it only reports.
+- **The ladder, nobody has to climb:** 0 meet the gate in CI · 1 plugin locally · 2 answer decision cards ·
+  3 write only issues. Everyone sees the next step.
+- **The skeptical senior** keeps writing money code by hand; the factory tests and reviews it. Over weeks the
+  numbers show where an agent would have been fine. Trust comes from their own data.
 
 ## 9. The first 90 days
 
-| Weeks | Build | Expect to learn |
+| Weeks | Build | Learn |
 |---|---|---|
-| 1 to 2 | Gate in CI (no install) on one FTMO and one OANDA repo, tier "money" only, report only, nothing blocks | False alarm rate, what the retro run finds on past MRs |
-| 3 to 6 | Plugin with tester, reviewer, hooks, `/ship`; invariants proposed for those repos | Whether blind tests beat author tests in practice; review time |
-| 7 to 10 | Gate starts blocking on tier "money"; provenance records; cost per MR in Grafana | Cost per merged MR, compliance's view of the records |
-| 11 to 13 | Shadow agent on a sample; harness for long tasks; paved road design with platform | Where agents are trusted per module; what the analyst lane needs |
+| 1 to 2 | Gate, report only, on one FTMO and one OANDA repo | False alarm rate; what blind tests find on real code |
+| 3 to 6 | Plugin, decision cards, invariants proposed for those repos | Review time; which tester model is worth it there |
+| 7 to 10 | Gate blocks on `money`; OIDC; cost per change in Grafana | Cost per merged change; compliance's view of the trail |
+| 11 to 13 | Autopilot from issues for volunteers; paved road design | Where people take the wheel, and why |
 
-Adoption is reported honestly every two weeks, including where it fails.
+## Limits
 
----
-
-## Limits and trade-offs
-
-- **Invariants are only as good as the people who own them.** The factory makes them cheap to propose and enforce, not correct.
-- **Mutation testing costs CI time.** Run on changed code only, full only on tier "money".
-- **Blind tests need a clear interface.** Where a change has no stable interface yet, the tester works from the spec only and catches less.
-- **The reviewer agent misses things.** It narrows human attention; it does not replace it. That is why approval stays human.
-- **Shadow agents cost tokens.** Sampled, cheaper model, and switched off per module.
-- **What we did not design:** deploy pipelines, hosting, IDE choice, model selection policy.
+- 15 planted bugs is a small sample, and the adversary is also Claude.
+- The tester needs a clear interface; the author writes signatures first.
+- Hooks cover Claude Code's file tools; a shell command is stopped only by the gate in CI.
+- The reviewer misses things. It narrows attention; approval stays human.
+- Invariants are only as good as their owners. The factory makes them cheap to propose, not correct.
