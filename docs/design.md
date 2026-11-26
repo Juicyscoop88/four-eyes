@@ -1,4 +1,4 @@
-# Four Eyes: a software factory for FTMO & OANDA
+# FourEyes: a software factory for FTMO & OANDA
 
 > **People write issues. The factory does the rest, and nobody, human or agent, checks their own work.**
 
@@ -70,13 +70,20 @@ also why the tester is **not** a Claude Code subagent: a subagent shares the aut
 spots. The tester runs on a different model from the author (in the prototype Opus and Sonnet; at FTMO,
 Gemini on the same Vertex AI account: another vendor, no new data processor).
 
-### Three layers
+### Three parts, each once
 
-1. **Advice** (skills, later an MCP with live facts per file): the agent does the right thing by itself.
-2. **Guards** (hooks, local): it cannot edit an invariant, write a secret, or stop with an invariant broken.
-3. **The rule** (the gate in CI): applies to everyone, plugin or not.
+1. **The rule:** the gate in CI. Deterministic code: the verdict never waits on a model's judgment, and
+   running it again gives the same answer. Any CI runs it; it is one command.
+2. **The path:** issue → autopilot → pull request with decision cards → `/decide`. The same autopilot from
+   an issue label in CI or from `/ship` on a laptop.
+3. **The guide:** the plugin, with hooks (local guards) and the FourEyes MCP for people and agents in
+   Claude: `rules_for(path)` (owners, tier, invariants, standards) and `why(path, line)`.
 
-Efficiency comes from advice; safety comes from the rule.
+**Code decides, agents advise.** Rules come in two kinds in `factory.yaml`: *invariants* (never broken,
+property-tested, the gate blocks) and *standards* (how it is done here: a design system and optimistic UI
+for apps, money handling for the core; served to the agent by `rules_for`, checked by the reviewer). MCP
+tools differ per role: the author gets `rules_for`; the tester and reviewer get none, so nothing shows them
+more than their role may see.
 
 ## 4. People, day to day
 
@@ -129,6 +136,10 @@ Every step is a commit by its role (`author agent`, `tester agent`, …) with `R
 accountable for intent; a different person approves (CODEOWNERS on money paths). The report records which
 roles ran, on which models, what they caught and what it cost.
 
+**`why` answers the regulator in one question.** Asked in Claude *"why does line 64 exist and who decided?"*,
+the MCP returns the commit and its role, who asked, the person's decision on the card, the tests that fail
+when that line is broken (found by breaking it), and the pull request with its approvals.
+
 ### Risk tiers (`factory.yaml`)
 
 `money` (orders, risk, payouts): invariants, mutation floor 80%, senior approver. `standard`: 50%. `low`: no floor.
@@ -142,7 +153,7 @@ approval. The template is the process; engineering knows the app exists because 
 ## 8. Adoption without a mandate (deep)
 
 - **No install:** the plugin arrives with the repo (`.claude/settings.json`); one Enter. The gate is one CI
-  include, or an org-wide policy set by the platform team.
+  job, which a platform team can require across all repos.
 - **Value before effort:** the first thing a skeptic sees is blind tests and a review map on *their own*
   hand-written pull request. They changed nothing and got something.
 - **Never slower:** quiet when you are right. The first weeks it only reports.

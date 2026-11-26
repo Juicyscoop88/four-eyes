@@ -9,9 +9,7 @@ For each finished task (a factory/<slug> branch):
 - the same tester variants are scored by mutation on the changed lines.
 """
 
-import json
 import shutil
-import time
 from pathlib import Path
 
 from gate import agents, mutation
