@@ -1,0 +1,262 @@
+[
+  {
+    "task": "amend-quantity",
+    "testers": {
+      "opus": {
+        "mutants": 11,
+        "mutation_caught": 11
+      },
+      "haiku": {
+        "mutants": 11,
+        "mutation_caught": 11
+      },
+      "sonnet": {
+        "mutants": 11,
+        "mutation_caught": 11
+      }
+    },
+    "bugs": [
+      {
+        "file": "src/orders/engine.py",
+        "why": "A FILLED order can be amended. For example, a 10/10 order amended to 12 is accepted and stays FILLED with 2 unfilled, which breaks ORD-3 and ORD-4.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "The same-quantity shortcut runs before the terminal check, so amending a FILLED or CANCELED order to its current quantity succeeds instead of raising OrderRejected.",
+        "caught_by": {
+          "author": true,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "State changes before the check. With 4 of 10 filled, amending to 3 raises, but qty is left at 3, below the filled quantity.",
+        "caught_by": {
+          "author": true,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": true,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "The status rule from apply_fill is wrong here, because an order may have no fills. Any accepted amend of a NEW order, such as 10 to 12, marks it PARTIALLY_FILLED.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": true,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "NaN is still rejected, but new_qty=Decimal('Infinity') passes every check. The order then gets an unlimited quantity and will accept a fill of any size.",
+        "caught_by": {
+          "author": true,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      }
+    ],
+    "cost_usd": 0.165
+  },
+  {
+    "task": "duplicate-fills",
+    "testers": {
+      "opus": {
+        "mutants": 8,
+        "mutation_caught": 8
+      },
+      "haiku": {
+        "mutants": 8,
+        "mutation_caught": 8
+      },
+      "sonnet": {
+        "mutants": 8,
+        "mutation_caught": 8
+      }
+    },
+    "bugs": [
+      {
+        "file": "src/orders/engine.py",
+        "why": "On a partially filled order that was then canceled, redelivering an already applied execution raises OrderRejected instead of returning the order unchanged. A test that only redelivers to a FILLED order still passes.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "Only the latest fill is checked for a duplicate. After applying A and then B, a redelivery of A is counted again if it fits the remaining quantity. On a finished order it raises instead of doing nothing.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": false,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "A reused id is rejected only when both qty and price differ. If just one of them differs, the report is silently accepted as a duplicate.",
+        "caught_by": {
+          "author": true,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "Values are compared by how they are written, not as numbers. A redelivery of qty Decimal('100') as Decimal('100.0'), or the same kind of change in price, is wrongly rejected as different content.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/engine.py",
+        "why": "Ids are no longer compared exactly. 'E1' and 'E1 ' are treated as the same execution, so with equal content the second real fill is silently dropped, and with different content it is rejected.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      }
+    ],
+    "cost_usd": 0.199
+  },
+  {
+    "task": "average-price",
+    "testers": {
+      "opus": {
+        "mutants": 7,
+        "mutation_caught": 7
+      },
+      "haiku": {
+        "mutants": 7,
+        "mutation_caught": 7
+      },
+      "sonnet": {
+        "mutants": 7,
+        "mutation_caught": 7
+      }
+    },
+    "bugs": [
+      {
+        "file": "src/orders/model.py",
+        "why": "Each qty*price is rounded in the caller's Decimal context before it becomes exact. With low precision, or operands whose product has more than 28 digits, the average changes or a near-tie rounds the wrong way.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/model.py",
+        "why": "filled_qty adds Decimals in the caller's context. With prec=3 and fill quantities such as 1000 and 1, the denominator is rounded and the average is wrong.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": false,
+          "tester_haiku": false,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": false,
+          "reviewer": true
+        },
+        "reviewer_said": [
+          "The denominator is `Fraction(self.filled_qty)`, so converting to Fraction happens only after `filled_qty` has produced a Decimal. `filled_qty` isn't shown in the diff. This assumes it adds the fill quantities with ordinary Decimal arithmetic, which uses the caller's context. In that case, take fills (qty 1000, price 1) and (qty 1, price 2) with caller precision 3. The total 1001 rounds to 1.00E+3, so the property returns 1.002000 instead of 1.000999. This breaks assumption 4. With the `Inexact` trap on, it raises instead. Fix it by adding the quantities exactly: `sum(Fraction(f.qty) for f in self.fills)`. Add a regression test for this input. The low-precision tests shown use totals that fit within the set precision, so they don't cover this case.",
+          "The file says `uv run pytest` passed 33 tests, but this gate's measurement says 0 tests ran and gives no mutation results. Neither the blind tests nor the author tests are confirmed by this gate run."
+        ]
+      },
+      {
+        "file": "src/orders/model.py",
+        "why": "scaleb applies the caller's precision. A result with more digits than that, such as 100.000000 with prec=6, is rounded again using the caller's rounding mode and loses its 6-place scale.",
+        "caught_by": {
+          "author": true,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/model.py",
+        "why": "This rounds twice. An average within 5e-13 of a halfway point, such as 1.0000005000000001, becomes an exact tie and then rounds to even in the wrong direction.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      },
+      {
+        "file": "src/orders/model.py",
+        "why": "A partially filled order that is then canceled returns None, even though it has fills and should still report their average.",
+        "caught_by": {
+          "author": false,
+          "invariants": false,
+          "tester_opus": true,
+          "tester_haiku": true,
+          "tester_sonnet": true,
+          "invariants_with_proposal": false,
+          "gate_tests": true
+        }
+      }
+    ],
+    "cost_usd": 0.293
+  }
+]
