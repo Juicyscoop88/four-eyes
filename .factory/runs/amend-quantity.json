@@ -3,112 +3,122 @@
   "requested_by": "Jakub Schinko",
   "passed": true,
   "score": 1.0,
-  "mutants": 9,
-  "equivalent": {},
+  "mutants": 7,
+  "equivalent": {
+    "M6": "The fault only changes how an amendment to exactly zero passes the positive-quantity check. The later rule rejects any new total that is not above the filled quantity. The filled quantity is never below zero, so zero is still rejected with the same kind of rejection and the order is unchanged. This holds for orders with and without fills, and terminal orders are rejected earlier. Only the wording of the rejection message differs, and the task does not specify it. This assumes fills always have positive quantities. The diff does not show the fill-handling code that enforces this, and an order built by hand with a negative fill total is not treated as a valid input.",
+    "M7": "Without the positive-quantity rejection, a zero or negative new total reaches the rule that rejects any total not above the filled quantity. The filled quantity is never below zero, so every such input is still rejected with the same kind of rejection and nothing on the order changes. Non-finite values and terminal orders are rejected before this point. Only the wording of the rejection message differs, and the task does not specify it. This relies on the same assumption as M6: fills always have positive quantities, which the diff does not show. The existing tests for zero and negative totals already check the behaviour the task requires."
+  },
+  "base": "8fd1e6d5e1e5f2c01d06328b703af92650c40c13",
   "caught": {
-    "author": 7,
-    "tester": 9,
+    "author": 6,
+    "tester": 7,
     "invariants": 0
   },
   "proposal": {
     "file": ".factory/proposals/amend-quantity/tests/invariants/test_orders.py",
     "target": "tests/invariants/test_orders.py",
     "before": 0,
-    "after": 6,
-    "n": 9
+    "after": 2,
+    "n": 7
   },
-  "cost_usd": 0.762,
-  "minutes": 4.0,
+  "cost_usd": 0.507,
+  "minutes": 2.5,
   "steps": [
     {
-      "step": "plan",
-      "role": "author",
-      "cost_usd": 0.137424,
-      "seconds": 45.5
+      "step": "decision 1: reject: raise OrderRejected when new_qty <= filled_qty on an order with fills, so the trader must use cancel"
     },
     {
-      "step": "blind tests",
+      "step": "tester pins the decision, blind",
       "role": "tester",
-      "cost_usd": 0.2352662,
-      "seconds": 55.4,
+      "cost_usd": 0.1876804,
+      "seconds": 36.0,
       "files": [
         "tests/blind/test_amend_quantity.py"
       ]
     },
     {
-      "step": "implementation",
+      "step": "4 tests fail against the decision, the author changes the code",
       "role": "author",
-      "cost_usd": 0.11925250000000001,
-      "seconds": 31.0
+      "cost_usd": 0.1379726,
+      "seconds": 30.1
     },
     {
-      "step": "round 1: score 100%, 0 faults survived",
+      "step": "round 1: score 78%, 2 faults survived",
+      "score": 0.7777777777777778,
+      "survivors": 2
+    },
+    {
+      "step": "reviewer turns 2 survivors into 0 behaviors to test",
+      "role": "reviewer",
+      "cost_usd": 0.08397370000000001,
+      "seconds": 10.9,
+      "equivalent": [
+        "M6",
+        "M7"
+      ]
+    },
+    {
+      "step": "round 2: score 100%, 0 faults survived",
       "score": 1.0,
       "survivors": 0
     },
     {
-      "step": "tester proposes an extension of the owned invariant tests",
-      "role": "tester",
-      "cost_usd": 0.1848714,
-      "seconds": 43.2
-    },
-    {
       "step": "gate with the reviewer: passed",
       "role": "reviewer",
-      "cost_usd": 0.0853177,
-      "seconds": 27.4
+      "cost_usd": 0.09699569999999999,
+      "seconds": 18.9
     }
   ],
   "cards": [
     {
-      "where": "src/orders/engine.py:49",
-      "why": "Reducing to the filled quantity ends the order permanently as FILLED, so a trader who gave up the unfilled rest is reported to the client and regulator as fully filled at a smaller size, and tests can only confirm the assumed rule, not that this reporting is right.",
-      "question": "Should an amend down to exactly the filled quantity end the order as FILLED?",
-      "options": [
-        "keep: accept it and set the status to FILLED",
-        "reject: raise OrderRejected when new_qty <= filled_qty on an order with fills, so the trader must use cancel",
-        "cancel: accept it, leave qty unchanged and set the status to CANCELED, keeping the fills"
-      ]
-    },
-    {
       "where": "src/orders/engine.py:47",
-      "why": "A reduction applies immediately with no pending or confirmed state, so `apply_fill` rejects a fill that was already executed but arrives late if it exceeds the new remaining quantity, which could leave a real position unrecorded.",
+      "why": "A reduction applies at once with no pending or confirmed state, so `apply_fill` will reject an already executed fill that arrives late and exceeds the new remaining quantity (assumption 13), possibly leaving a real position unrecorded.",
       "question": "May a reduction take effect before the venue confirms it?",
       "options": [
         "keep: apply it at once and let apply_fill reject any late fill that no longer fits",
-        "block-reductions: raise OrderRejected for any new_qty below the current qty until in-flight handling exists"
+        "block: raise OrderRejected for any new_qty below the current qty until in-flight handling exists"
       ]
     },
     {
       "where": "src/orders/engine.py:47",
-      "why": "Any finite increase is accepted with no maximum or risk check and keeps the same order, and the owned invariants only limit fills to whatever the new quantity is. This diff does not show whether order entry or another layer enforces such limits.",
-      "question": "May this function increase an order's size without a limit or risk check?",
+      "why": "This function accepts any finite increase above the filled quantity with no maximum, risk or authorization check. The owned invariants only cap fills at the new quantity, and the diff does not show whether another layer enforces limits.",
+      "question": "May an order's size be increased here without a limit or risk check?",
       "options": [
-        "keep: accept any finite increase, with limits and authorization handled elsewhere or not at all",
-        "reductions-only: raise OrderRejected when new_qty > qty until a risk check exists"
+        "keep: accept any finite increase, with any limits and authorization left outside this function",
+        "reductions-only: raise OrderRejected when new_qty > order.qty until a risk check exists"
       ]
     }
   ],
   "findings": [
     {
       "severity": "warn",
-      "where": ".factory/proposals/amend-quantity/tests/invariants/test_orders.py:35",
-      "what": "The proposed ORD-3 test snapshots only status and fills, not qty. If an amend changed the qty of a CANCELED order, the status and fills would stay the same. The ORD-4 test skips CANCELED orders, and ORD-1 would miss any new qty at or above the filled quantity. Include qty (and limit_price) in the terminal snapshot before the owners adopt the proposal."
+      "where": "src/orders/engine.py:47",
+      "what": "`order.qty` is overwritten and the previous value is not recorded (assumption 11). The diff shows no other amendment record, so the audit trail owner should confirm that earlier sizes are recorded elsewhere."
+    },
+    {
+      "severity": "warn",
+      "where": "src/orders/engine.py:47",
+      "what": "Only the order object and ID keep their \"place\". Queue or time priority is not modeled, and some venues drop it when size increases (assumption 10), so traders should not be told it is preserved."
     },
     {
       "severity": "warn",
       "where": "src/orders/engine.py:28",
-      "what": "The owned invariant tests caught 0 of the 9 injected faults. The progress note says they do not call amend_quantity, and the updated version is only a proposal under .factory/proposals. Until an owner reviews and adopts it, the owned suite does not check ORD-1, ORD-3 or ORD-4 against amends."
+      "what": "The owned invariant tests caught 0 of the 7 injected faults, and the extended version is only a proposal under `.factory/proposals`. The diff does not add it to the owned suite, so an owner needs to review and adopt it for that suite to cover amends."
     },
     {
       "severity": "warn",
-      "where": "src/orders/engine.py:47",
-      "what": "qty is overwritten and the previous value is not recorded (assumption 11). Unless something outside this diff records amendments, the order cannot show its earlier size or that a FILLED status came from a reduction. Whoever owns the regulatory audit trail should confirm where this is recorded."
+      "where": ".factory/proposals/amend-quantity/tests/invariants/test_orders.py:36",
+      "what": "The ORD-3 snapshot holds only status and fills. A faulty amend that changed `qty` on a CANCELED order would pass that test, and the ORD-4 test skips CANCELED orders. Add `qty` and `limit_price` to the snapshot and its assertion before adopting the proposal."
     },
     {
       "severity": "warn",
-      "where": "src/orders/engine.py:47",
-      "what": "The task asks that traders not lose their place, but only the object and ID are preserved. Time priority is not modeled, and some venues drop it when size increases (assumption 10). Do not present this change to traders as guaranteeing queue priority."
+      "where": ".factory/runs/amend-quantity.md:9",
+      "what": "The committed run report and its JSON do not match the current gate results. They report 9 faults (the current run has 7) and 56 tests (now 60). They still ask the already decided FILLED question, with \"keep\" meaning accept and set FILLED, and the proposal's 6 of 9 score comes from that run. An approver should not rely on them for this version; regenerate them or label them as superseded."
+    },
+    {
+      "severity": "warn",
+      "where": ".factory/tasks/amend-quantity.md:25",
+      "what": "Assumption 5 still says an amend to the filled quantity is accepted and sets FILLED. The Decisions section and the code reject it. Update the assumption, along with the reference to \"case 5\" in assumption 9, so nobody implements or tests the old rule."
     }
   ]
 }
