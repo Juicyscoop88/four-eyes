@@ -22,6 +22,16 @@ task (person)  ──►  tester writes blind tests  ──►  author implement
 Why the tester is not a Claude Code subagent: a subagent runs in the author's workspace and can read the
 code. Only a separate workspace without the code makes "the tester never saw it" true.
 
+## On GitHub
+
+| Workflow | When | What |
+|---|---|---|
+| `gate` | every pull request | the gate with the reviewer; the report and its decision cards as a comment |
+| `autopilot` | an issue gets the label `autopilot` | plan, blind tests, code, gate, a pull request |
+| `decide` | someone with write access comments `/decide 1 reject` | the answer becomes a blind test, then code, then the gate again |
+
+The same gate runs on GitLab (`.gitlab-ci.yml`). Secret: `ANTHROPIC_API_KEY`, spend-limited, used only by CI.
+
 ## Run it
 
 ```bash
