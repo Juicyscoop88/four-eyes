@@ -294,3 +294,27 @@ def test_each_mutant_runs_only_the_tests_the_gate_uses(tmp_path):
     (root / "tests/blind/test_triple.py").write_text("from calc import triple\n\n\ndef test_triple():\n    assert triple(2) == 6\n")
     res = check(load(root), "main", None, False, log=lambda m: None)
     assert len(res.mutants) == 2 and all(m.caught_by == {"tester"} for m in res.mutants)
+
+
+def test_a_hand_made_change_gets_blind_tests_from_the_gate(tmp_path, monkeypatch):
+    # design.md promised it, the gate did not: a change written by hand had only its author's tests.
+    from foureyes import agents
+    from foureyes.check import check
+
+    def tester(factory, task, name, gaps=(), model=None, dest_root=None, fresh=False):
+        (dest_root / "tests/blind").mkdir(parents=True, exist_ok=True)
+        (dest_root / "tests/blind/test_this_change.py").write_text(
+            "from calc import triple\n\n\ndef test_triple():\n    assert triple(2) == 6\n")
+        return agents.AgentRun("tester", "haiku", "", 0.01, 1), ["tests/blind/test_this_change.py"]
+
+    def reviewer(factory, task, diff, facts):
+        return agents.Review(agents.AgentRun("reviewer", "haiku", "", 0.01, 1), [], [], "")
+
+    monkeypatch.setattr(agents, "write_blind_tests", tester)
+    monkeypatch.setattr(agents, "review", reviewer)
+    root = small_repo(tmp_path, {"src/calc.py": "def double(x):\n    return x * 2\n"})
+    (root / "src/calc.py").write_text("def double(x):\n    return x * 2\n\n\ndef triple(x):\n    return x * 3\n")
+    res = check(load(root), "main", "Add triple.", True, log=lambda m: None)
+    assert res.blind_written == ["tests/blind/test_this_change.py"]
+    assert res.mutants and all("tester" in m.caught_by for m in res.mutants)
+    assert not (root / "tests/blind").exists()  # the branch is unchanged
