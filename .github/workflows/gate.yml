@@ -26,7 +26,8 @@ jobs:
   # Bugs and CLAUDE.md: Anthropic's own code-review plugin, not ours. It comments inline on the pull request.
   # FourEyes' reviewer only makes the decision cards and checks the task and the invariants.
   review:
-    if: github.event_name == 'pull_request'
+    # Not for pull requests from forks: the key and write access never reach code from outside the company.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 1 }
-      - uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@4411a9e9b0283becf4b924f7bce360fd7756c78c  # v1, pinned to a commit
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ github.token }}   # the workflow's own token: no extra GitHub App to approve
