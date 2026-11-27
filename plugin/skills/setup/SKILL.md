@@ -202,6 +202,8 @@ owned by people (CODEOWNERS): no agent edits or deletes them, and a failing one 
   pull request at the end.
 - Write progress down where the next session finds it: the pull request description, or the task file of
   `/four-eyes:ship`. A new session reads it first.
+- When the gate asks a question on a pull request, the answer is one sentence added to the pull request
+  description (the spec), then the code follows it: the gate runs again and its tester checks the answer.
 - The gate in CI is the check, whoever wrote the code: blind tests, the protected tests, and the questions only a
   person can answer. Run `/code-review` before a push if you like; it does not replace the gate.
 - Hand a larger change to the factory with `/four-eyes:ship <what and why>`, or work with Claude as usual.
@@ -239,17 +241,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.15
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.16
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.15
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.16
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.15
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.16
     with: { setup: "SETUP" }
     secrets: inherit
 ```

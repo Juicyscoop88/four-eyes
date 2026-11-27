@@ -270,3 +270,9 @@ Stop hook and the gate saw "no report". Now the suites run in the repo's `.venv`
 
 `/decide` works on any pull request, not only the autopilot's: its description is the task, the gate's last
 comment the cards. An agent's JSON with a sentence around it is read instead of crashing. Pins to `@v0.3.15`.
+
+## From v0.3.15 to v0.3.16
+
+A decision is a spec update: the gate asks a person to answer each question in one sentence in the pull request
+description (in Claude Code: just say it); the gate runs again and the tester checks it. `/decide` stays for
+the autopilot's own pull requests. The CLAUDE.md section from setup says the same. Pins to `@v0.3.16`.
