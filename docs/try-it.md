@@ -3,6 +3,15 @@
 Six use cases, each a few prompts in a Claude Code terminal. About 30 minutes in all.
 Each says what to type, what you should see, and what it shows.
 
+Who does what:
+- **The lead, once per repo:** `/ftmo-factory:setup` writes the guardrails (what is risky, who approves, what only
+  people may change) into the repo as a pull request.
+- **Every engineer, every day:** clones the repo and is asked once to install the plugin. Then one of two ways:
+  - *hand it over:* `/ftmo-factory:ship <what and why>` turns the request into an issue and the factory builds it;
+  - *work as today,* alone or with Claude: the plugin gives Claude each file's rules, and the gate checks the
+    pull request however it was written.
+- **Anyone without code (analyst):** the issue form on GitHub; the factory opens the pull request.
+
 Two repos:
 - **`~/Projects/ftmo-case-study`**: FourEyes' own repo, already on the factory (orders domain, invariants, standards).
 - **`~/Projects/foureyes-try`**: a fresh clone of python-humanize, not on the factory yet. For installing.
@@ -11,26 +20,47 @@ Needs: `claude` signed in, `uv`, `gh` signed in (the FourEyes repo is private, g
 
 ---
 
-## UC1. Install FourEyes in a repo it has never seen (team lead, 5 min)
+## UC1. Set up a repo the factory has never seen (team lead, 5 min)
 
 ```bash
 cd ~/Projects/foureyes-try && claude
 ```
 
 1. `/plugin marketplace add Juicyscoop88/four-eyes`
-2. `/plugin install four-eyes@foureyes`, then restart Claude Code (`/exit`, `claude`).
-3. `/four-eyes:init`
+2. `/plugin install ftmo-factory@ftmo-factory`, then restart Claude Code (`/exit`, `claude`).
+3. `/ftmo-factory:setup`
 
 **You should see:** Claude reads the repo and finds `src/humanize`, `tests`, the test command. It asks you one
 question at a time (which paths carry money or trust, which files only people change). It writes on a branch
-`foureyes-init`: `factory.yaml`, `standards/basics.md`, `.claude/settings.json` (Claude Code asks you first:
+`ftmo-factory-setup`: `factory.yaml`, `standards/basics.md`, `.claude/settings.json` (Claude Code asks you first:
 it protects `.claude/`), `.github/workflows/foureyes.yml`, the issue form and `CODEOWNERS`. At the end it shows
 the brief every session will get.
 
 **Shows:** the plugin is standard Claude Code distribution (marketplace + `enabledPlugins` in the repo). Anyone who
 clones this repo later is asked once to install it. Nothing is copied from our repo.
 
-Check: `git log --stat -1` on the branch `foureyes-init`.
+Check: `git log --stat -1` on the branch `ftmo-factory-setup`.
+
+## UC1b. Bring an analyst's tool under the rules (operations analyst, 5 min)
+
+`~/Projects/recon-tool` is a made-up reconciliation tool, "built with ChatGPT over a weekend": a script, a
+production payouts export with trader emails, a database password in the code, no git, no tests.
+
+```bash
+cd ~/Projects/recon-tool && claude
+```
+
+Say something in your own words, then `/ftmo-factory:setup`.
+
+**You should see:** a checklist in plain words before anything changes: the password, the client data on a
+laptop, no git, no tests, and a real bug (a bank row missing from the export is silently dropped: neither
+matched nor on the CHECK list). Then questions about what you know: where a mistake hurts money, who approves,
+and **what the tool must always promise** ("every row is either matched or flagged"). Those promises become
+owned invariants with tests on a made-up sample; the exports leave the repo; the password goes to the secret
+manager, with a note that it must be rotated.
+
+**Shows:** the analyst does not become an engineer. They say what the tool promises; the factory checks it as
+strictly as engineers' code, and engineering finally knows the tool exists.
 
 ## UC2. Guardrails while you write (engineer, 5 min)
 
@@ -67,7 +97,7 @@ Same session, three questions in plain words:
 
 In `~/Projects/ftmo-case-study`:
 
-`/four-eyes:ship orders should reject a limit price with more than 4 decimal places, a client sent 1.234567 and we stored it`
+`/ftmo-factory:ship orders should reject a limit price with more than 4 decimal places, a client sent 1.234567 and we stored it`
 
 **You should see:** Claude writes `issues/<name>.md` in your words and waits for your go (this is where you steer).
 Then the autopilot runs a few minutes on `factory/<name>`: plan, blind tests by a tester who never saw the code,

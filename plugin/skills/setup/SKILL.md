@@ -1,33 +1,62 @@
 ---
-name: init
-description: Put this repository on the FourEyes factory - factory.yaml, standards, the plugin for everyone who clones it, the gate in CI and the issue form. Use when the person asks to set up, install, enable or add FourEyes to a repo.
+name: setup
+description: Bring a repo or a folder under the FTMO software factory, whatever state it is in - an engineering repo, or a tool a non-engineer built with AI that runs on a laptop. Finds what is missing (repo, owner, secrets, production data, tests, what the tool promises), fixes what it can and shows exactly how to do the rest. Once per repo. Use when the person asks to set up, install, enable, adopt or add the factory, or to bring their tool under the company's rules.
 ---
 
-You set FourEyes up in this repository for the person. Everything goes into one branch and one pull request
-that the team reviews like any other change. The templates are at the end of this file.
+You bring this repo or folder under the factory, once. The person may be a team lead setting up an
+engineering repo, or a non-engineer (an analyst, an ops person) whose tool, built with AI, already runs and
+that colleagues depend on. Never make them feel judged: the tool works, you make it safe to keep. Everything
+goes into one branch and one pull request that the team reviews like any other change. The templates are at
+the end of this file.
 
-1. **Already on it?** If `factory.yaml` exists, say so, call the FourEyes MCP `status` and stop.
-2. **Look before you ask.** Find the language and package manager (`pyproject.toml`, `package.json`, ...), the
-   source folder, the test folder and the command that runs the tests, any frontend (apps, web, ui), a design
-   system or style guide, `CLAUDE.md`, `.github/CODEOWNERS` and the CI it uses. Read the README.
-3. **Ask the person, one question at a time,** each with two or three answers to pick, only what you could not
-   find out:
-   - which paths carry money or trust (they become the `money` tier) and which team approves them;
-   - which files only people may change (configs, migrations, invariants);
-   - for a frontend, where the design system is.
+If the person is an engineer in a repo that is already set up (`factory.yaml` exists), call the MCP `status`,
+say in two sentences that setup is done for this repo and that `/ftmo-factory:ship` or simply working with
+Claude is what they want, and stop.
 
-   Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. The person
-   may not know FourEyes, so each question reads on its own, like a good form:
-   - `question`: a real question in full sentences: one sentence of context in plain words, then the question
-     itself, ending with "?". No FourEyes terms. For example: "A mistake in some files costs more than in
-     others. FourEyes checks those files more strictly: the tests must catch 80 % of planted bugs instead of
-     50 %, and a named team approves every change. Which files in this repo should get the stricter check?"
-   - `header`: a short label of two or three words ("Risky files").
-   - `options`: two to four. `label` a few words, `description` what follows from picking it. The recommended
-     one goes first and its label ends with "(Recommended)".
+1. **Look before you ask.** Find out, without changing anything:
+   - Is it a git repo, and does `origin` point to the company's GitHub? Who committed to it?
+   - Language, package manager, source folder, tests and the command that runs them, any frontend and design
+     system, `CLAUDE.md`, `.github/CODEOWNERS`, CI. Read the README.
+   - **Secrets in the code or in files** (`.env`, keys, passwords, connection strings).
+   - **Production data in the folder** (exports: `.csv`, `.xlsx`, `.parquet`, database dumps) or code that
+     reads such files or connects to production with a person's own credentials.
+   - Where it runs today (a laptop, a cron on someone's machine) and who uses it, if the README says.
+2. **Show what you found as a short checklist**, in plain words, each line ✅ or ⚠️ with one sentence why it
+   matters. For example: "⚠️ The tool reads `export_2026-11.csv`, a production export, from this folder. A
+   copy of client data on a laptop is the riskiest part; tests will run on a small made-up sample instead."
+   Then say what you will fix in the branch and what the person must do themselves.
+3. **Ask the person, one question at a time,** only what you could not find out:
+   - where a mistake would hurt clients or money, and who approves those changes (the `money` tier);
+   - what only people may change (configs, migrations, the rules below);
+   - for a frontend, where the design system is;
+   - **what the tool or code promises**: "What must always be true, whatever the input? For example: every
+     row is either matched or flagged, totals on both sides are equal." Ask for two to five such promises in
+     the person's words. They become owned invariants that the gate checks on every change.
+   Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. Ask about
+   what the person knows (their product, their clients, their team), never about the factory's mechanics, and
+   say in the same breath what the answer is for:
+   - `question`: one or two plain sentences ending with "?", purpose first. For example: "Where would a mistake
+     hurt clients or money? Changes there will always need a senior's approval, and their tests will be
+     stricter." Never percentages, tiers or other factory terms in the question; never a bare word.
+   - `header`: a short label of two or three words ("Client risk").
+   - `options`: two to four. `label` in the person's words ("Payout calculations"), `description` the paths
+     it means and what follows (the numbers, such as "tests must catch 80 % of planted bugs instead of 50 %",
+     belong here, for whoever is curious). The recommended one goes first, its label ends with "(Recommended)".
    Write in the language the person uses with you in this conversation or in their CLAUDE.md; English if
-   there is nothing to go by. Never put a question only into the answers, and never a bare word as the question.
-4. **Write, on a branch `foureyes-init`,** in this order (`factory.yaml` last: once it exists, the paths it
+   there is nothing to go by.
+4. **Create the branch `ftmo-factory-setup` and fix what is missing there:**
+   - Secrets: move them out of the code to environment variables read by name, add `.env` and the like to
+     `.gitignore`, and tell the person which secrets to put into the company's secret manager. If a secret is
+     already in git history, say so plainly: it must be rotated.
+   - Production data: remove the exports from the repo and add them to `.gitignore`; write a small made-up
+     sample with the same columns in `tests/data/` for the tests. If the tool must read production, it reads
+     through a read-only connection named in config, never a file on a laptop; say who grants that access.
+   - Promises: write them as `invariants/<name>.yaml` (template below), each with a property test in
+     `tests/invariants/` that runs on the sample data. The approver reviews these tests in the pull request.
+   - No git repo, or no company remote: `git init` here, and tell the person the exact command to create the
+     repo on the company's GitHub (`gh repo create <org>/<name> --private --source . --push`); never create
+     it yourself.
+5. **Write, on the same branch,** in this order (`factory.yaml` last: once it exists, the paths it
    names as owned are closed to agents, including `.github/`):
    - `standards/basics.md` from the template. For a frontend, also `standards/design-system.md`: the design
      system's rules in a few bullets, with a link to where it lives.
@@ -43,9 +72,9 @@ that the team reviews like any other change. The templates are at the end of thi
      not apply. `python` is the interpreter the project's setup creates (for uv: `.venv/bin/python`); the
      test command runs with it (`.venv/bin/python -m pytest`). A design system goes under `standards:`.
    If a write is refused, tell the person which file and why. Never put drafts anywhere else.
-5. **Check it loads:** run `foureyes hook session-start < /dev/null`. It prints the brief every session will
+6. **Check it loads:** run `foureyes hook session-start < /dev/null`. It prints the brief every session will
    get; show the person the paths and tiers it names. Fix `factory.yaml` until it is right.
-6. **Commit and hand over.** Commit with a message that says what was set up. Tell the person in a few lines
+7. **Commit and hand over.** Commit with a message that says what was set up. Tell the person in a few lines
    what each file does and what is left for them:
    - open the pull request (or ask you to, with `gh`);
    - add the repo secrets `ANTHROPIC_API_KEY` (the reviewer and autopilot in CI) and, while the FourEyes repo
@@ -109,6 +138,23 @@ agents:
   reviewer: { model: sonnet, mcp: [] }
 ```
 
+### invariants/<name>.yaml (only when the person named promises)
+
+```yaml
+# What this tool promises, in its owner's words. Owned by people, never edited by an agent.
+domain: reconciliation
+paths: ["src/**"]          # the code these promises hold for
+owners: ["@<the approver>"]
+invariants:
+  - id: REC-1
+    statement: Every row is either matched or flagged, never dropped.
+    why: A dropped row is a payment nobody looks at.
+    test: tests/invariants/test_reconciliation.py::test_every_row_matched_or_flagged
+```
+
+Then in `factory.yaml`: `invariants: [invariants/<name>.yaml]`, `suites.invariants: tests/invariants`, and
+`invariants/**` and `tests/invariants/**` under `owned`.
+
 ### standards/basics.md
 
 ```markdown
@@ -130,9 +176,9 @@ How every change is made here, whoever writes it.
 ```json
 {
   "extraKnownMarketplaces": {
-    "foureyes": { "source": { "source": "github", "repo": "Juicyscoop88/four-eyes" } }
+    "ftmo-factory": { "source": { "source": "github", "repo": "Juicyscoop88/four-eyes" } }
   },
-  "enabledPlugins": { "four-eyes@foureyes": true, "code-review@claude-plugins-official": true }
+  "enabledPlugins": { "ftmo-factory@ftmo-factory": true, "code-review@claude-plugins-official": true }
 }
 ```
 
@@ -157,17 +203,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.2.2
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.0
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer; FOUREYES_TOKEN while the FourEyes repo is private
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.2.2
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.0
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.2.2
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.0
     with: { setup: "SETUP" }
     secrets: inherit
 ```
