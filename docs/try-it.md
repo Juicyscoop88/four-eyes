@@ -265,3 +265,8 @@ Found by running case 2 for real: a project installed with pip, with no `python`
 suites run in the interpreter that runs foureyes (the plugin's own, without pytest or the project), so the
 Stop hook and the gate saw "no report". Now the suites run in the repo's `.venv` if there is one, else the
 `python` on PATH (in CI, the runner's). Pins to `@v0.3.14`.
+
+## From v0.3.14 to v0.3.15
+
+`/decide` works on any pull request, not only the autopilot's: its description is the task, the gate's last
+comment the cards. An agent's JSON with a sentence around it is read instead of crashing. Pins to `@v0.3.15`.

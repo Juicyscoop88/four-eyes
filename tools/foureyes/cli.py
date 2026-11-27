@@ -48,6 +48,9 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("answer", nargs="+")
     d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
     d.add_argument("--comment", help="a file with the gate comment the person answered (its cards are used)")
+    d.add_argument("--branch", default="", help="the pull request's branch, when the autopilot did not make it")
+    d.add_argument("--description", default=os.environ.get("FACTORY_TASK", ""),
+                   help="the pull request's description: the task, when there is no task file")
 
     sub.add_parser("company", help="the company's settings: its GitHub organisation and who adopts self-built tools")
 
@@ -92,7 +95,8 @@ def cmd_decide(args) -> int:
     factory = load(repo_root())
     pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=log)
     cards = cards_from(Path(args.comment).read_text()) if args.comment else None
-    path = pilot.decide(args.card, " ".join(args.answer), args.by or author_of(factory.root), cards)
+    path = pilot.decide(args.card, " ".join(args.answer), args.by or author_of(factory.root), cards,
+                        branch=args.branch, description=args.description)
     print(f"decide: report in {path.relative_to(factory.root)}")
     return 0
 
