@@ -3,7 +3,7 @@
 For each finished task (a factory/<slug> branch):
 - an adversary who sees the code plants k realistic bugs, one edit each;
 - each bug runs against every suite: the author's tests, the tester's (on opus, as the factory runs it,
-  and on cheaper models writing from scratch), the owned invariants, and the invariants with the
+  and on cheaper models writing from scratch), the protected tests, and the protected tests with the
   tester's proposal;
 - a bug no test catches goes to the reviewer, the last check before a person;
 - the same tester variants are scored by mutation on the changed lines.
@@ -81,13 +81,13 @@ def evaluate(factory: Factory, slug: str, k: int, testers: list[str], log=print)
                     break
                 if label == factory.models["tester"]:
                     entry["caught_by"]["author"] = "author" in suites
-                    entry["caught_by"]["invariants"] = "invariants" in suites
+                    entry["caught_by"]["protected"] = "protected" in suites
                 if label == "proposal":
-                    entry["caught_by"]["invariants_with_proposal"] = "invariants" in suites
+                    entry["caught_by"]["invariants_with_proposal"] = "protected" in suites
                 else:
                     entry["caught_by"][f"tester_{label}"] = "tester" in suites
             if "invalid" not in entry:
-                factory_tests = entry["caught_by"][f"tester_{factory.models['tester']}"] or entry["caught_by"]["invariants"]
+                factory_tests = entry["caught_by"][f"tester_{factory.models['tester']}"] or entry["caught_by"]["protected"]
                 entry["caught_by"]["gate_tests"] = factory_tests
                 if not factory_tests:
                     original = _apply(root, bug)
@@ -125,9 +125,9 @@ def summary(results: list[dict], testers: list[str]) -> str:
     ]
     lines += [f"| tester on {m} (blind) | {count('tester_' + m)} of {n} |" for m in testers]
     lines += [
-        f"| owned invariants | {count('invariants')} of {n} |",
-        f"| owned invariants with the tester's proposal | {count('invariants_with_proposal')} of {n} |",
-        f"| **the gate's tests** (factory tester + invariants) | **{count('gate_tests')} of {n}** |",
+        f"| protected tests | {count('protected')} of {n} |",
+        f"| protected tests with the tester's proposal | {count('invariants_with_proposal')} of {n} |",
+        f"| **the gate's tests** (factory tester + protected tests) | **{count('gate_tests')} of {n}** |",
         f"| reviewer, on the bugs no test caught | {count('reviewer')} of {n - count('gate_tests')} |",
         "",
         "## Tester models, by mutation on the changed lines\n",

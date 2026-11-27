@@ -9,10 +9,10 @@ owned:
   - plugin/**
   - .github/**
 
-invariants:
+rules:                           # named rules the protected tests hold (optional)
   - invariants/orders.yaml
 
-# Standards: how things are done here. Softer than invariants: the agent gets them as advice
+# Standards: how things are done here. Softer than protected tests: the agent gets them as advice
 # (rules_for in the MCP server), the reviewer checks them, and what can be measured is measured.
 standards:
   - paths: ["**"]
@@ -28,12 +28,12 @@ standards:
 suites:
   author: tests/unit          # written by whoever wrote the code
   tester: tests/blind         # written by the tester, who never saw the code
-  invariants: tests/invariants  # owned by people
+  protected: tests/invariants   # owned by people: no agent changes them, a failing one blocks
 
 tiers:
   money:
     paths: ["src/orders/**"]
-    mutation_min: 0.8     # share of injected faults the tester and invariant tests must catch
+    mutation_min: 0.8     # share of injected faults the tester and protected tests must catch
     approver: senior      # CODEOWNERS group that approves
   standard:
     paths: ["src/**"]

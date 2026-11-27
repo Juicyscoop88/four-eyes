@@ -2,7 +2,7 @@
 
 plan (author) -> blind tests (tester) -> code (author, under the hooks) -> gate
   -> until the score is met: surviving faults, in words, back to the tester (via the reviewer)
-  -> a proposal for the owners when the invariants do not cover the change
+  -> a proposal for the owners when the protected tests do not cover the change
   -> the reviewer's decision cards -> the merge request (here: a branch and its report)
 
 Every step is a commit by its role, so the history says who did what. A person can take the wheel at any
@@ -123,8 +123,8 @@ class Pilot:
         root = self.f.root
         # One gate run with the reviewer: every run repeats the mutation testing, the slowest part of the gate.
         final = check(self.f, self.base, self.task(), True, equivalent, log=lambda m: None)
-        uncovered = final.counted and final.caught("invariants") < len(final.counted) / 2
-        final.proposal = self.propose(final) if self.f.invariants and uncovered else None
+        uncovered = final.counted and final.caught("protected") < len(final.counted) / 2
+        final.proposal = self.propose(final) if self.f.rules and uncovered else None
         final.agent_runs = self.runs + final.agent_runs
         self.step("gate with the reviewer: " + ("passed" if final.passed else "blocked"), final.review.run if final.review else None)
 
@@ -137,7 +137,7 @@ class Pilot:
             "issue": self.slug, "requested_by": self.requested_by, "passed": final.passed,
             "score": final.score, "mutants": len(final.counted), "equivalent": final.equivalent,
             "base": self.base,
-            "caught": {s: final.caught(s) for s in ("author", "tester", "invariants")},
+            "caught": {s: final.caught(s) for s in ("author", "tester", "protected")},
             "proposal": proposal, "cost_usd": round(sum(r.cost_usd for r in final.agent_runs), 3),
             "minutes": round((time.monotonic() - self.started) / 60, 1), "steps": self.steps,
             "cards": final.cards(),
@@ -229,19 +229,19 @@ class Pilot:
         work = checkout_copy(self.f.root)
         try:
             (work / path).write_text(text)
-            failures, _ = run_suites(self.f, work, only=("invariants",))
+            failures, _ = run_suites(self.f, work, only=("protected",))
             if failures:
                 self.step("the proposal fails on the current code, dropped", failures=[f.message for f in failures][:3])
                 return None
             targets = {f: changed_lines(self.f.root, self.base, f) for f in res.files
                        if self.f.is_source(f) and (self.f.root / f).exists()}
-            only_invariants = (self.f.suites["invariants"],)  # only their catches are counted here
-            after = [m for m in mutation.run(self.f, work, targets, paths=only_invariants) if m.id not in res.equivalent]
+            only_protected = (self.f.suites["protected"],)  # only their catches are counted here
+            after = [m for m in mutation.run(self.f, work, targets, paths=only_protected) if m.id not in res.equivalent]
         finally:
             shutil.rmtree(work, ignore_errors=True)
         dest = f".factory/proposals/{self.slug}/{path}"
         (self.f.root / dest).parent.mkdir(parents=True, exist_ok=True)
         (self.f.root / dest).write_text(text)
         self.commit("tester", f"Proposal for the owners: invariant tests that cover {self.slug}")
-        caught = sum(1 for m in after if "invariants" in m.caught_by)
-        return {"file": dest, "target": path, "before": res.caught("invariants"), "after": caught, "n": len(after)}
+        caught = sum(1 for m in after if "protected" in m.caught_by)
+        return {"file": dest, "target": path, "before": res.caught("protected"), "after": caught, "n": len(after)}

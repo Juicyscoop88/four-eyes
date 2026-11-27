@@ -1,8 +1,8 @@
 """The gate: what a change must prove before it merges.
 
-1. Owned files (invariants, their tests, factory.yaml) need their owners, never an agent.
+1. Owned files (protected tests, factory.yaml) need their owners, never an agent.
 2. Every suite passes, and a broken invariant is named in words.
-3. Mutation: the tester's and the invariants' tests catch enough faults injected into the changed
+3. Mutation: the tester's and the protected tests catch enough faults injected into the changed
    lines. The author's own tests are measured too, but they do not count: nobody checks their own work.
 4. The reviewer, who never saw the author's conversation, writes a review map: where a person must look.
 """
@@ -21,9 +21,9 @@ from foureyes.config import Factory
 from foureyes.diff import changed_files, changed_lines, diff_text, git
 from foureyes.tests import Failure, base_copy, checkout_copy, run_suites
 
-INDEPENDENT = ("tester", "invariants")
+INDEPENDENT = ("tester", "protected")
 SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests",
-               "invariants": "of the protected tests (owned by people)"}
+               "protected": "of the protected tests (owned by people)"}
 
 
 @dataclass
@@ -119,11 +119,11 @@ def check(
             log("gate: tests fail, checking which already failed on the base")
             res.preexisting = already_failing(factory, base, res.failures)
             res.failures = [f for f in res.failures if f not in res.preexisting]
-        broken = {inv.id: inv for f in res.failures if (inv := invariant_of(factory, f))}
+        broken = {inv.id: inv for f in res.failures if (inv := rule_of(factory, f))}
         res.blocks += [f"{inv.id} broken: {inv.statement}" for inv in broken.values()]
-        for suite in ("tester", "author", "other", "collection", "timeout", "invariants"):
+        for suite in ("tester", "author", "other", "collection", "timeout", "protected"):
             # an invariant test that names its invariant is blocked above, in words; any other one blocks here
-            n = sum(1 for f in res.failures if f.suite == suite and not (suite == "invariants" and invariant_of(factory, f)))
+            n = sum(1 for f in res.failures if f.suite == suite and not (suite == "protected" and rule_of(factory, f)))
             if n:
                 res.blocks.append(f"{n} {SUITE_NAMES.get(suite, suite)} fail")
 
@@ -153,7 +153,7 @@ def already_failing(factory: Factory, base: str, failures: list[Failure]) -> lis
     """The failures that the base revision has too. A mature repo often has a red test nobody fixed yet; it is
     reported, but it neither blocks this change nor sends its author to fix someone else's test. An owned invariant
     is the exception: red on the base or not, a broken invariant always blocks."""
-    failures = [f for f in failures if f.suite not in ("collection", "timeout", "invariants")]
+    failures = [f for f in failures if f.suite not in ("collection", "timeout", "protected")]
     files = sorted({f.file for f in failures})
     if not files:
         return []
@@ -201,11 +201,11 @@ def first_sentence(text: str) -> str:
     return m.group(1) if m else text
 
 
-def invariant_of(factory: Factory, failure: Failure):
-    if failure.suite != "invariants":
+def rule_of(factory: Factory, failure: Failure):
+    if failure.suite != "protected":
         return None
     m = re.match(r"(?:AssertionError: )?([A-Z]+-\d+):", failure.message)
-    return factory.invariant(m.group(1)) if m else None
+    return factory.rule(m.group(1)) if m else None
 
 
 def facts(res: Result) -> str:
@@ -214,7 +214,7 @@ def facts(res: Result) -> str:
     lines += [f"- already failing on the base, not caused by this change: {f.test}: {f.message}" for f in res.preexisting]
     if res.mutants:
         lines.append(f"Mutation: {len(res.counted)} faults injected into the changed lines.")
-        for suite in ("author", "tester", "invariants"):
+        for suite in ("author", "tester", "protected"):
             lines.append(f"- {suite} tests caught {res.caught(suite)}")
         lines += [f"- {m.id} survived the independent tests: {m.path}:{m.line} {m.description}" for m in res.survivors]
         lines += [f"- {i} judged equivalent: {why}" for i, why in res.equivalent.items()]
@@ -262,7 +262,7 @@ def report(factory: Factory, res: Result, head: str) -> str:
                    f"without seeing the code: {', '.join(f'`{w}`' for w in res.blind_written)}. They ran in the gate's "
                    "copy only; the branch is unchanged.\n")
     for f in res.failures:
-        inv = invariant_of(factory, f)
+        inv = rule_of(factory, f)
         label = f"**{inv.id}** {inv.statement} *Why it matters:* {inv.why}" if inv else f"`{f.test}`"
         out.append(f"- {f.suite}: {label}\n  `{f.message}`")
     if res.failures:
@@ -281,7 +281,7 @@ def report(factory: Factory, res: Result, head: str) -> str:
         out.append("| Tests | Written by | Caught | Counts |\n|---|---|---|---|")
         out.append(f"| author | whoever wrote the code | {res.caught('author')} of {n} | no, nobody checks their own work |")
         out.append(f"| tester | the tester, who never saw the code | {res.caught('tester')} of {n} | yes |")
-        out.append(f"| protected | people own them | {res.caught('invariants')} of {n} | yes |")
+        out.append(f"| protected | people own them | {res.caught('protected')} of {n} | yes |")
         out.append(f"| **tester + protected** | | **{res.caught(*INDEPENDENT)} of {n}** ({res.score:.0%}, needs {res.mutation_min:.0%}) | |\n")
         if res.survivors:
             out.append("<details><summary>Faults no independent test caught</summary>\n")
