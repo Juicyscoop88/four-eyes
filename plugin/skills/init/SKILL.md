@@ -16,13 +16,17 @@ that the team reviews like any other change. The templates are at the end of thi
    - which files only people may change (configs, migrations, invariants);
    - for a frontend, where the design system is.
 
-   The person may not know FourEyes. Before each question, say in one or two plain sentences, in the
-   person's language and without FourEyes' terms, what it is about and what the answer changes. Title the
-   question in plain words ("Where does a mistake cost the most?", not "Money tier"). For example: "Some code
-   is riskier than the rest: a mistake there costs money or trust. FourEyes is stricter there: its tests must
-   catch at least 80 % of planted bugs instead of 50 %, a named team approves the merge, and Claude gets the
-   money rules whenever it opens such a file." Each answer says in a few words what follows from it, and
-   one is marked as your recommendation with the reason.
+   Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. The person
+   may not know FourEyes, so each question reads on its own, like a good form:
+   - `question`: a real question in full sentences: one sentence of context in plain words, then the question
+     itself, ending with "?". No FourEyes terms. For example: "A mistake in some files costs more than in
+     others. FourEyes checks those files more strictly: the tests must catch 80 % of planted bugs instead of
+     50 %, and a named team approves every change. Which files in this repo should get the stricter check?"
+   - `header`: a short label of two or three words ("Risky files").
+   - `options`: two to four. `label` a few words, `description` what follows from picking it. The recommended
+     one goes first and its label ends with "(Recommended)".
+   Write in the language the person uses with you in this conversation or in their CLAUDE.md; English if
+   there is nothing to go by. Never put a question only into the answers, and never a bare word as the question.
 4. **Write, on a branch `foureyes-init`,** in this order (`factory.yaml` last: once it exists, the paths it
    names as owned are closed to agents, including `.github/`):
    - `standards/basics.md` from the template. For a frontend, also `standards/design-system.md`: the design
@@ -153,17 +157,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.2.1
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.2.2
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer; FOUREYES_TOKEN while the FourEyes repo is private
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.2.1
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.2.2
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.2.1
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.2.2
     with: { setup: "SETUP" }
     secrets: inherit
 ```
