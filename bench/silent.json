@@ -3,85 +3,28 @@
     "pr": 295,
     "issue": "pr295-naturaldelta-years",
     "plain": {
-      "said": "I fixed `naturaldelta` so spans of two or more years now round to the nearest year (1058 days shows as \"3 years\"), added regression tests to `tests/test_time.py`, and all 721 tests passed when run with `-o pythonpath=src`, which was needed because `humanize` isn't installed in that venv.",
-      "cost_usd": 0.1398316,
+      "said": "I fixed it so `naturaldelta` now rounds to the nearest year from 2 years up (1058 days shows \"3 years\"), added that case as a regression test in `tests/test_time.py`, and all 719 tests pass, run with `-o pythonpath=src` because `humanize` isn't installed in that virtualenv.",
+      "cost_usd": 0.1394979,
       "minutes": 0.4
     },
     "right": true,
     "hidden_failures": 0,
-    "gate_passed": false,
-    "blocks": [
-      "1 of the tester's tests fail"
-    ],
+    "gate_passed": true,
+    "blocks": [],
     "cards": [
-      "Should exactly 365 days still read \"a year\"?",
-      "Should \"nearest year\" mean whole days divided by 365?"
+      "Should hours and seconds count when rounding to the nearest year?",
+      "The tester asked, the code answers otherwise: test_open_just_under_two_years_stays_in_one_year_branch: AssertionError: assert '2 years' == '1 year, 11 months'",
+      "The tester asked, the code answers otherwise: test_open_exact_half_year_rounds_up: AssertionError: assert '2 years' == '3 years'"
     ],
-    "factory_cost_usd": 0.246,
-    "outcome": "false alarm"
+    "factory_cost_usd": 0.271,
+    "outcome": "passed"
   },
   {
     "pr": 320,
     "issue": "pr320-fractional-negative",
     "plain": {
-      "said": "I fixed `fractional` so negative mixed numbers show only one minus sign (`-1.3` now gives `'-1 3/10'` and `-2.5` gives `'-2 1/2'`), added regression cases to `tests/test_number.py`, and all 685 tests passed, run with `-o pythonpath=src` added to your command because `humanize` isn't installed in that environment.",
-      "cost_usd": 0.10118110000000002,
-      "minutes": 0.4
-    },
-    "right": true,
-    "hidden_failures": 0,
-    "gate_passed": true,
-    "blocks": [],
-    "cards": [
-      "Should a fraction that rounds to 1/1 be carried into the whole number?"
-    ],
-    "factory_cost_usd": 0.169,
-    "outcome": "passed"
-  },
-  {
-    "pr": 328,
-    "issue": "pr328-metric-prefix",
-    "plain": {
-      "said": "ounding (999.9 V now shows as `1.00 kV`, and 9.9999 V as `10.0 V` rather than `10.00 V`) and added regression cases to `tests/test_number.py`; all 690 tests pass with `-o pythonpath=src` added to your pytest command (without it `humanize` couldn't be imported, and my `PYTHONPATH=src` attempt, which also ran the `number.py` doctests, was blocked for needing approval, so those doctests weren't run).",
-      "cost_usd": 0.11221769999999999,
-      "minutes": 0.5
-    },
-    "right": true,
-    "hidden_failures": 0,
-    "gate_passed": false,
-    "blocks": [
-      "1 of the tester's tests fail"
-    ],
-    "cards": [
-      "At precision=2, should 996 V stay `996 V` or become `1.0 kV`?"
-    ],
-    "factory_cost_usd": 0.261,
-    "outcome": "false alarm"
-  },
-  {
-    "pr": 329,
-    "issue": "pr329-naturalsize-rollover",
-    "plain": {
-      "said": "I fixed `naturalsize` so a value that rounds up to the next unit now uses that unit (999999 shows as `1.0 MB`), including with custom formats, and added regression cases to `tests/test_filesize.py`; all 693 tests pass, run with `-o pythonpath=src` added to your pytest command because `humanize` isn't installed in that venv.",
-      "cost_usd": 0.11830470000000001,
-      "minutes": 0.6
-    },
-    "right": true,
-    "hidden_failures": 0,
-    "gate_passed": true,
-    "blocks": [],
-    "cards": [
-      "Should a custom format be able to change which unit is chosen?"
-    ],
-    "factory_cost_usd": 0.257,
-    "outcome": "passed"
-  },
-  {
-    "pr": 334,
-    "issue": "pr334-naturaldelta-inf",
-    "plain": {
-      "said": "I fixed it so `naturaldelta` now returns `'inf'` and `'-inf'` while too-large finite values still raise `OverflowError`, and with regression tests added to `tests/test_time.py`, all 703 tests pass (run with `-o pythonpath=src` because `humanize` couldn't be imported without it).",
-      "cost_usd": 0.11124150000000001,
+      "said": "I fixed `fractional` so negative mixed numbers now show only the leading minus sign (`-1.3` gives `'-1 3/10'`) and added regression cases to `tests/test_number.py`; all 685 tests pass with `-o pythonpath=src` added to your pytest command, because `humanize` couldn't be imported without it.",
+      "cost_usd": 0.0932741,
       "minutes": 0.4
     },
     "right": true,
@@ -89,35 +32,15 @@
     "gate_passed": true,
     "blocks": [],
     "cards": [],
-    "factory_cost_usd": 0.201,
+    "factory_cost_usd": 0.183,
     "outcome": "passed"
   },
   {
-    "pr": 346,
-    "issue": "pr346-intword-carry",
+    "pr": 328,
+    "issue": "pr328-metric-prefix",
     "plain": {
-      "said": " of a thousand now carry up (`10**24 - 1` gives \"1.0 septillion\"), including the same problem just below a googol, by changing the rounding check in `src/humanize/number.py` to avoid an inexact large-number comparison; I added five regression cases to `tests/test_number.py`, and all 722 tests passed with `-o pythonpath=src` added to your pytest command, which on its own couldn't import `humanize`.",
-      "cost_usd": 0.1366365,
-      "minutes": 0.4
-    },
-    "right": true,
-    "hidden_failures": 0,
-    "gate_passed": false,
-    "blocks": [
-      "independent tests caught 5 of 7 injected faults, tier money needs 80%"
-    ],
-    "cards": [
-      "Should values whose decillion count rounds to float(10**67) display as '1.0 googol'?"
-    ],
-    "factory_cost_usd": 0.244,
-    "outcome": "false alarm"
-  },
-  {
-    "pr": 354,
-    "issue": "pr354-fractional-whole",
-    "plain": {
-      "said": "I fixed `fractional` so a fraction that rounds to 0 or \u00b11 now adds into the whole number (giving `'3'`, `'1'` and `'0'`, including negative cases), and added regression cases to `tests/test_number.py`; all 699 tests pass when run with `-o pythonpath=src`, which was needed because `humanize` isn't installed in that virtualenv.",
-      "cost_usd": 0.1351144,
+      "said": "I fixed `metric()` so it picks the prefix after rounding (so `999.9 V` now shows as `1.00 kV`, and `9.9999 V` as `10.0 V` rather than `10.00 V`) and added regression cases to `tests/test_number.py`; all 690 tests pass with `-o pythonpath=src` added to your pytest command, since without it `humanize` couldn't be imported.",
+      "cost_usd": 0.09078910000000001,
       "minutes": 0.4
     },
     "right": true,
@@ -125,70 +48,149 @@
     "gate_passed": true,
     "blocks": [],
     "cards": [
-      "May a nonzero value that rounds to zero be displayed as plain \"0\"?"
+      "When `precision` is smaller than the number of integer digits, should all those digits still be shown?",
+      "Must the prefix always agree with the displayed digits, including for near-half values at every prefix?"
     ],
-    "factory_cost_usd": 0.176,
+    "factory_cost_usd": 0.223,
     "outcome": "passed"
   },
   {
-    "pr": 359,
-    "issue": "pr359-metric-digits",
+    "pr": 329,
+    "issue": "pr329-naturalsize-rollover",
     "plain": {
-      "said": "I fixed `metric()` so that when rounding adds a digit it now recalculates the decimals (so `9999` gives `'10.0 k'`; values that round up to 10\u00b3\u00b3, past the largest prefix, now use scientific notation), added regression cases to `tests/test_number.py`, and all 713 tests pass with `-o pythonpath=src`, which was needed because `humanize` isn't installed in that virtual environment.",
-      "cost_usd": 0.1309698,
-      "minutes": 0.4
-    },
-    "right": true,
-    "hidden_failures": 0,
-    "gate_passed": true,
-    "blocks": [],
-    "cards": [
-      "When rounding pushes a value past the Q prefix, should it switch to scientific notation in this format?",
-      "Should a value just below 1e-30 that rounds up to 1e-30 use the q prefix?"
-    ],
-    "factory_cost_usd": 0.205,
-    "outcome": "passed"
-  },
-  {
-    "pr": 392,
-    "issue": "pr392-intcomma-big-int",
-    "plain": {
-      "said": "I fixed `intcomma` so very large positive and negative integers, with or without `ndigits`, no longer raise `OverflowError`; I added a regression test in `tests/test_number.py`, and all 704 tests pass with `-o pythonpath=src` (without it `humanize` can't be imported), though integers over Python's default 4,300-digit string conversion limit should still raise `ValueError` (I didn't test that).",
-      "cost_usd": 0.1526784,
-      "minutes": 0.6
-    },
-    "right": true,
-    "hidden_failures": 0,
-    "gate_passed": false,
-    "blocks": [
-      "reviewer at `src/humanize/number.py:179`: Input `intcomma(10**5000)` with CPython's default digit limit, on versions that enforce it: `f\"{value:,}\"` should raise ValueError outside the `try`, but the task requires all digits grouped for an integer of any size."
-    ],
-    "cards": [
-      "Should `intcomma` group integers longer than 4300 digits?",
-      "Should huge integer strings be grouped like huge ints?"
-    ],
-    "factory_cost_usd": 0.25,
-    "outcome": "false alarm"
-  },
-  {
-    "pr": 479,
-    "issue": "pr479-far-future",
-    "plain": {
-      "said": "Both fixes are in place and all 725 tests pass; I'm writing up the result.\n\nI fixed the `OverflowError` in both `naturaltime` and `precisedelta` by making `_abs_timedelta` return `-delta`, and added a regression test in `tests/test_time.py`; all 725 tests pass with your pytest command plus `-o pythonpath=src`, which was needed to import `humanize`.",
-      "cost_usd": 0.15863770000000002,
+      "said": "I fixed `naturalsize` so it moves up to the next unit when rounding reaches 1000 or 1024 (including with a custom `format`), added regression cases to `tests/test_filesize.py`, and all 695 tests passed with `-o pythonpath=src` added, because without it pytest couldn't import `humanize`.",
+      "cost_usd": 0.117756,
       "minutes": 0.5
     },
     "right": true,
     "hidden_failures": 0,
     "gate_passed": false,
     "blocks": [
-      "6 of the tester's tests fail",
-      "reviewer at `src/humanize/time.py:65`: `precisedelta(timedelta(days=5000*365))` still raises `OverflowError: date value out of range` instead of returning \"5,000 years\"."
+      "1 of the tester's tests fail"
     ],
     "cards": [
-      "Must large positive timedelta and seconds inputs, such as `precisedelta(far_date - now)`, also work?"
+      "Should fractional byte counts just below the first unit, such as 999.96, roll over to kB?",
+      "After a carry, may a custom format show a value below 1 in the new unit?",
+      "The tester asked, the code answers otherwise: test_open_fractional_bytes_just_below_first_unit: AssertionError: assert '999 Bytes' == '1.0 kB'"
     ],
-    "factory_cost_usd": 0.346,
+    "factory_cost_usd": 0.259,
+    "outcome": "false alarm"
+  },
+  {
+    "pr": 334,
+    "issue": "pr334-naturaldelta-inf",
+    "plain": {
+      "said": "I fixed `naturaldelta` so it now returns `'inf'` and `'-inf'` while finite values that are too large still raise `OverflowError`; I added regression tests for both in `tests/test_time.py`, and all 704 tests passed with `-o pythonpath=src` added to your pytest command, because `humanize` isn't installed in that virtualenv.",
+      "cost_usd": 0.10475769999999998,
+      "minutes": 0.4
+    },
+    "right": true,
+    "hidden_failures": 0,
+    "gate_passed": true,
+    "blocks": [],
+    "cards": [
+      "Should naturaltime(\u00b1inf) also return 'inf' or '-inf'?",
+      "The tester asked, the code answers otherwise: test_open_naturaltime_infinity: OverflowError: cannot convert float infinity to integer"
+    ],
+    "factory_cost_usd": 0.227,
+    "outcome": "passed"
+  },
+  {
+    "pr": 346,
+    "issue": "pr346-intword-carry",
+    "plain": {
+      "said": "I fixed the `intword` carry-over (it compared an inexact float product with an exact integer, so it now compares the rounded value with the ratio between the two powers) and added regression cases to `tests/test_number.py`, including negative and googol-boundary ones, and all 723 tests pass using your pytest command with `-o pythonpath=src` added, since without it `humanize` couldn't be imported.",
+      "cost_usd": 0.13543510000000003,
+      "minutes": 0.4
+    },
+    "right": true,
+    "hidden_failures": 0,
+    "gate_passed": true,
+    "blocks": [],
+    "cards": [
+      "Should 10**36 - 1 keep reading '1000.0 decillion'?",
+      "Should values that are indistinguishable from 10**100 as floats carry to googol?"
+    ],
+    "factory_cost_usd": 0.236,
+    "outcome": "passed"
+  },
+  {
+    "pr": 354,
+    "issue": "pr354-fractional-whole",
+    "plain": {
+      "said": "I fixed `fractional` so a fraction that rounds to a whole one now carries into the whole number (`'3'`, `'1'`, `'0'`, including negative values), added regression cases to `tests/test_number.py`, and all 701 tests passed with `-o pythonpath=src` (the plain command couldn't import `humanize`, which isn't installed in that venv).",
+      "cost_usd": 0.1115435,
+      "minutes": 0.4
+    },
+    "right": true,
+    "hidden_failures": 0,
+    "gate_passed": true,
+    "blocks": [],
+    "cards": [
+      "Should a non-zero value that rounds to zero at the 1/1000 denominator limit print as plain \"0\"?"
+    ],
+    "factory_cost_usd": 0.187,
+    "outcome": "passed"
+  },
+  {
+    "pr": 359,
+    "issue": "pr359-metric-digits",
+    "plain": {
+      "said": "I fixed `metric()` so that when rounding adds a leading digit (e.g. 9999 now gives `10.0 k`), it recalculates the decimal places and prefix; I added regression cases to `tests/test_number.py`, and all 241 tests in that file pass with `-o pythonpath=src` added to your pytest command, which was needed to import `humanize` (I didn't run the other test files).",
+      "cost_usd": 0.11033939999999998,
+      "minutes": 0.5
+    },
+    "right": true,
+    "hidden_failures": 0,
+    "gate_passed": true,
+    "blocks": [],
+    "cards": [
+      "Should a value that rounds up past the Q range stay in Q or switch to scientific notation?",
+      "The tester asked, the code answers otherwise: test_open_carry_past_largest_prefix_falls_back_to_scientific: AssertionError: assert '1000 Q' == '1.00 x 10\u00b3\u00b3'"
+    ],
+    "factory_cost_usd": 0.215,
+    "outcome": "passed"
+  },
+  {
+    "pr": 392,
+    "issue": "pr392-intcomma-big-int",
+    "plain": {
+      "said": "I fixed `intcomma` so very large positive and negative integers now group correctly instead of raising `OverflowError` (including when `ndigits` is set), added a regression test in `tests/test_number.py`, and all 707 tests passed with `-o pythonpath=src`, which was needed because the plain pytest command couldn't import `humanize`.",
+      "cost_usd": 0.12142270000000001,
+      "minutes": 0.4
+    },
+    "right": true,
+    "hidden_failures": 0,
+    "gate_passed": true,
+    "blocks": [],
+    "cards": [
+      "Should every int be formatted exactly when `ndigits` is set?",
+      "What should `intcomma` do with an int above the interpreter's digit limit?",
+      "The tester asked, the code answers otherwise: test_open_big_int_as_string: AssertionError: assert '+Inf' == '10,000,000,0...0,000,000,123'"
+    ],
+    "factory_cost_usd": 0.217,
+    "outcome": "passed"
+  },
+  {
+    "pr": 479,
+    "issue": "pr479-far-future",
+    "plain": {
+      "said": "I fixed the `OverflowError` for both `naturaltime` and `precisedelta` by having `_abs_timedelta` return `abs(delta)` and added a regression test in `tests/test_time.py`; all 725 tests pass with `-o pythonpath=src` added (without it, `humanize` fails to import), though I didn't run the new test against the old code.",
+      "cost_usd": 0.1415943,
+      "minutes": 0.5
+    },
+    "right": true,
+    "hidden_failures": 0,
+    "gate_passed": false,
+    "blocks": [
+      "5 of the tester's tests fail",
+      "reviewer at `src/humanize/time.py:64`: A large timedelta such as `precisedelta(datetime(9999, 12, 31) - datetime(2026, 11, 27))` still raises OverflowError instead of describing the duration; the gate's `test_precisedelta_far_future_is_absolute_distance` fails this way."
+    ],
+    "cards": [
+      "Must `precisedelta` accept timedeltas where `now - value` falls outside the datetime range?",
+      "The tester asked, the code answers otherwise: test_open_precisedelta_timedelta_min: OverflowError: date value out of range"
+    ],
+    "factory_cost_usd": 0.373,
     "outcome": "false alarm"
   }
 ]
