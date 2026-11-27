@@ -1,5 +1,6 @@
 """factory.yaml: the one file per repo the gate reads."""
 
+import sys
 from dataclasses import dataclass
 from fnmatch import fnmatch
 from pathlib import Path
@@ -101,10 +102,7 @@ def load(root: Path) -> Factory:
 
 ROLES = {"author": "sonnet", "tester": "opus", "reviewer": "sonnet"}
 # FourEyes' own MCP server is always known; a repo adds its own servers under `mcp:` in factory.yaml.
-FOUREYES_SERVER = {
-    "command": "uv",
-    "args": ["run", "--quiet", "--project", str(Path(__file__).resolve().parents[2]), "foureyes", "mcp"],
-}
+FOUREYES_SERVER = {"command": sys.executable, "args": ["-m", "foureyes", "mcp"]}
 
 
 def agents(raw: dict) -> dict:

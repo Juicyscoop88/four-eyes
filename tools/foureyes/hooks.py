@@ -1,7 +1,10 @@
 """The plugin's hooks in Claude Code. They make the author's own session follow the rules early;
 the gate in CI enforces the same rules for everyone, hooks or not.
 
+- SessionStart: Claude learns that this repo has a factory, what people own and how to ship.
 - PreToolUse: an agent never edits an owned file and never writes something that looks like a secret.
+  The first time a session touches a path, Claude gets the rules for it (invariants, standards such as the
+  design system) without having to ask: the guardrails do not depend on the agent calling a tool.
 - Stop: an agent that changed code is not done while an invariant is broken.
 """
 
@@ -9,10 +12,12 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from foureyes.config import Factory
 from foureyes.diff import changed_files, git
+from foureyes.rules import rules_for
 from foureyes.tests import run_suites
 
 WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
@@ -40,9 +45,41 @@ def deny(reason: str) -> int:
 
 def handle(factory: Factory, event: str, raw: str) -> int:
     data = json.loads(raw or "{}")
+    if event == "session-start":
+        return session_start(factory)
     if event == "pre-tool-use":
         return pre_tool_use(factory, data)
     return stop(factory, data)
+
+
+def context(event: str, text: str) -> int:
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}}))
+    return 0
+
+
+def session_start(factory: Factory) -> int:
+    lines = [
+        "This repository runs FourEyes: nobody, human or agent, checks their own work. Every pull request goes "
+        "through its gate in CI (blind tests from a tester who never sees the code, injected faults, a reviewer).",
+        f"- Owned by people, never edited by an agent: {', '.join(factory.owned) or 'nothing'}.",
+        "- Risk tiers: " + "; ".join(f"{t.name} ({', '.join(t.paths)})" for t in factory.tiers) + ".",
+    ]
+    if factory.standards:
+        lines.append("- Standards (how it is done here): " + "; ".join(
+            f"{s.file} for {', '.join(s.paths)}" for s in factory.standards) + ". You get them when you touch those paths.")
+    lines.append("- To have the factory build something, the person says `/four-eyes:ship <what and why>`; "
+                 "`rules_for`, `why` and `status` in the FourEyes MCP explain the rest.")
+    return context("SessionStart", "\n".join(lines))
+
+
+def first_touch(session: str, path: str) -> bool:
+    """True the first time this session touches path (the rules are given once, not on every edit)."""
+    seen_file = Path(tempfile.gettempdir()) / f"foureyes-seen-{re.sub(r'[^A-Za-z0-9_-]', '', session) or 'none'}.json"
+    seen = set(json.loads(seen_file.read_text())) if seen_file.exists() else set()
+    if path in seen:
+        return False
+    seen_file.write_text(json.dumps(sorted(seen | {path})))
+    return True
 
 
 def pre_tool_use(factory: Factory, data: dict) -> int:
@@ -67,6 +104,8 @@ def pre_tool_use(factory: Factory, data: dict) -> int:
                 f"This looks like a {name}. Secrets never go into the repo: reference it from "
                 "Secret Manager (or an environment variable) by name, never by value."
             )
+    if first_touch(data.get("session_id", ""), rel):
+        return context("PreToolUse", rules_for(factory, rel))
     return 0
 
 

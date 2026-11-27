@@ -12,6 +12,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from dataclasses import dataclass, field
@@ -20,7 +21,9 @@ from pathlib import Path
 from foureyes.config import Factory
 from foureyes.tests import checkout_copy
 
-PLUGIN = Path(__file__).resolve().parents[2] / "plugin"
+ROLES = Path(__file__).resolve().parent / "roles"
+# FourEyes itself, as the interpreter running it now: the author's hooks call back into the same install.
+FOUREYES = f'"{sys.executable}" -m foureyes'
 
 
 @dataclass
@@ -35,7 +38,7 @@ class AgentRun:
 
 def role_prompt(role: str) -> str:
     """The role's instructions, from the plugin's role file, so local and CI share one text."""
-    text = (PLUGIN / "roles" / f"{role}.md").read_text()
+    text = (ROLES / f"{role}.md").read_text()
     return re.sub(r"\A---\n.*?\n---\n", "", text, flags=re.S).strip()
 
 
@@ -61,7 +64,7 @@ def claude(
     ]
     allowed = (*allowed, *(f"mcp__{n}" for n in servers))
     if hooks:
-        cmd += ["--plugin-dir", str(PLUGIN)]  # the author works under the plugin's hooks
+        cmd += ["--settings", json.dumps(AUTHOR_HOOKS)]  # the author works under the same hooks as a person's plugin
     if allowed:
         cmd += ["--allowedTools", *allowed]
     if not hooks and os.environ.get("ANTHROPIC_API_KEY"):
@@ -75,6 +78,13 @@ def claude(
         role, model, data.get("result", ""), data.get("total_cost_usd", 0.0), data.get("num_turns", 0),
         round(time.monotonic() - started, 1),
     )
+
+
+AUTHOR_HOOKS = {"hooks": {
+    "PreToolUse": [{"matcher": "Write|Edit|MultiEdit|NotebookEdit",
+                    "hooks": [{"type": "command", "command": f"{FOUREYES} hook pre-tool-use"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": f"{FOUREYES} hook stop", "timeout": 120}]}],
+}}
 
 
 def json_block(text: str) -> dict:

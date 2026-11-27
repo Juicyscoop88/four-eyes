@@ -51,10 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("mcp", help="run the FourEyes MCP server on stdio (Claude Code starts it from the plugin)")
 
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
-    h.add_argument("event", choices=["pre-tool-use", "stop"])
+    h.add_argument("event", choices=["session-start", "pre-tool-use", "stop"])
 
     args = p.parse_args(argv)
-    factory = load(repo_root())
 
     if args.cmd == "mcp":
         from foureyes.mcp_server import main as serve
@@ -63,7 +62,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.cmd == "hook":
-        return hooks.handle(factory, args.event, sys.stdin.read())
+        # The plugin is a person's, the repo may not use FourEyes: then its hooks stay silent.
+        import subprocess
+
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
+        root = Path(top or Path.cwd())
+        if not (root / "factory.yaml").exists():
+            return 0
+        return hooks.handle(load(root), args.event, sys.stdin.read())
+
+    factory = load(repo_root())
 
     if args.cmd == "autopilot":
         from foureyes.autopilot import Pilot

@@ -62,7 +62,20 @@ def test_a_broken_invariant_is_named():
 def decision(capsys, tool_input, tool="Edit"):
     pre_tool_use(factory, {"tool_name": tool, "tool_input": tool_input})
     out = capsys.readouterr().out
-    return json.loads(out)["hookSpecificOutput"]["permissionDecision"] if out else "allow"
+    return json.loads(out)["hookSpecificOutput"].get("permissionDecision", "allow") if out else "allow"
+
+
+def test_the_first_touch_of_a_path_brings_its_rules(capsys):
+    import uuid
+
+    session = uuid.uuid4().hex
+    edit = {"tool_name": "Edit", "tool_input": {"file_path": str(ROOT / "src/orders/model.py"), "new_string": "x"},
+            "session_id": session}
+    pre_tool_use(factory, edit)
+    first = json.loads(capsys.readouterr().out)["hookSpecificOutput"]["additionalContext"]
+    assert "ORD-1" in first and "money.md" in first
+    pre_tool_use(factory, edit)
+    assert capsys.readouterr().out == ""  # once per path and session, not on every edit
 
 
 def test_hook_keeps_agents_off_owned_files(capsys):
