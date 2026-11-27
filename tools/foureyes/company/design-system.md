@@ -1,7 +1,8 @@
 # Design system (example)
 
-Every internal app looks like one product, so nobody has to learn a new screen. An example of the kind of
-standard the factory serves to agents; a real group would point this at its own design system.
+Every internal FTMO app looks like one product, so nobody has to learn a new screen. Owned by the design
+system team; a repo that needs to differ proposes it to them (an example of a company standard: the real one
+would point at FTMO's design system and its component library).
 
 - Use the shared components (`Button`, `Table`, `Field`, `Banner`), never hand-made ones.
 - Colors and spacing only from tokens: `--surface`, `--text`, `--accent`, `--danger`, `--space-1..6`.

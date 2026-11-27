@@ -54,7 +54,8 @@ Nothing exists twice. Before adding a surface, ask whether an existing one alrea
 ```
 factory.yaml             owned paths, invariants, standards, suites, risk tiers, models per role
 invariants/orders.yaml   owned invariants of the sample domain (with the paths they hold for)
-standards/               how things are done here: design system, optimistic UI, money
+standards/               what only this repo does its own way (optimistic UI)
+tools/foureyes/company/  company standards, one version for every repo: basics, design system, money
 src/orders/              synthetic order handling: the code the factory protects
 tests/invariants/        property tests that prove the invariants (owned like them)
 tests/blind/             the tester's tests, written without seeing the code

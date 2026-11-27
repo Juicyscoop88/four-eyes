@@ -78,7 +78,7 @@ def test_the_first_touch_of_a_path_brings_its_rules(capsys):
     read = {"tool_name": "Read", "tool_input": {"file_path": str(ROOT / "src/orders/model.py")}, "session_id": session}
     pre_tool_use(factory, read)
     first = json.loads(capsys.readouterr().out)["hookSpecificOutput"]["additionalContext"]
-    assert "ORD-1" in first and "money.md" in first
+    assert "ORD-1" in first and "Company standard: money" in first
     edit = {"tool_name": "Edit", "tool_input": {"file_path": str(ROOT / "src/orders/model.py"), "new_string": "x"},
             "session_id": session}
     pre_tool_use(factory, edit)
@@ -87,7 +87,7 @@ def test_the_first_touch_of_a_path_brings_its_rules(capsys):
            "session_id": session}
     pre_tool_use(factory, new)
     out = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
-    assert "permissionDecision" not in out and "money.md" in out["additionalContext"]  # a new file: rules, no refusal
+    assert "permissionDecision" not in out and "Company standard: money" in out["additionalContext"]  # a new file: rules, no refusal
 
 
 def test_hook_keeps_agents_off_owned_files(capsys):
@@ -128,9 +128,10 @@ def test_rules_for_names_owners_invariants_and_standards():
 
     money = rules_for(factory, "src/orders/engine.py")
     assert "tier **money**" in money and "ORD-1" in money and "Money in code" not in money.split("##")[0]
-    assert "standards/money.md" in money
+    assert "Company standard: money" in money and "Company standard: basics" in money
     app = rules_for(factory, "apps/recon/page.tsx")
-    assert "design-system" in app and "optimistic-ui" in app and "ORD-1" not in app
+    assert "Company standard: design-system" in app and "Standard: standards/optimistic-ui.md" in app
+    assert "ORD-1" not in app
     assert "Owned by people" in rules_for(factory, "invariants/orders.yaml")
 
 
@@ -200,3 +201,13 @@ def yaml_list(text: str, key: str) -> list[str]:
     import yaml
 
     return yaml.safe_load(text).get(key, [])
+
+
+def test_a_company_standard_ships_with_the_factory_and_an_unknown_one_fails_loudly(tmp_path):
+    import pytest
+    from foureyes.config import standard
+
+    design = standard(tmp_path, {"paths": ["apps/**"], "company": "design-system"})
+    assert design.company and "Design system" in design.text()   # nothing copied into the repo
+    with pytest.raises(ValueError, match="design-sytem.*basics, design-system, money"):
+        standard(tmp_path, {"paths": ["apps/**"], "company": "design-sytem"})

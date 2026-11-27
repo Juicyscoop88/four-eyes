@@ -19,8 +19,12 @@ def rules_for(factory: Factory, path: str) -> str:
         out.append("")
     standards = [s for s in factory.standards if any(matches(path, p) for p in s.paths)]
     for s in standards:
-        out.append(f"## Standard: {s.file} (how it is done here; the reviewer checks it)\n")
-        out.append((factory.root / s.file).read_text().split("\n", 1)[1].strip() + "\n")
+        if s.company:
+            out.append(f"## Company standard: {s.source.stem} (the same in every FTMO repo; the reviewer checks it. "
+                       "A reason to differ goes to its owners as a proposal, never as a change here)\n")
+        else:
+            out.append(f"## Standard: {s.file} (how it is done in this repo; the reviewer checks it)\n")
+        out.append(s.text().split("\n", 1)[1].strip() + "\n")
     if not invariants and not standards:
         out.append("No invariants or standards apply here beyond the gate.")
     return "\n".join(out)
