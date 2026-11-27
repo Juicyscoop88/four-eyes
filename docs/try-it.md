@@ -1,4 +1,4 @@
-# Try it: FourEyes by hand in Claude Code
+# Try it: the FTMO factory by hand in Claude Code
 
 Six use cases, each a few prompts in a Claude Code terminal. About 30 minutes in all.
 Each says what to type, what you should see, and what it shows.
@@ -13,10 +13,10 @@ Who does what:
 - **Anyone without code (analyst):** the issue form on GitHub; the factory opens the pull request.
 
 Two repos:
-- **`~/Projects/ftmo-case-study`**: FourEyes' own repo, already on the factory (orders domain, invariants, standards).
+- **`~/Projects/ftmo-case-study`**: the factory's own repo, already on it (orders domain, invariants, standards).
 - **`~/Projects/foureyes-try`**: a fresh clone of python-humanize, not on the factory yet. For installing.
 
-Needs: `claude` signed in, `uv`, `gh` signed in (the FourEyes repo is private, git reads it with your login).
+Needs: `claude` signed in, `uv`, `gh` signed in (the factory repo is private, git reads it with your login).
 
 ---
 
@@ -33,7 +33,7 @@ cd ~/Projects/foureyes-try && claude
 **You should see:** Claude reads the repo and finds `src/humanize`, `tests`, the test command. It asks you one
 question at a time (which paths carry money or trust, which files only people change). It writes on a branch
 `ftmo-factory-setup`: `factory.yaml`, `standards/basics.md`, `.claude/settings.json` (Claude Code asks you first:
-it protects `.claude/`), `.github/workflows/foureyes.yml`, the issue form and `CODEOWNERS`. At the end it shows
+it protects `.claude/`), `.github/workflows/ftmo-factory.yml`, the issue form and `CODEOWNERS`. At the end it shows
 the brief every session will get.
 
 **Shows:** the plugin is standard Claude Code distribution (marketplace + `enabledPlugins` in the repo). Anyone who
@@ -68,7 +68,7 @@ strictly as engineers' code, and engineering finally knows the tool exists.
 cd ~/Projects/ftmo-case-study && claude
 ```
 
-1. Look at the first lines Claude gets: ask `what do you know about this repo from FourEyes?`
+1. Look at the first lines Claude gets: ask `what do you know about this repo from the factory?`
    **You should see:** owned paths, risk tiers (money for `src/orders/**`), where invariants live.
 2. `add a method to cancel the remaining quantity of an order in src/orders/engine.py`
    **You should see:** when Claude opens `engine.py`, it gets that file's rules without asking: tier money,
@@ -83,7 +83,7 @@ cd ~/Projects/ftmo-case-study && claude
 
 Afterwards: `git checkout -- . && git clean -fd src tests` to drop the experiment.
 
-## UC3. Ask FourEyes, not a colleague (engineer, 3 min)
+## UC3. Ask the factory, not a colleague (engineer, 3 min)
 
 Same session, three questions in plain words:
 1. `why does line 18 of src/orders/engine.py exist?` → the MCP tool `why`: the issue, who asked, the decision, the tests that pin it.
@@ -136,3 +136,9 @@ in about 4 minutes. Nobody touched it.
   the company's Grafana. See `docs/design.md`.
 - **The gate's blind tests and mutation** work on Python today. In another stack the guardrails and the reviewer
   work, the gate runs the project's own tests.
+
+## From v0.3.0 to v0.3.1
+
+The factory's MCP server is now called `factory`, and setup writes `.github/workflows/ftmo-factory.yml`. A repo set
+up with v0.3.0: in `factory.yaml` change `mcp: [foureyes]` to `mcp: [factory]`, rename
+`.github/workflows/foureyes.yml` to `ftmo-factory.yml` and move its pins to `@v0.3.1`.

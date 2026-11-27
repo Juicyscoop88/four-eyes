@@ -16,9 +16,9 @@ from foureyes.rules import rules_for as _rules_for
 from foureyes.why import why as _why
 
 server = MCPServer(
-    "foureyes",
+    "factory",
     instructions=(
-        "FourEyes is this repository's software factory: nobody, human or agent, checks their own work. "
+        "This repository runs the FTMO software factory: nobody, human or agent, checks their own work. "
         "Call rules_for before you change a file. Call why when someone asks why code is the way it is, "
         "who asked for it or who decided. Call status when someone asks where their change stands. Call "
         "propose_standard when people agree on how something should be done here from now on. "
@@ -27,7 +27,7 @@ server = MCPServer(
 )
 
 
-NOT_SET_UP = ("This repository does not run FourEyes yet (no factory.yaml). `/ftmo-factory:setup` puts it on the "
+NOT_SET_UP = ("This repository is not on the FTMO factory yet (no factory.yaml). `/ftmo-factory:setup` puts it on the "
               "factory: the repo's lead runs it once and reviews the pull request it makes.")
 
 

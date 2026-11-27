@@ -95,13 +95,13 @@ def load(root: Path) -> Factory:
         standards=[Standard(tuple(x["paths"]), x["file"]) for x in raw.get("standards", [])],
         source=raw.get("source", "src"),
         test_command=raw.get("test_command", "uv run pytest"),
-        python=str((root / raw["python"]).resolve()) if raw.get("python") else "",  # relative to the repo
+        python=str((root / raw["python"]).absolute()) if raw.get("python") else "",  # relative to the repo
         **agents(raw),
     )
 
 
 ROLES = {"author": "sonnet", "tester": "opus", "reviewer": "sonnet"}
-# FourEyes' own MCP server is always known; a repo adds its own servers under `mcp:` in factory.yaml.
+# The factory's own MCP server is always known; a repo adds its own servers under `mcp:` in factory.yaml.
 FOUREYES_SERVER = {"command": sys.executable, "args": ["-m", "foureyes", "mcp"]}
 
 
@@ -112,14 +112,14 @@ def agents(raw: dict) -> dict:
     installed on the computer or CI runner they happen to run on.
     """
     models, mcp = dict(ROLES), {role: () for role in ROLES}
-    mcp["author"] = ("foureyes",)
+    mcp["author"] = ("factory",)
     for role, entry in raw.get("agents", {}).items():
         if isinstance(entry, str):
             models[role] = entry
         else:
             models[role] = entry.get("model", models.get(role, "sonnet"))
             mcp[role] = tuple(entry.get("mcp", []))
-    servers = {"foureyes": FOUREYES_SERVER, **raw.get("mcp", {})}
+    servers = {"factory": FOUREYES_SERVER, **raw.get("mcp", {})}
     for role, names in mcp.items():
         unknown = [n for n in names if n not in servers]
         if unknown:

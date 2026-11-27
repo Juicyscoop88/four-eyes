@@ -48,7 +48,7 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
     d.add_argument("--comment", help="a file with the gate comment the person answered (its cards are used)")
 
-    sub.add_parser("mcp", help="run the FourEyes MCP server on stdio (Claude Code starts it from the plugin)")
+    sub.add_parser("mcp", help="run the factory's MCP server on stdio (Claude Code starts it from the plugin)")
 
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
     h.add_argument("event", choices=["session-start", "pre-tool-use", "stop"])

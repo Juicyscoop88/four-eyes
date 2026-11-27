@@ -64,9 +64,9 @@ Claude is what they want, and stop.
      everything already there. Everyone who clones the repo is then asked once to install the plugin, and Anthropic's
      `code-review` with it: `/code-review` before a push, the same review the gate runs in CI.
      Claude Code asks the person before it writes in `.claude/`; that is expected.
-   - `.github/workflows/foureyes.yml` from the template, `SETUP` replaced by the project's own setup command
+   - `.github/workflows/ftmo-factory.yml` from the template, `SETUP` replaced by the project's own setup command
      (for uv: `uv sync`; for pip: `pip install -e .[test]`).
-   - `.github/ISSUE_TEMPLATE/foureyes.yml` from the issue form template.
+   - `.github/ISSUE_TEMPLATE/ftmo-factory.yml` from the issue form template.
    - `.github/CODEOWNERS`: the money paths and the owned paths with the team the person named.
    - `factory.yaml` from the template, filled with what you found and heard. Delete the comments that do
      not apply. `python` is the interpreter the project's setup creates (for uv: `.venv/bin/python`); the
@@ -77,7 +77,7 @@ Claude is what they want, and stop.
 7. **Commit and hand over.** Commit with a message that says what was set up. Tell the person in a few lines
    what each file does and what is left for them:
    - open the pull request (or ask you to, with `gh`);
-   - add the repo secrets `ANTHROPIC_API_KEY` (the reviewer and autopilot in CI) and, while the FourEyes repo
+   - add the repo secrets `ANTHROPIC_API_KEY` (the reviewer and autopilot in CI) and, while the factory repo
      is private, `FOUREYES_TOKEN` (a read-only token for it);
    - create the label `autopilot`.
 
@@ -92,7 +92,7 @@ Never commit a secret, and never enable anything outside this repository.
 ### factory.yaml
 
 ```yaml
-# FourEyes: the one file per repo. What people own, and how strict the gate is per path.
+# FTMO factory: the one file per repo. What people own, and how strict the gate is per path.
 # Owned paths are changed only by their owners (CODEOWNERS approval). Agents never edit them.
 
 owned:
@@ -133,7 +133,7 @@ tiers:
     mutation_min: 0.0
 
 agents:
-  author:   { model: sonnet, mcp: [foureyes] }
+  author:   { model: sonnet, mcp: [factory] }
   tester:   { model: sonnet, mcp: [] }   # isolation does the work; the model is a cost choice
   reviewer: { model: sonnet, mcp: [] }
 ```
@@ -182,12 +182,12 @@ How every change is made here, whoever writes it.
 }
 ```
 
-### .github/workflows/foureyes.yml
+### .github/workflows/ftmo-factory.yml
 
 ```yaml
-# FourEyes on this repo: the gate on every pull request, the autopilot from an issue labeled `autopilot`,
-# and `/decide` on a pull request. The workflows themselves live in the FourEyes repo, pinned to a version.
-name: four-eyes
+# The FTMO factory on this repo: the gate on every pull request, the autopilot from an issue labeled `autopilot`,
+# and `/decide` on a pull request. The workflows themselves live in the factory repo, pinned to a version.
+name: ftmo-factory
 
 on:
   pull_request:
@@ -203,22 +203,22 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.0
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.1
     with: { setup: "SETUP" }
-    secrets: inherit   # ANTHROPIC_API_KEY for the reviewer; FOUREYES_TOKEN while the FourEyes repo is private
+    secrets: inherit   # ANTHROPIC_API_KEY for the reviewer; FOUREYES_TOKEN while the factory repo is private
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.0
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.1
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.0
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.1
     with: { setup: "SETUP" }
     secrets: inherit
 ```
 
-### .github/ISSUE_TEMPLATE/foureyes.yml (the issue form)
+### .github/ISSUE_TEMPLATE/ftmo-factory.yml (the issue form)
 
 ```yaml
 name: A change

@@ -183,7 +183,7 @@ def facts(res: Result) -> str:
 
 def report(factory: Factory, res: Result, head: str) -> str:
     verdict = "✅ **Passed.** A person approves the merge." if res.passed else "⛔ **Blocked.**"
-    out = [f"## FourEyes gate\n\n{verdict} Tier **{res.tier}**.\n"]
+    out = [f"## FTMO factory gate\n\n{verdict} Tier **{res.tier}**.\n"]
     if res.blocks:
         out += ["### What blocks it\n"] + [f"- {b}" for b in res.blocks] + [""]
 
