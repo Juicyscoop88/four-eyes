@@ -220,3 +220,11 @@ where it said `mcp: [factory]`.
 - Setup appends a short "Working with agents here" section to `CLAUDE.md`: small pull requests along the way,
   progress written down, the gate as the check.
 - Pins to `@v0.3.8`.
+
+## From v0.3.8 to v0.3.9
+
+A tool someone built outside the company's GitHub gets adopted by engineering. The company names its adopters
+once, in the factory (`tools/foureyes/company/company.yaml`, printed by `foureyes company`): its organisation,
+who adopts self-built tools, where requests go. Setup no longer asks the builder who approves; it asks for
+their lead (the business owner), prepares everything locally, and with their yes files one adoption request.
+The adopters create the repo; the next session pushes the branch and opens the pull request. Pins to `@v0.3.9`.
