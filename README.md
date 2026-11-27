@@ -11,17 +11,17 @@ Try it: [docs/try-it.md](docs/try-it.md) · Design: [docs/design.md](docs/design
 
 | Part | What | Where it runs |
 |---|---|---|
-| **The rule** | `foureyes check`: all suites, broken invariants named in words, faults injected into the changed lines and counted per suite (the author's own tests are measured, never counted), the reviewer's decision cards. Deterministic: the verdict never waits on a model. | CI, on every pull request |
+| **The rule** | `foureyes check`: all suites, a failing protected test named in words, faults injected into the changed lines and counted per suite (the author's own tests are measured, never counted), the reviewer's decision cards. Deterministic: the verdict never waits on a model. | CI, on every pull request |
 | **The path** | `foureyes autopilot`: issue → plan → blind tests → code → gate → its own gaps closed → pull request with decision cards. `foureyes decide`: an answer becomes a blind test first, then code. Every step is a commit by its role. | CI (issue label, `/decide` comment) or a laptop (`/ship`) |
-| **The guide** | Plugin `four-eyes`, arrives with the repo: hooks (no edits to owned files, no secrets, not done while an invariant is broken), `/ship`, and the factory's MCP: `rules_for(path)` (owners, tier, invariants, standards) and `why(path, line)` (issue, who asked, decisions, the tests that pin the line, approval). | Claude Code |
+| **The guide** | Plugin `four-eyes`, arrives with the repo: hooks (no edits to owned files, no secrets, not done while a protected test fails), `/ship`, and the factory's MCP: `rules_for(path)` (owners, tier, invariants, standards) and `why(path, line)` (issue, who asked, decisions, the tests that pin the line, approval). | Claude Code |
 
 The roles, and what each may see:
 
 | Role | Model | Sees | Never sees |
 |---|---|---|---|
 | author | Sonnet | the repo, under the hooks; `rules_for` | owned files as writable |
-| tester | Opus (any model: isolation does the work, see the eval) | task, invariants, signatures | the implementation, the author's tests and chat |
-| reviewer | Sonnet | task, diff, invariants, the gate's numbers; makes the decision cards (general bug review is Anthropic's `code-review`) | the author's conversation |
+| tester | Opus (any model: isolation does the work, see the eval) | task, protected tests, signatures | the implementation, the author's tests and chat |
+| reviewer | Sonnet | task, diff, protected tests, the gate's numbers; makes the decision cards (general bug review is Anthropic's `code-review`) | the author's conversation |
 
 The tester is not a Claude Code subagent: a subagent shares the author's workspace. It runs in a copy of the
 repo where every function body is `raise NotImplementedError`.
@@ -42,12 +42,12 @@ production design: no long-lived key).
 
 ```bash
 uv sync
-uv run pytest                                  # the sample domain, invariants, blind tests, the gate's own tests
+uv run pytest                                  # the sample domain, protected tests, blind tests, the gate's own tests
 uv run foureyes autopilot issues/average-price.md  # the whole path on a branch (needs `claude` signed in)
 uv run foureyes eval amend-quantity duplicate-fills average-price   # plant bugs, see what catches them
 ```
 
-`factory.yaml` is the one file per repo: owned paths, invariants, standards, test suites, risk tiers, models.
+`factory.yaml` is the one file per repo: owned paths, protected tests, standards, test suites, risk tiers, models.
 
 ## Limits
 

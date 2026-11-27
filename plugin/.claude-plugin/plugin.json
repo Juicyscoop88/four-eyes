@@ -1,6 +1,6 @@
 {
   "name": "four-eyes",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "description": "The Four Eyes software factory. Four eyes for agents: nobody, human or agent, checks their own work. The rules of each file while you write, /four-eyes:ship from an issue to a pull request, /four-eyes:setup to put a repo on the factory (once, by its lead).",
   "author": {
     "name": "Four Eyes software factory"

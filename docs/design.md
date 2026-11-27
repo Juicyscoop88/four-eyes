@@ -15,6 +15,11 @@ says *designed, not built*.
 
 ---
 
+
+*Wording: "protected tests" are tests people own and no agent may change; a failing one always blocks. The
+first versions called them owned invariants and kept each as a named rule in a YAML file; that stays optional
+(the sample domain here uses it), a folder of protected tests is enough.*
+
 ## 1. Definition
 
 **A software factory is the contract every change must meet on its way to main, plus an autopilot that meets

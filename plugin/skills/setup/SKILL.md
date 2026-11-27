@@ -46,9 +46,13 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
      the answers *company design system (Recommended)* and *keep our own look*. If the repo already has its
      own design, never overwrite it: keeping it is a fine answer, made on purpose, and a reason to differ can
      go to the design system's owners later as a proposal;
-   - **what the tool or code promises**: "What must always be true, whatever the input? For example: every
-     row is either matched or flagged, totals on both sides are equal." Ask for two to five such promises in
-     the person's words. They become owned invariants that the gate checks on every change.
+   - **the rules the tool must never break.** Do not ask the person to invent them: someone who built a tool
+     with AI rarely knows. Propose them yourself, from what the code does, what its users rely on and any bug
+     you found, in their words: "Your tool matches bank rows to payouts. I would make sure this always holds:
+     every bank row is matched or flagged, never dropped. Today one row is dropped silently. Keep it as a
+     rule?" One question per rule, two or three at most, each with the answers *yes, keep it (Recommended)*,
+     *not quite* (they say how) and *no*. An engineer's repo may have them written down already: read the
+     README and tests first. The confirmed rules become protected tests: tests people own, which no agent changes, checked on every change.
    Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. Ask about
    what the person knows (their product, their clients, their team), never about the factory's mechanics, and
    say in the same breath what the answer is for:
@@ -68,8 +72,9 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
    - Production data: remove the exports from the repo and add them to `.gitignore`; write a small made-up
      sample with the same columns in `tests/data/` for the tests. If the tool must read production, it reads
      through a read-only connection named in config, never a file on a laptop; say who grants that access.
-   - Promises: write them as `invariants/<name>.yaml` (template below), each with a property test in
-     `tests/invariants/` that runs on the sample data. The approver reviews these tests in the pull request.
+   - The confirmed rules: one test each in `tests/protected/` (template below), running on the sample data.
+     Its docstring says the rule and why it matters, in the person's words. The approver reviews them in
+     the pull request.
    - No git repo: `git init` here. No remote in the company's organisation: leave it local; step 8 asks the
      adopters for the repo. Never create a repo or invite anyone yourself.
 5. **Write, on the same branch,** in this order (`factory.yaml` last: once it is committed, the paths it
@@ -92,7 +97,7 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
      (for uv: `uv sync`; for pip: `pip install -e .[test]`).
    - `.github/ISSUE_TEMPLATE/four-eyes.yml` from the issue form template.
    - `.github/CODEOWNERS`: the money paths and the owned paths with the team the person named; for an adopted
-     tool, the `adopters`, and the business owner on the invariants (they own what the tool promises).
+     tool, the `adopters`, and the business owner on `tests/protected/` (they own what the tool must always do).
    - `factory.yaml` from the template, filled with what you found and heard. Delete the comments that do
      not apply. `python` is the interpreter the project's setup creates (for uv: `.venv/bin/python`); the
      test command runs with it (`.venv/bin/python -m pytest`).
@@ -137,15 +142,12 @@ owned:
   - factory.yaml
   - .github/workflows/**          # CI: the gate itself
   - .github/CODEOWNERS            # who approves
-  # - invariants/**          # if this repo has invariants
-  # - tests/invariants/**
+  - tests/protected/**            # tests people own: no agent changes them
 
 source: src                       # the code the gate protects: stubbed for the tester, mutated by the gate
 test_command: uv run pytest       # what the author agent runs
 python: .venv/bin/python          # the interpreter that runs the suites (relative to the repo)
 
-# invariants:                     # owned rules that must never break, each with its property test
-#   - invariants/payments.yaml
 
 # How things are done here. The agent gets them when it touches the paths, the reviewer checks them.
 standards:
@@ -161,7 +163,7 @@ standards:
 suites:
   author: tests                   # written by whoever wrote the code (measured, never counted)
   tester: tests/blind             # written by the tester, who never saw the code
-  invariants: tests/invariants    # owned by people
+  protected: tests/protected      # owned by people: a failing one always blocks
 
 tiers:
   money:                          # where a mistake costs money or trust
@@ -181,22 +183,18 @@ agents:
   reviewer: { model: sonnet, mcp: [] }
 ```
 
-### invariants/<name>.yaml (only when the person named promises)
+### tests/protected/test_<what>.py (one test per confirmed rule)
 
-```yaml
-# What this tool promises, in its owner's words. Owned by people, never edited by an agent.
-domain: reconciliation
-paths: ["src/**"]          # the code these promises hold for
-owners: ["@<the approver>"]
-invariants:
-  - id: REC-1
-    statement: Every row is either matched or flagged, never dropped.
-    why: A dropped row is a payment nobody looks at.
-    test: tests/invariants/test_reconciliation.py::test_every_row_matched_or_flagged
+```python
+"""Rules this tool must never break. Owned by people (CODEOWNERS); an agent never edits this file."""
+
+
+def test_every_bank_row_is_matched_or_flagged():
+    """Every bank row is matched or flagged to check, never dropped.
+
+    Why: a dropped row is a payment nobody looks at. (Confirmed by <the person>, <date>.)"""
+    ...
 ```
-
-Then in `factory.yaml`: `invariants: [invariants/<name>.yaml]`, `suites.invariants: tests/invariants`, and
-`invariants/**` and `tests/invariants/**` under `owned`.
 
 ### CLAUDE.md, the section to append
 
@@ -207,7 +205,7 @@ Then in `factory.yaml`: `invariants: [invariants/<name>.yaml]`, `suites.invarian
   pull request at the end.
 - Write progress down where the next session finds it: the pull request description, or the task file of
   `/four-eyes:ship`. A new session reads it first.
-- The gate in CI is the check, whoever wrote the code: blind tests, the invariants, and the questions only a
+- The gate in CI is the check, whoever wrote the code: blind tests, the protected tests, and the questions only a
   person can answer. Run `/code-review` before a push if you like; it does not replace the gate.
 - Hand a larger change to the factory with `/four-eyes:ship <what and why>`, or work with Claude as usual.
 ```
@@ -244,17 +242,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.9
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.10
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.9
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.10
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.9
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.10
     with: { setup: "SETUP" }
     secrets: inherit
 ```

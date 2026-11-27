@@ -23,7 +23,7 @@ from foureyes.tests import Failure, base_copy, checkout_copy, run_suites
 
 INDEPENDENT = ("tester", "invariants")
 SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests",
-               "invariants": "of the owned invariant tests"}
+               "invariants": "of the protected tests (owned by people)"}
 
 
 @dataclass
@@ -281,8 +281,8 @@ def report(factory: Factory, res: Result, head: str) -> str:
         out.append("| Tests | Written by | Caught | Counts |\n|---|---|---|---|")
         out.append(f"| author | whoever wrote the code | {res.caught('author')} of {n} | no, nobody checks their own work |")
         out.append(f"| tester | the tester, who never saw the code | {res.caught('tester')} of {n} | yes |")
-        out.append(f"| invariants | people (owned) | {res.caught('invariants')} of {n} | yes |")
-        out.append(f"| **tester + invariants** | | **{res.caught(*INDEPENDENT)} of {n}** ({res.score:.0%}, needs {res.mutation_min:.0%}) | |\n")
+        out.append(f"| protected | people own them | {res.caught('invariants')} of {n} | yes |")
+        out.append(f"| **tester + protected** | | **{res.caught(*INDEPENDENT)} of {n}** ({res.score:.0%}, needs {res.mutation_min:.0%}) | |\n")
         if res.survivors:
             out.append("<details><summary>Faults no independent test caught</summary>\n")
             out += [f"- {m.id} `{m.path}:{m.line}` {m.description}" for m in res.survivors]
@@ -295,11 +295,11 @@ def report(factory: Factory, res: Result, head: str) -> str:
 
     if res.proposal:
         p = res.proposal
-        out.append("### For the owners of the invariants\n")
+        out.append("### For the owners of the protected tests\n")
         out.append(
-            f"The owned invariant tests caught {p['before']} of {p['n']} faults in this change: they do not "
+            f"The protected tests caught {p['before']} of {p['n']} faults in this change: they do not "
             f"exercise it yet. The tester (blind) proposes an extension in `{p['file']}`. With it, the "
-            f"invariants catch **{p['after']} of {p['n']}**, and it passes on the current code. "
+            f"protected tests catch **{p['after']} of {p['n']}**, and it passes on the current code. "
             "Only an owner can accept it.\n"
         )
 

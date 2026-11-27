@@ -122,7 +122,7 @@ def pre_tool_use(factory: Factory, data: dict) -> int:
     if factory.is_owned(rel) and committed(factory.root, rel):
         return deny(
             f"{rel} is owned by people (factory.yaml: owned). An agent never edits it. "
-            "If an invariant looks wrong, stop and tell the person; they propose the change to its owners."
+            "If a protected test looks wrong, stop and tell the person; they propose the change to its owners."
         )
     text = " ".join(str(tool_input.get(k, "")) for k in ("content", "new_string", "new_source"))
     text += " ".join(str(e.get("new_string", "")) for e in tool_input.get("edits", []))
@@ -155,8 +155,8 @@ def stop(factory: Factory, data: dict) -> int:
         inv = factory.invariant(m.group(1)) if m else None
         lines.append(f"- {inv.id}: {inv.statement} ({f.message})" if inv else f"- {f.test}: {f.message}")
     print(
-        "You are not done: an owned invariant is broken by your change.\n" + "\n".join(lines) +
-        "\nFix the code, not the invariant or its test.",
+        "You are not done: a protected test fails with your change.\n" + "\n".join(lines) +
+        "\nFix the code, never the protected test: people own it.",
         file=sys.stderr,
     )
     return 2
