@@ -96,6 +96,11 @@ for apps, money handling for the core; served to the agent by `rules_for`, check
 tools differ per role: the author gets `rules_for`; the tester and reviewer get none, so nothing shows them
 more than their role may see.
 
+**General bug review is not rebuilt.** Anthropic's `code-review` plugin runs on every pull request through
+the official `claude-code-action` (several agents, each finding validated before it is posted, inline comments),
+and the same `/code-review` is enabled for every engineer locally. FourEyes' reviewer does only what the factory
+knows: the task, the owned invariants, the gate's numbers, the decision cards.
+
 ## 4. People, day to day
 
 What each person gets is attention back, not speed:

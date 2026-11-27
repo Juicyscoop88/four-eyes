@@ -20,7 +20,8 @@ that the team reviews like any other change. The templates are at the end of thi
    - `standards/basics.md` from the template. For a frontend, also `standards/design-system.md`: the design
      system's rules in a few bullets, with a link to where it lives.
    - `.claude/settings.json`: merge in the template's `extraKnownMarketplaces` and `enabledPlugins`, keep
-     everything already there. Everyone who clones the repo is then asked once to install the plugin.
+     everything already there. Everyone who clones the repo is then asked once to install the plugin, and Anthropic's
+     `code-review` with it: `/code-review` before a push, the same review the gate runs in CI.
      Claude Code asks the person before it writes in `.claude/`; that is expected.
    - `.github/workflows/foureyes.yml` from the template, `SETUP` replaced by the project's own setup command
      (for uv: `uv sync`; for pip: `pip install -e .[test]`).
@@ -119,7 +120,7 @@ How every change is made here, whoever writes it.
   "extraKnownMarketplaces": {
     "foureyes": { "source": { "source": "github", "repo": "Juicyscoop88/four-eyes" } }
   },
-  "enabledPlugins": { "four-eyes@foureyes": true }
+  "enabledPlugins": { "four-eyes@foureyes": true, "code-review@claude-plugins-official": true }
 }
 ```
 
@@ -139,6 +140,7 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write   # Anthropic's code-review action in the gate
 
 jobs:
   gate:
