@@ -1,4 +1,7 @@
-# FourEyes: a software factory prototype
+# Four Eyes: a software factory prototype
+
+*A case study designed for FTMO & OANDA as part of a job application. Not affiliated with or endorsed by FTMO or OANDA.
+Everything here runs on public or made-up data.*
 
 > **People write issues. The factory does the rest, and nobody, human or agent, checks their own work.**
 
@@ -10,7 +13,7 @@ Try it: [docs/try-it.md](docs/try-it.md) · Design: [docs/design.md](docs/design
 |---|---|---|
 | **The rule** | `foureyes check`: all suites, broken invariants named in words, faults injected into the changed lines and counted per suite (the author's own tests are measured, never counted), the reviewer's decision cards. Deterministic: the verdict never waits on a model. | CI, on every pull request |
 | **The path** | `foureyes autopilot`: issue → plan → blind tests → code → gate → its own gaps closed → pull request with decision cards. `foureyes decide`: an answer becomes a blind test first, then code. Every step is a commit by its role. | CI (issue label, `/decide` comment) or a laptop (`/ship`) |
-| **The guide** | Plugin `ftmo-factory`, arrives with the repo: hooks (no edits to owned files, no secrets, not done while an invariant is broken), `/ship`, and the factory's MCP: `rules_for(path)` (owners, tier, invariants, standards) and `why(path, line)` (issue, who asked, decisions, the tests that pin the line, approval). | Claude Code |
+| **The guide** | Plugin `four-eyes`, arrives with the repo: hooks (no edits to owned files, no secrets, not done while an invariant is broken), `/ship`, and the factory's MCP: `rules_for(path)` (owners, tier, invariants, standards) and `why(path, line)` (issue, who asked, decisions, the tests that pin the line, approval). | Claude Code |
 
 The roles, and what each may see:
 

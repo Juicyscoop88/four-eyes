@@ -60,7 +60,7 @@ def context(event: str, text: str) -> int:
 
 def session_start(factory: Factory) -> int:
     lines = [
-        "This repository runs the FTMO factory: nobody, human or agent, checks their own work. Every pull request goes "
+        "This repository runs Four Eyes: nobody, human or agent, checks their own work. Every pull request goes "
         "through its gate in CI (blind tests from a tester who never sees the code, injected faults, a reviewer).",
         f"- Owned by people, never edited by an agent: {', '.join(factory.owned) or 'nothing'}.",
         "- Risk tiers: " + "; ".join(f"{t.name} ({', '.join(t.paths)})" for t in factory.tiers) + ".",
@@ -68,7 +68,7 @@ def session_start(factory: Factory) -> int:
     if factory.standards:
         lines.append("- Standards (how it is done here): " + "; ".join(
             f"{s.file} for {', '.join(s.paths)}" for s in factory.standards) + ". You get them when you touch those paths.")
-    lines.append("- To have the factory build something, the person says `/ftmo-factory:ship <what and why>`; "
+    lines.append("- To have the factory build something, the person says `/four-eyes:ship <what and why>`; "
                  "`rules_for`, `why` and `status` in the factory's MCP explain the rest.")
     return context("SessionStart", "\n".join(lines))
 

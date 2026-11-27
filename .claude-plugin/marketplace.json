@@ -1,12 +1,12 @@
 {
-  "name": "ftmo-factory",
-  "owner": { "name": "FTMO" },
-  "description": "The company's plugins for Claude Code. One today: ftmo-factory, the software factory.",
+  "name": "four-eyes",
+  "owner": { "name": "Juicyscoop88" },
+  "description": "The company's plugins for Claude Code. One today: four-eyes, the software factory.",
   "plugins": [
     {
-      "name": "ftmo-factory",
+      "name": "four-eyes",
       "source": "./plugin",
-      "description": "Guardrails while you write (the rules of each file), /ftmo-factory:ship from an idea to a pull request, /ftmo-factory:setup to put a repo on the factory."
+      "description": "Guardrails while you write (the rules of each file), /four-eyes:ship from an idea to a pull request, /four-eyes:setup to put a repo on the factory."
     }
   ]
 }
