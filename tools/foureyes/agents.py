@@ -40,9 +40,13 @@ def role_prompt(role: str) -> str:
 
 
 def claude(
-    role: str, prompt: str, cwd: Path, model: str, tools: str,
-    allowed: tuple[str, ...] = (), hooks: bool = False, timeout: int = 900,
+    role: str, prompt: str, cwd: Path, factory: Factory, tools: str,
+    allowed: tuple[str, ...] = (), hooks: bool = False, timeout: int = 900, model: str = "",
 ) -> AgentRun:
+    """One headless agent, hermetic: its MCP servers come from factory.yaml only, and no user
+    settings (plugins, hooks, permissions) of the machine it runs on. Same tools on every laptop and in CI."""
+    model = model or factory.models.get(role, factory.models["reviewer"])
+    servers = factory.mcp.get(role, ())
     cmd = [
         "claude", "-p", prompt,
         "--append-system-prompt", role_prompt(role),
@@ -51,13 +55,13 @@ def claude(
         "--permission-mode", "acceptEdits",
         "--output-format", "json",
         "--no-session-persistence",
+        "--setting-sources", "project",
+        "--strict-mcp-config",
+        "--mcp-config", json.dumps({"mcpServers": {n: factory.servers[n] for n in servers}}),
     ]
+    allowed = (*allowed, *(f"mcp__{n}" for n in servers))
     if hooks:
-        # The author works under the plugin's hooks and may ask its MCP what applies to a file.
-        cmd += ["--plugin-dir", str(PLUGIN)]
-        allowed = (*allowed, "mcp__plugin_four-eyes_foureyes__rules_for")
-    else:
-        cmd.append("--strict-mcp-config")  # tester and reviewer: no MCP, nothing that could show them more
+        cmd += ["--plugin-dir", str(PLUGIN)]  # the author works under the plugin's hooks
     if allowed:
         cmd += ["--allowedTools", *allowed]
     if not hooks and os.environ.get("ANTHROPIC_API_KEY"):
@@ -84,7 +88,7 @@ def json_block(text: str) -> dict:
 def author(factory: Factory, prompt: str) -> AgentRun:
     """The author in the repo itself, under the plugin's hooks. It may run the tests, nothing else."""
     return claude(
-        "author", prompt, factory.root, factory.models["author"], "Read,Glob,Grep,Write,Edit,Bash",
+        "author", prompt, factory.root, factory, "Read,Glob,Grep,Write,Edit,Bash",
         allowed=(f"Bash({factory.test_command}:*)",), hooks=True, timeout=1500,
     )
 
@@ -153,7 +157,7 @@ def write_blind_tests(
         "The implementation is not in this workspace; the files in `src/` show only the interface. "
         "Read them and the invariants, then write the tests."
     )
-    run = claude("tester", prompt, ws, model or factory.models["tester"], "Read,Glob,Grep,Write,Edit")
+    run = claude("tester", prompt, ws, factory, "Read,Glob,Grep,Write,Edit", model=model)
     written = copy_back(ws, dest_root or factory.root, folder)
     shutil.rmtree(ws, ignore_errors=True)
     return run, written
@@ -174,7 +178,7 @@ def propose_invariant_tests(factory: Factory, task: str, name: str) -> tuple[Age
         "operation to the random steps so that every invariant is checked after it too. Keep the "
         "invariant ids in the assertion messages. Change nothing else."
     )
-    run = claude("tester", prompt, ws, factory.models["tester"], "Read,Glob,Grep,Write,Edit")
+    run = claude("tester", prompt, ws, factory, "Read,Glob,Grep,Write,Edit")
     proposals = {}
     for path in owned_tests:
         f = ws / "proposal" / path
@@ -206,7 +210,7 @@ def review(factory: Factory, task: str, diff: str, gate_facts: str) -> Review:
         f"## What the gate measured\n\n{gate_facts}\n\n## The diff\n\n```diff\n{diff}\n```\n"
     )
     ws = Path(tempfile.mkdtemp(prefix="gate-review-"))
-    run = claude("reviewer", prompt, ws, factory.models["reviewer"], "")
+    run = claude("reviewer", prompt, ws, factory, "")
     shutil.rmtree(ws, ignore_errors=True)
     data = json_block(run.result)
     return Review(run, data.get("map", [])[:3], data.get("findings", []), data.get("summary", ""))
@@ -227,7 +231,7 @@ def explain_gaps(factory: Factory, task: str, diff: str, survivors: list[str]) -
         '{"id": "M5", "equivalent": true, "why": "..."}]}'
     )
     ws = Path(tempfile.mkdtemp(prefix="gate-gaps-"))
-    run = claude("reviewer", prompt, ws, factory.models["reviewer"], "")
+    run = claude("reviewer", prompt, ws, factory, "")
     shutil.rmtree(ws, ignore_errors=True)
     data = json_block(run.result)
     return Review(run, [], [], "", data.get("gaps", []))
@@ -249,6 +253,6 @@ def seed_bugs(factory: Factory, task: str, files: dict[str, str], k: int) -> tup
         '"why": "what goes wrong, for which input"}]}'
     )
     ws = Path(tempfile.mkdtemp(prefix="gate-adversary-"))
-    run = claude("adversary", prompt, ws, factory.models["reviewer"], "")
+    run = claude("adversary", prompt, ws, factory, "", model=factory.models["reviewer"])
     shutil.rmtree(ws, ignore_errors=True)
     return run, json_block(run.result).get("bugs", [])

@@ -124,3 +124,24 @@ def test_assumptions_in_any_list_style():
 
     task = "## Assumptions\n\n- A1. Limit price.\n- A2. No rounding.\n* 3) Zero fills.\n"
     assert assumptions_of(task) == ["Limit price.", "No rounding.", "Zero fills."]
+
+
+def test_agents_are_hermetic_with_only_the_servers_factory_yaml_names(tmp_path):
+    from foureyes.config import agents
+
+    repo = load(Path(__file__).resolve().parents[2])
+    assert repo.models == {"author": "sonnet", "tester": "opus", "reviewer": "sonnet"}
+    assert repo.mcp == {"author": ("foureyes",), "tester": (), "reviewer": ()}
+    # A plain model name still works, and a repo adds its own server for one role.
+    got = agents({"agents": {"tester": "haiku", "author": {"mcp": ["foureyes", "gitlab"]}},
+                  "mcp": {"gitlab": {"command": "gitlab-mcp"}}})
+    assert got["models"]["tester"] == "haiku" and got["mcp"]["tester"] == ()
+    assert got["mcp"]["author"] == ("foureyes", "gitlab") and "gitlab" in got["servers"]
+
+
+def test_a_role_naming_an_undefined_server_fails_loudly():
+    import pytest
+    from foureyes.config import agents
+
+    with pytest.raises(ValueError, match="neon"):
+        agents({"agents": {"author": {"mcp": ["neon"]}}})

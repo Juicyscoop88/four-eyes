@@ -195,7 +195,26 @@ class Pilot:
             "(signature, docstring, `raise NotImplementedError`) and export them where the package exports its "
             "other functions. Write no tests and no implementation."
         )))
+        missing = self.plan_missing()
+        if missing:
+            # The plan is the tester's only input: without it the tester would test nothing. One clear ask back.
+            run = agents.author(self.f, (
+                f"Your plan is incomplete: {missing}. Write `{self.task_path}` now, as asked before: the issue "
+                "in the person's words, `## Interface` with the exact signatures, `## Assumptions` as `- A1. ...`."
+            ))
+            self.step("plan, completed", run)
+            missing = self.plan_missing()
+            if missing:
+                raise SystemExit(f"autopilot: the plan is incomplete ({missing}). The author said: {run.result[:500]}")
         self.commit("author", f"Plan {self.slug}: the task and its interface")
+
+    def plan_missing(self) -> str:
+        path = self.f.root / self.task_path
+        if not path.exists():
+            return f"`{self.task_path}` does not exist"
+        if "## Interface" not in path.read_text():
+            return f"`{self.task_path}` has no `## Interface` section"
+        return ""
 
     def propose(self, res) -> dict | None:
         existing = sorted((self.f.root / ".factory" / "proposals" / self.slug).rglob("*.py"))

@@ -38,6 +38,8 @@ class Factory:
     tiers: list[Tier]
     invariants: list[Invariant]
     models: dict[str, str]  # role -> model; the tester differs from the author on purpose
+    mcp: dict[str, tuple[str, ...]]  # role -> the MCP servers it gets; nothing else from the machine it runs on
+    servers: dict[str, dict]         # name -> MCP server definition (the shape of .mcp.json)
     standards: list[Standard]
     source: str = "src"                 # the code the factory protects (stubbed for the tester, mutated by the gate)
     test_command: str = "uv run pytest" # what the author runs
@@ -93,5 +95,35 @@ def load(root: Path) -> Factory:
         source=raw.get("source", "src"),
         test_command=raw.get("test_command", "uv run pytest"),
         python=raw.get("python", ""),
-        models={"author": "sonnet", "tester": "opus", "reviewer": "sonnet", **raw.get("agents", {})},
+        **agents(raw),
     )
+
+
+ROLES = {"author": "sonnet", "tester": "opus", "reviewer": "sonnet"}
+# FourEyes' own MCP server is always known; a repo adds its own servers under `mcp:` in factory.yaml.
+FOUREYES_SERVER = {
+    "command": "uv",
+    "args": ["run", "--quiet", "--project", str(Path(__file__).resolve().parents[2]), "foureyes", "mcp"],
+}
+
+
+def agents(raw: dict) -> dict:
+    """Each role's model and MCP servers. An entry is a model name or {model, mcp: [server, ..]}.
+
+    The factory's agents are hermetic: they get only the servers named here, never the ones
+    installed on the computer or CI runner they happen to run on.
+    """
+    models, mcp = dict(ROLES), {role: () for role in ROLES}
+    mcp["author"] = ("foureyes",)
+    for role, entry in raw.get("agents", {}).items():
+        if isinstance(entry, str):
+            models[role] = entry
+        else:
+            models[role] = entry.get("model", models.get(role, "sonnet"))
+            mcp[role] = tuple(entry.get("mcp", []))
+    servers = {"foureyes": FOUREYES_SERVER, **raw.get("mcp", {})}
+    for role, names in mcp.items():
+        unknown = [n for n in names if n not in servers]
+        if unknown:
+            raise ValueError(f"factory.yaml: agents.{role} names MCP servers not defined under mcp: {unknown}")
+    return {"models": models, "mcp": mcp, "servers": servers}

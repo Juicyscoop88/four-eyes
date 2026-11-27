@@ -200,7 +200,12 @@ if __name__ == "__main__":
     issues = sorted(p for p in (ROOT / "bench" / "issues").glob("pr*.md")
                     if not wanted or int(re.match(r"pr(\d+)", p.stem).group(1)) in wanted)
     with ThreadPoolExecutor(max_workers=3) as pool:
-        results = list(pool.map(one, issues))
-    (ROOT / "bench" / "results.json").write_text(json.dumps(results, indent=2))
+        fresh = list(pool.map(one, issues))
+    # A rerun of some bugs replaces only their rows; the others keep their last result.
+    saved = ROOT / "bench" / "results.json"
+    by_pr = {r["pr"]: r for r in (json.loads(saved.read_text()) if saved.exists() else [])}
+    by_pr.update({r["pr"]: r for r in fresh})
+    results = sorted(by_pr.values(), key=lambda r: r["pr"])
+    saved.write_text(json.dumps(results, indent=2))
     (ROOT / "docs" / "bench.md").write_text(summary(results))
     print(summary(results))

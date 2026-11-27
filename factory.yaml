@@ -42,6 +42,12 @@ tiers:
 
 agents:
   # A tester on the same model as the author shares its blind spots. Different models, on purpose.
-  author: sonnet
-  tester: opus
-  reviewer: sonnet
+  # Hermetic: each role gets only the MCP servers named here, never the ones installed on the laptop or
+  # runner it runs on. The author may ask FourEyes what applies; the tester and reviewer get nothing more.
+  author:   { model: sonnet, mcp: [foureyes] }
+  tester:   { model: opus,   mcp: [] }
+  reviewer: { model: sonnet, mcp: [] }
+
+# MCP servers a repo adds for its agents (the shape of .mcp.json), for example its tracker:
+# mcp:
+#   gitlab: { command: npx, args: ["-y", "@modelcontextprotocol/server-gitlab"] }
