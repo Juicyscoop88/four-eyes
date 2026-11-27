@@ -97,6 +97,10 @@ def setup(n: int) -> tuple[Path, str, str]:
     if wt.exists():
         sh("git", "worktree", "remove", "--force", str(wt), cwd=REPO, check=False)
         shutil.rmtree(wt, ignore_errors=True)
+    sh("git", "worktree", "prune", cwd=REPO)
+    # A rerun starts from nothing: the autopilot would otherwise go on with the last run's branch.
+    for branch in sh("git", "branch", "--list", f"factory/pr{n}-*", "--format=%(refname:short)", cwd=REPO).split():
+        sh("git", "branch", "-D", branch, cwd=REPO)
     sh("git", "worktree", "add", "-q", "--detach", str(wt), f"{merge}^1", cwd=REPO)
     sh("git", "checkout", "-q", "-B", f"bench-main-{n}", cwd=wt)
     sh("git", "branch", "-f", "main", "HEAD", cwd=wt, check=False)
