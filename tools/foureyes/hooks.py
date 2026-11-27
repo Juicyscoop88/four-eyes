@@ -53,6 +53,13 @@ def handle(factory: Factory, event: str, raw: str) -> int:
     return stop(factory, data)
 
 
+NOT_SET_UP = (
+    "Four Eyes is installed but this folder does not use it yet. Work as the person asks. If what they build "
+    "will be used by others, touches money or client data, or should get company rules, offer once to run "
+    "`/four-eyes:setup` (it looks first and changes nothing without their go). Do not offer it again."
+)
+
+
 def context(event: str, text: str) -> int:
     print(json.dumps({"hookSpecificOutput": {"hookEventName": event, "additionalContext": text}}))
     return 0

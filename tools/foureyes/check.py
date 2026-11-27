@@ -319,6 +319,12 @@ def report(factory: Factory, res: Result, head: str) -> str:
     if res.owned_changed:
         out.append(f"- owned files touched: {', '.join(res.owned_changed)}")
     out.append(f"- gate run: {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC")
+    # The numbers as data, for the team's summary (`foureyes summary`): per change, never per person.
+    stats = {"passed": res.passed, "tier": res.tier, "files": len(res.files), "tests_run": res.tests_run,
+             "failures": len(res.failures), "preexisting": len(res.preexisting), "mutants": len(res.counted),
+             "caught": res.caught(*INDEPENDENT), "cards": len(res.cards()), "blind_written": bool(res.blind_written),
+             "cost_usd": round(cost, 4)}
+    out.append(f"\n<!-- four-eyes-stats {json.dumps(stats)} -->")
     if res.cards():
         # The cards as data, so an answer (`/decide 1 keep`) refers to exactly the card the person saw.
         out.append(f"\n<!-- four-eyes-cards {json.dumps(res.cards())} -->")

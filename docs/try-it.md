@@ -211,3 +211,12 @@ where it said `mcp: [factory]`.
 ## From v0.3.6 to v0.3.7
 
 `status` is gone from the MCP (pins to `@v0.3.7`): nobody used it, the branch and the pull request already say where a change stands.
+
+## From v0.3.7 to v0.3.8
+
+- `foureyes summary --days 7`: the team's last days from the gate reports on the pull requests (changes,
+  merged, stopped, faults caught, decisions asked, cost, time to merge). Per repo and team, never per person.
+- In a folder without Four Eyes, Claude offers `/four-eyes:setup` once when what you build will be used by others.
+- Setup appends a short "Working with agents here" section to `CLAUDE.md`: small pull requests along the way,
+  progress written down, the gate as the check.
+- Pins to `@v0.3.8`.

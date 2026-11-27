@@ -121,8 +121,8 @@ What each person gets is attention back, not speed:
 |---|---|---|
 | Senior engineer | reads 400 lines to trust them | answers the few cards only a person can decide (#479 on the bench: three questions) |
 | Early adopter | ships fast, tests from the same agent | keeps the speed; tests come from someone who never saw the code |
-| Team lead | setup lives in people's heads; no numbers | setup lives in the repo; time, cost and catches per change |
-| Long tasks | the next session starts from scratch | the task, progress and every step are commits on the branch |
+| Team lead | setup lives in people's heads; no numbers | setup lives in the repo; `foureyes summary`: the team's week from the gate reports, never per person |
+| Long tasks | the next session starts from scratch | setup adds to `CLAUDE.md`: small pull requests along the way, progress written down; the autopilot commits every step |
 | Compliance | "who is the author?" | the person who asked plus the agent; an approver who is neither; `why` traces each decision |
 | Analyst | a weekend tool nobody knows of | setup adopts it (secrets, client data, tests of what it promises), then `ship` or the issue form |
 

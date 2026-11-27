@@ -329,3 +329,39 @@ def test_an_owned_file_is_locked_unless_git_says_it_is_new(tmp_path):
     assert committed(tmp_path, "factory.yaml")  # not a repo: git cannot answer, so it counts as committed
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     assert not committed(tmp_path, "factory.yaml")  # fresh repo, no commit yet
+
+
+def test_the_summary_counts_per_change_from_the_gate_reports():
+    # The team lead's question, "are we faster?", answered from what the gate already writes, never per person.
+    from foureyes.summary import summarize
+
+    def report(passed, mutants, caught, cost, cards=1):
+        stats = {"passed": passed, "tier": "money", "files": 2, "tests_run": 10, "failures": 0, "preexisting": 0,
+                 "mutants": mutants, "caught": caught, "cards": cards, "blind_written": True, "cost_usd": cost}
+        return {"body": "## Four Eyes gate\n<!-- four-eyes-stats " + json.dumps(stats) + " -->"}
+
+    prs = [
+        {"createdAt": "2026-11-20T10:00:00Z", "mergedAt": "2026-11-20T14:00:00Z",
+         "comments": [report(False, 10, 6, 0.2), report(True, 10, 9, 0.3)]},
+        {"createdAt": "2026-11-21T10:00:00Z", "mergedAt": None, "comments": [report(False, 4, 1, 0.1, 3)]},
+        {"createdAt": "2026-11-22T10:00:00Z", "mergedAt": "2026-11-22T12:00:00Z", "comments": []},
+    ]
+    text = summarize(prs, 7)
+    assert "**3** pull requests, **2** merged, median **3.0 h**" in text
+    assert "**2** went through the gate; it stopped **1**" in text
+    assert "caught **10 of 14**" in text and "$0.40" in text
+
+
+def test_a_repo_without_four_eyes_gets_one_offer_of_setup(tmp_path, capsys, monkeypatch):
+    import subprocess
+
+    from foureyes.cli import main
+
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
+    assert main(["hook", "session-start"]) == 0
+    assert "/four-eyes:setup" in capsys.readouterr().out
+    monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
+    assert main(["hook", "pre-tool-use"]) == 0
+    assert capsys.readouterr().out == ""

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Four Eyes engine, as this plugin runs it. FOUREYES_FROM is a local checkout (development) or a git source;
 # by default the version this plugin release pins, so every engineer and CI run the same gate.
-SRC="${FOUREYES_FROM:-git+https://github.com/Juicyscoop88/four-eyes@v0.3.7}"
+SRC="${FOUREYES_FROM:-git+https://github.com/Juicyscoop88/four-eyes@v0.3.8}"
 if [ -d "$SRC" ]; then
   exec uv run --quiet --project "$SRC" python -m foureyes "$@"
 fi
