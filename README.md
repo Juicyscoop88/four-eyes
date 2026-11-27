@@ -2,7 +2,7 @@
 
 > **People write issues. The factory does the rest, and nobody, human or agent, checks their own work.**
 
-Design: [docs/design.md](docs/design.md) · Eval: [docs/eval.md](docs/eval.md) · Build log: [docs/build-log.md](docs/build-log.md)
+Try it: [docs/try-it.md](docs/try-it.md) · Design: [docs/design.md](docs/design.md) · Eval: [docs/eval.md](docs/eval.md) · Build log: [docs/build-log.md](docs/build-log.md)
 
 ## Three parts, each once
 
