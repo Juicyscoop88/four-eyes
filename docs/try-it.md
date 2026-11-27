@@ -1,13 +1,13 @@
-# Try it: the FTMO factory by hand in Claude Code
+# Try it: Four Eyes by hand in Claude Code
 
 Ten use cases, each a few prompts in a Claude Code terminal. About 30 minutes in all.
 Each says what to type, what you should see, and what it shows.
 
 Who does what:
-- **The lead, once per repo:** `/ftmo-factory:setup` writes the guardrails (what is risky, who approves, what only
+- **The lead, once per repo:** `/four-eyes:setup` writes the guardrails (what is risky, who approves, what only
   people may change) into the repo as a pull request.
 - **Every engineer, every day:** clones the repo and is asked once to install the plugin. Then one of two ways:
-  - *hand it over:* `/ftmo-factory:ship <what and why>` turns the request into an issue and the factory builds it;
+  - *hand it over:* `/four-eyes:ship <what and why>` turns the request into an issue and the factory builds it;
   - *work as today,* alone or with Claude: the plugin gives Claude each file's rules, and the gate checks the
     pull request however it was written.
 - **Anyone without code (analyst):** the issue form on GitHub; the factory opens the pull request.
@@ -27,19 +27,19 @@ cd ~/Projects/foureyes-try && claude
 ```
 
 1. `/plugin marketplace add Juicyscoop88/four-eyes`
-2. `/plugin install ftmo-factory@ftmo-factory`, then restart Claude Code (`/exit`, `claude`).
-3. `/ftmo-factory:setup`
+2. `/plugin install four-eyes@four-eyes`, then restart Claude Code (`/exit`, `claude`).
+3. `/four-eyes:setup`
 
 **You should see:** Claude reads the repo and finds `src/humanize`, `tests`, the test command. It asks you one
 question at a time (which paths carry money or trust, which files only people change). It writes on a branch
-`ftmo-factory-setup`: `factory.yaml`, `.claude/settings.json` (Claude Code asks you first:
-it protects `.claude/`), `.github/workflows/ftmo-factory.yml`, the issue form and `CODEOWNERS`. At the end it shows
+`four-eyes-setup`: `factory.yaml`, `.claude/settings.json` (Claude Code asks you first:
+it protects `.claude/`), `.github/workflows/four-eyes.yml`, the issue form and `CODEOWNERS`. At the end it shows
 the brief every session will get.
 
 **Shows:** the plugin is standard Claude Code distribution (marketplace + `enabledPlugins` in the repo). Anyone who
 clones this repo later is asked once to install it. Nothing is copied from our repo.
 
-Check: `git log --stat -1` on the branch `ftmo-factory-setup`.
+Check: `git log --stat -1` on the branch `four-eyes-setup`.
 
 ## UC1b. Bring an analyst's tool under the rules (operations analyst, 5 min)
 
@@ -52,7 +52,7 @@ rm -rf ~/Projects/recon-try && cp -R ~/Projects/recon-tool-original ~/Projects/r
 cd ~/Projects/recon-try && claude
 ```
 
-Say something in your own words, then `/ftmo-factory:setup`.
+Say something in your own words, then `/four-eyes:setup`.
 
 **You should see:** a checklist in plain words before anything changes: the password, the client data on a
 laptop, no git, no tests, and a real bug (a bank row missing from the export is silently dropped: neither
@@ -99,7 +99,7 @@ Same session, three questions in plain words:
 
 In `~/Projects/ftmo-case-study`:
 
-`/ftmo-factory:ship orders should reject a limit price with more than 4 decimal places, a client sent 1.234567 and we stored it`
+`/four-eyes:ship orders should reject a limit price with more than 4 decimal places, a client sent 1.234567 and we stored it`
 
 **You should see:** Claude writes `issues/<name>.md` in your words and waits for your go (this is where you steer).
 Then the autopilot runs a few minutes on `factory/<name>`: plan, blind tests by a tester who never saw the code,
@@ -144,7 +144,7 @@ goes to the design system's owners, not into this repo.
 
 ## UC8. The analyst changes their own tool (analyst, 6 min)
 
-Same folder: `/ftmo-factory:ship the CHECK list should also say how big the difference is, so the team starts with the biggest`
+Same folder: `/four-eyes:ship the CHECK list should also say how big the difference is, so the team starts with the biggest`
 
 **You should see:** the issue in your words, then the autopilot: blind tests written from your promises (every
 row matched or flagged) by a tester that never saw the code, then the code, the gate, and cards in plain words
@@ -182,20 +182,16 @@ In `~/Projects/ftmo-case-study`:
 - **The gate's blind tests and mutation** work on Python today. In another stack the guardrails and the reviewer
   work, the gate runs the project's own tests.
 
-## From v0.3.0 to v0.3.1
+## From ftmo-factory (v0.3.3) to four-eyes (v0.3.4)
 
-The factory's MCP server is now called `factory`, and setup writes `.github/workflows/ftmo-factory.yml`. A repo set
-up with v0.3.0: in `factory.yaml` change `mcp: [foureyes]` to `mcp: [factory]`, rename
-`.github/workflows/foureyes.yml` to `ftmo-factory.yml` and move its pins to `@v0.3.1`.
+The plugin is now called `four-eyes`, its commands `/four-eyes:setup` and `/four-eyes:ship`. In Claude Code:
+`claude plugin uninstall ftmo-factory@ftmo-factory`, `claude plugin marketplace remove ftmo-factory`, then
+`claude plugin marketplace add Juicyscoop88/four-eyes` and `claude plugin install four-eyes@four-eyes`, and restart.
+A repo set up before: in `.claude/settings.json` rename `ftmo-factory` to `four-eyes` (marketplace and plugin),
+rename `.github/workflows/ftmo-factory.yml` and `.github/ISSUE_TEMPLATE/ftmo-factory.yml` to `four-eyes.yml`, and
+move the workflow pins to `@v0.3.4`.
 
-## From v0.3.1 to v0.3.2
-
-Company standards ship with the factory. In `factory.yaml` replace `file: standards/basics.md` with
-`company: basics` (and a copied design system with `company: design-system`), delete those copies from
-`standards/`, and move the workflow pins to `@v0.3.2`.
-
-## From v0.3.2 to v0.3.3
-
-Nothing to change in a repo but the workflow pins (`@v0.3.3`). The gate reports tests that already fail on
-the base branch instead of blocking on them (a failing invariant still blocks), and each injected fault runs
-only the tests the gate counts, in parallel: on a repo with 1700 tests the gate went from about 26 minutes to 2.
+Since v0.3.3 the gate reports tests that already fail on the base branch instead of blocking on them (a failing
+invariant still blocks), and each injected fault runs only the tests the gate counts, in parallel: on a repo with
+1700 tests the gate went from about 26 minutes to 2. Since v0.3.4 a change written by hand gets blind tests at the
+gate, and setup fits a mature repo (it keeps the team's agent rules possible and can correct its own draft).

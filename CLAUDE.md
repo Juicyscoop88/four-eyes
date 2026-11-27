@@ -44,7 +44,7 @@ Everything else is what they already have: GitLab, Claude Code, Claude on Vertex
 2. **The path:** `foureyes autopilot` (issue → plan → blind tests → code → gate → gaps closed → pull request with
    decision cards) and `foureyes decide` (an answer becomes a blind test, then code). CI from an issue label and
    `/decide` comments; a laptop through `/ship`. One path, not two.
-3. **The guide:** plugin `ftmo-factory` (arrives with the repo): hooks, `/ftmo-factory:ship`, the factory's MCP with `rules_for`
+3. **The guide:** plugin `four-eyes` (arrives with the repo): hooks, `/four-eyes:ship`, the factory's MCP with `rules_for`
    and `why`. MCP is for people and agents in Claude; CLI is only for what has no chat (CI, the eval).
 
 Nothing exists twice. Before adding a surface, ask whether an existing one already does it.

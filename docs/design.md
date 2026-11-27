@@ -186,7 +186,7 @@ when that line is broken (found by breaking it), and the pull request with its a
 The analyst does not become an engineer. They say what their tool promises; the factory checks it as strictly
 as engineers' code, and engineering learns the tool exists because it arrives as a pull request.
 
-**Built: setup adopts a tool in any state.** `/ftmo-factory:setup` is the same skill for a lead's repo and an
+**Built: setup adopts a tool in any state.** `/four-eyes:setup` is the same skill for a lead's repo and an
 analyst's folder. Run on a made-up weekend tool (a payout reconciliation script, a production export with
 trader emails, a database password in the code, no git, no tests), it first showed a checklist in plain
 Czech: the password ("rotate it, deleting it from the code does not fix copies already sent"), client data on

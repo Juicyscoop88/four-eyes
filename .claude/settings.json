@@ -1,7 +1,7 @@
 {
   "extraKnownMarketplaces": {
-    "ftmo-factory": { "source": { "source": "directory", "path": "." } }
+    "four-eyes": { "source": { "source": "directory", "path": "." } }
   },
-  "enabledPlugins": { "ftmo-factory@ftmo-factory": true, "code-review@claude-plugins-official": true },
+  "enabledPlugins": { "four-eyes@four-eyes": true, "code-review@claude-plugins-official": true },
   "env": { "FOUREYES_FROM": "." }
 }

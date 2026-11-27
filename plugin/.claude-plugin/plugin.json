@@ -1,8 +1,8 @@
 {
-  "name": "ftmo-factory",
+  "name": "four-eyes",
   "version": "0.3.3",
-  "description": "The FTMO software factory. Four eyes for agents: nobody, human or agent, checks their own work. The rules of each file while you write, /ftmo-factory:ship from an issue to a pull request, /ftmo-factory:setup to put a repo on the factory (once, by its lead).",
+  "description": "The Four Eyes software factory. Four eyes for agents: nobody, human or agent, checks their own work. The rules of each file while you write, /four-eyes:ship from an issue to a pull request, /four-eyes:setup to put a repo on the factory (once, by its lead).",
   "author": {
-    "name": "FTMO software factory"
+    "name": "Four Eyes software factory"
   }
 }

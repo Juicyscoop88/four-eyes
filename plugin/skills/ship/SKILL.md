@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Ship a change through the FTMO software factory - the person's request becomes an issue, the autopilot does the rest (plan, blind tests, code, gate) and comes back with decision cards. Use when the person asks to ship, implement or build something in this repo.
+description: Ship a change through the Four Eyes software factory - the person's request becomes an issue, the autopilot does the rest (plan, blind tests, code, gate) and comes back with decision cards. Use when the person asks to ship, implement or build something in this repo.
 argument-hint: "<what should change and why>"
 ---
 
