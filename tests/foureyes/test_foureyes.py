@@ -318,3 +318,14 @@ def test_a_hand_made_change_gets_blind_tests_from_the_gate(tmp_path, monkeypatch
     assert res.blind_written == ["tests/blind/test_this_change.py"]
     assert res.mutants and all("tester" in m.caught_by for m in res.mutants)
     assert not (root / "tests/blind").exists()  # the branch is unchanged
+
+
+def test_an_owned_file_is_locked_unless_git_says_it_is_new(tmp_path):
+    # Card 1 of PR #20 (deny-in-repo): a fresh `git init` drafts freely, a folder git cannot read stays locked.
+    import subprocess
+
+    from foureyes.hooks import committed
+
+    assert committed(tmp_path, "factory.yaml")  # not a repo: git cannot answer, so it counts as committed
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    assert not committed(tmp_path, "factory.yaml")  # fresh repo, no commit yet

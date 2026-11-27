@@ -87,7 +87,14 @@ def committed(root: Path, rel: str) -> bool:
     """Whether the file is in the last commit. People own what was committed; a new owned file (setup drafting
     factory.yaml, a first invariant) may be written until it is committed, and its pull request still needs
     the owners' approval at the gate."""
-    return subprocess.run(["git", "cat-file", "-e", f"HEAD:{rel}"], cwd=root, capture_output=True).returncode == 0
+    def ok(*args: str) -> bool:
+        return subprocess.run(["git", *args], cwd=root, capture_output=True).returncode == 0
+
+    if ok("rev-parse", "--verify", "-q", "HEAD"):
+        return ok("cat-file", "-e", f"HEAD:{rel}")
+    # No commit yet: a fresh `git init` (setup of a tool that had no repo) drafts freely. Anything else git
+    # cannot answer counts as committed: an error never unlocks an owned file.
+    return not ok("rev-parse", "--git-dir")
 
 
 def pre_tool_use(factory: Factory, data: dict) -> int:
