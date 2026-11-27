@@ -1,6 +1,7 @@
 {
   "extraKnownMarketplaces": {
-    "factory": { "source": { "source": "directory", "path": "." } }
+    "foureyes": { "source": { "source": "directory", "path": "." } }
   },
-  "enabledPlugins": { "four-eyes@factory": true }
+  "enabledPlugins": { "four-eyes@foureyes": true },
+  "env": { "FOUREYES_FROM": "." }
 }

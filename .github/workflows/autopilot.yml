@@ -5,6 +5,10 @@ name: autopilot
 on:
   issues:
     types: [labeled]
+  workflow_call:  # other repos call this same workflow: their factory.yaml, this repo's gate
+    inputs:
+      setup: { type: string, default: "", description: "the project's own setup, for example `uv sync` or `pip install -e .[test]`" }
+      foureyes: { type: string, default: "git+https://github.com/Juicyscoop88/four-eyes@v0.2.0" }
 
 permissions:
   contents: write
@@ -20,7 +24,18 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: astral-sh/setup-uv@v6
-      - run: uv sync --frozen
+      - name: FourEyes
+        env:
+          SOURCE: ${{ inputs.foureyes }}
+          TOKEN: ${{ secrets.FOUREYES_TOKEN }}
+        run: |
+          if [ -d tools/foureyes ]; then uv sync --frozen; echo "FE=uv run foureyes" >> "$GITHUB_ENV"; exit 0; fi
+          # FourEyes from its own repo (private: a read-only token as the secret FOUREYES_TOKEN)
+          [ -n "$TOKEN" ] && git config --global url."https://x-access-token:$TOKEN@github.com/".insteadOf "https://github.com/"
+          uv tool install "$SOURCE" && echo "FE=foureyes" >> "$GITHUB_ENV"
+      - name: the project's own setup
+        if: inputs.setup != ''
+        run: ${{ inputs.setup }}
       - run: curl -fsSL https://claude.ai/install.sh | bash && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: autopilot
         id: pilot
@@ -33,7 +48,7 @@ jobs:
           slug="$(echo "$TITLE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-|-$//g' | cut -c1-40)"
           mkdir -p "$RUNNER_TEMP/issues"
           printf '# %s\n\n%s\n' "$TITLE" "$BODY" > "$RUNNER_TEMP/issues/$slug.md"
-          uv run foureyes autopilot "$RUNNER_TEMP/issues/$slug.md"
+          $FE autopilot "$RUNNER_TEMP/issues/$slug.md"
           echo "slug=$slug" >> "$GITHUB_OUTPUT"
       - name: pull request
         env:

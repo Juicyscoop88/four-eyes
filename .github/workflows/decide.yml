@@ -6,6 +6,10 @@ name: decide
 on:
   issue_comment:
     types: [created]
+  workflow_call:  # other repos call this same workflow: their factory.yaml, this repo's gate
+    inputs:
+      setup: { type: string, default: "", description: "the project's own setup, for example `uv sync` or `pip install -e .[test]`" }
+      foureyes: { type: string, default: "git+https://github.com/Juicyscoop88/four-eyes@v0.2.0" }
 
 permissions:
   contents: write
@@ -29,7 +33,18 @@ jobs:
         with: { ref: "${{ steps.pr.outputs.ref }}", fetch-depth: 0 }
       - run: git branch main origin/main
       - uses: astral-sh/setup-uv@v6
-      - run: uv sync --frozen
+      - name: FourEyes
+        env:
+          SOURCE: ${{ inputs.foureyes }}
+          TOKEN: ${{ secrets.FOUREYES_TOKEN }}
+        run: |
+          if [ -d tools/foureyes ]; then uv sync --frozen; echo "FE=uv run foureyes" >> "$GITHUB_ENV"; exit 0; fi
+          # FourEyes from its own repo (private: a read-only token as the secret FOUREYES_TOKEN)
+          [ -n "$TOKEN" ] && git config --global url."https://x-access-token:$TOKEN@github.com/".insteadOf "https://github.com/"
+          uv tool install "$SOURCE" && echo "FE=foureyes" >> "$GITHUB_ENV"
+      - name: the project's own setup
+        if: inputs.setup != ''
+        run: ${{ inputs.setup }}
       - run: curl -fsSL https://claude.ai/install.sh | bash && echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: decide
         env:
@@ -45,7 +60,7 @@ jobs:
           gh api "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" --paginate \
             --jq '[.[] | select(.body | contains("four-eyes-cards"))] | last | .body' > "$RUNNER_TEMP/cards.md"
           echo "$COMMENT" | grep '^/decide ' | while read -r _ card answer; do
-            uv run foureyes decide "$slug" "$card" $answer --by "$WHO" --comment "$RUNNER_TEMP/cards.md"
+            $FE decide "$slug" "$card" $answer --by "$WHO" --comment "$RUNNER_TEMP/cards.md"
           done
           git push origin "HEAD:$REF"
           gh pr comment ${{ github.event.issue.number }} --body-file gate-report.md

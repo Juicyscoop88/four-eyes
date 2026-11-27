@@ -20,13 +20,26 @@ server = MCPServer(
     instructions=(
         "FourEyes is this repository's software factory: nobody, human or agent, checks their own work. "
         "Call rules_for before you change a file. Call why when someone asks why code is the way it is, "
-        "who asked for it or who decided. The gate in CI gives the verdict; these tools only advise and explain."
+        "who asked for it or who decided. Call status when someone asks where their change stands. Call "
+        "propose_standard when people agree on how something should be done here from now on. "
+        "The gate in CI gives the verdict; these tools only advise and explain."
     ),
 )
 
 
+NOT_SET_UP = ("This repository does not run FourEyes yet (no factory.yaml). `/four-eyes:init` puts it on the "
+              "factory: a person runs it and reviews the pull request it makes.")
+
+
+def _root() -> Path:
+    return Path(git(Path.cwd(), "rev-parse", "--show-toplevel").strip())
+
+
 def _factory():
-    return load(Path(git(Path.cwd(), "rev-parse", "--show-toplevel").strip()))
+    root = _root()
+    if not (root / "factory.yaml").exists():
+        raise ValueError(NOT_SET_UP)
+    return load(root)
 
 
 @server.tool()
@@ -46,6 +59,56 @@ def why(path: str, line: int) -> str:
     people made on it, the tests that fail when the line is broken, and the pull request with its approvals."""
     return _why(_factory(), path, line)
 
+
+@server.tool()
+def status() -> str:
+    """Call this when someone asks where their change stands: is it ready, what blocks it, what is left for a
+    person to decide. Reads the current branch: the factory's last gate report on it, or else what the gate
+    will demand of the files changed so far."""
+    f = _factory()
+    branch = git(f.root, "rev-parse", "--abbrev-ref", "HEAD").strip()
+    if branch.startswith("factory/"):
+        report = f.root / ".factory" / "runs" / f"{branch.removeprefix('factory/')}.md"
+        if report.exists():
+            return f"Branch `{branch}`, the factory's last gate report:\n\n{report.read_text()}"
+    from foureyes.check import strictest
+    from foureyes.diff import changed_files
+
+    try:
+        base = git(f.root, "merge-base", "HEAD", "main").strip()
+    except Exception:
+        base = "HEAD"
+    files = changed_files(f.root, base)
+    if not files:
+        return f"Branch `{branch}`: nothing changed against main yet."
+    tier = strictest(f, files)
+    owned = [x for x in files if f.is_owned(x)]
+    lines = [f"Branch `{branch}`: {len(files)} changed files, tier **{tier.name}** "
+             f"(independent tests must catch {tier.mutation_min:.0%} of injected faults)."]
+    if owned:
+        lines.append(f"Owned files changed, an owner must approve: {', '.join(owned)}.")
+    lines.append("The gate runs on the pull request in CI and posts its report there as a comment, with the "
+                 "decision cards (`gh pr view --comments` shows it). Push and open the pull request to get it.")
+    return "\n".join(lines)
+
+
+@server.tool()
+def propose_standard(name: str, paths: list[str], text: str) -> str:
+    """Call this when people agree on how something should be done in this repo from now on (for example "amounts
+    are always rounded half-even", "every screen has a loading state"). Writes the standard as
+    standards/<name>.md; from then on everyone who touches those paths gets it. name: short, kebab-case.
+    paths: glob patterns it applies to, like ["src/payments/**"]. text: the standard as a few bullet points."""
+    f = _factory()
+    file = f"standards/{name}.md"
+    target = f.root / file
+    if target.exists():
+        return f"`{file}` exists already. Change it there; a person reviews it in the pull request."
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(f"# {name.replace('-', ' ').capitalize()}\n\n{text.strip()}\n")
+    entry = f'  - paths: {paths}\n    file: {file}'.replace("'", '"')
+    return (f"Wrote `{file}`. It applies once an owner of `factory.yaml` adds it under `standards:` in the same "
+            f"pull request:\n\n```yaml\n{entry}\n```\n\nAn agent never edits factory.yaml: show this to the "
+            "person, who adds it and opens the pull request. The owners approve it like any other change.")
 
 
 def main() -> None:

@@ -95,7 +95,7 @@ def load(root: Path) -> Factory:
         standards=[Standard(tuple(x["paths"]), x["file"]) for x in raw.get("standards", [])],
         source=raw.get("source", "src"),
         test_command=raw.get("test_command", "uv run pytest"),
-        python=raw.get("python", ""),
+        python=str((root / raw["python"]).resolve()) if raw.get("python") else "",  # relative to the repo
         **agents(raw),
     )
 

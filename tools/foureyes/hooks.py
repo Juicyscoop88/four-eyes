@@ -3,8 +3,9 @@ the gate in CI enforces the same rules for everyone, hooks or not.
 
 - SessionStart: Claude learns that this repo has a factory, what people own and how to ship.
 - PreToolUse: an agent never edits an owned file and never writes something that looks like a secret.
-  The first time a session touches a path, Claude gets the rules for it (invariants, standards such as the
-  design system) without having to ask: the guardrails do not depend on the agent calling a tool.
+  The first time a session reads or writes a path, Claude gets the rules for it as context (invariants,
+  standards such as the design system) without having to ask: the guardrails do not depend on the agent
+  calling a tool.
 - Stop: an agent that changed code is not done while an invariant is broken.
 """
 
@@ -110,8 +111,7 @@ def pre_tool_use(factory: Factory, data: dict) -> int:
                 "Secret Manager (or an environment variable) by name, never by value."
             )
     if first_touch(session, rel):
-        # A file written without being read first (a new one): the rules come first, then the edit again.
-        return deny(rules_for(factory, rel) + "\n\nThese rules apply to this path. Make the change again with them in mind.")
+        return context("PreToolUse", rules_for(factory, rel))  # a file written without being read first
     return 0
 
 

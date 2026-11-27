@@ -87,9 +87,7 @@ def test_the_first_touch_of_a_path_brings_its_rules(capsys):
            "session_id": session}
     pre_tool_use(factory, new)
     out = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
-    assert out["permissionDecision"] == "deny" and "money.md" in out["permissionDecisionReason"]
-    pre_tool_use(factory, new)
-    assert capsys.readouterr().out == ""  # the second attempt, with the rules known, goes through
+    assert "permissionDecision" not in out and "money.md" in out["additionalContext"]  # a new file: rules, no refusal
 
 
 def test_hook_keeps_agents_off_owned_files(capsys):

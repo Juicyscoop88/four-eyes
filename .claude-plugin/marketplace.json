@@ -1,7 +1,12 @@
 {
-  "name": "factory",
-  "owner": { "name": "Engineering platform" },
+  "name": "foureyes",
+  "owner": { "name": "FourEyes" },
+  "description": "The company's plugins for Claude Code. One today: four-eyes, the software factory.",
   "plugins": [
-    { "name": "four-eyes", "source": "./plugin", "description": "The software factory: four eyes for agents." }
+    {
+      "name": "four-eyes",
+      "source": "./plugin",
+      "description": "Guardrails while you write (the rules of each file), /four-eyes:ship from an idea to a pull request, /four-eyes:init to put a repo on the factory."
+    }
   ]
 }
