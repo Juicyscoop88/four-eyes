@@ -242,17 +242,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.10
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.11
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.10
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.11
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.10
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.11
     with: { setup: "SETUP" }
     secrets: inherit
 ```

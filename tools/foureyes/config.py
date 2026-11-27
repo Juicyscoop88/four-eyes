@@ -17,7 +17,7 @@ class Tier:
 
 
 @dataclass(frozen=True)
-class Invariant:
+class Rule:
     id: str
     statement: str
     why: str
@@ -47,7 +47,7 @@ class Factory:
     owned: list[str]
     suites: dict[str, str]
     tiers: list[Tier]
-    invariants: list[Invariant]
+    rules: list[Rule]
     models: dict[str, str]  # role -> model; the tester differs from the author on purpose
     mcp: dict[str, tuple[str, ...]]  # role -> the MCP servers it gets; nothing else from the machine it runs on
     servers: dict[str, dict]         # name -> MCP server definition (the shape of .mcp.json)
@@ -74,8 +74,8 @@ class Factory:
                 if test_path == f or test_path.startswith(f.rstrip("/") + "/")]
         return max(hits)[1] if hits else None
 
-    def invariant(self, inv_id: str) -> Invariant | None:
-        return next((i for i in self.invariants if i.id == inv_id), None)
+    def rule(self, rule_id: str) -> Rule | None:
+        return next((r for r in self.rules if r.id == rule_id), None)
 
 
 def matches(path: str, pattern: str) -> bool:
@@ -91,17 +91,17 @@ def load(root: Path) -> Factory:
         Tier(name, t["paths"], float(t.get("mutation_min", 0)), t.get("approver"))
         for name, t in raw["tiers"].items()
     ]
-    invariants = []
-    for file in raw.get("invariants", []):
+    rules = []
+    for file in raw.get("rules", raw.get("invariants", [])):  # `invariants:` is the first versions' name
         doc = yaml.safe_load((root / file).read_text())
         paths = tuple(doc.get("paths", []))
-        invariants += [Invariant(i["id"], i["statement"], i["why"], i["test"], paths) for i in doc["invariants"]]
+        rules += [Rule(i["id"], i["statement"], i["why"], i["test"], paths) for i in doc.get("rules", doc.get("invariants", []))]
     return Factory(
         root=root,
         owned=raw.get("owned", []),
         suites=suites(raw["suites"]),
         tiers=tiers,
-        invariants=invariants,
+        rules=rules,
         standards=[standard(root, x) for x in raw.get("standards", [])],
         source=raw.get("source", "src"),
         test_command=raw.get("test_command", "uv run pytest"),
@@ -111,11 +111,11 @@ def load(root: Path) -> Factory:
 
 
 def suites(raw: dict) -> dict:
-    """The suites by role. `protected` (tests people own, no agent changes them) is the name people use; the gate
-    counts it as the owned suite, the one first called `invariants`."""
+    """The suites by role: author, tester and protected (tests people own, no agent changes them). The first
+    versions called the protected suite `invariants`; a factory.yaml that still says so works the same."""
     out = dict(raw)
-    if "protected" in out:
-        out["invariants"] = out.pop("protected")
+    if "invariants" in out:
+        out["protected"] = out.pop("invariants")
     return out
 
 

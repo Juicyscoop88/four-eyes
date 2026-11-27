@@ -46,7 +46,7 @@ def _factory():
 def rules_for(path: str) -> str:
     """Call this BEFORE you create or change a file. Returns what applies to that path in this repository:
     whether people own it (then you must not edit it), its risk tier and what the gate will demand, the owned
-    invariants that must never break there, and the standards for how things are done there (for example the
+    the protected tests that hold there, and the standards for how things are done there (for example the
     design system for apps). path is relative to the repository root."""
     return _rules_for(_factory(), path)
 

@@ -2,7 +2,7 @@
 
 Isolation is physical. The tester's workspace has the interface of the code (signatures and
 docstrings) but not one line of implementation, and not the author's tests. The reviewer's
-workspace is empty: it gets the task, the diff, the invariants and the gate's results in its prompt.
+workspace is empty: it gets the task, the diff, the protected rules and the gate's results in its prompt.
 The author works in the repo itself, under the plugin's hooks, like an engineer's own Claude Code.
 """
 
@@ -165,7 +165,7 @@ def write_blind_tests(
         prompt += f"Write the tests for this task in `{target}`. "
     prompt += (
         "The implementation is not in this workspace; the files in `src/` show only the interface. "
-        "Read them and the invariants, then write the tests."
+        "Read them and the rules the protected tests hold, then write the tests."
     )
     run = claude("tester", prompt, ws, factory, "Read,Glob,Grep,Write,Edit", model=model)
     written = copy_back(ws, dest_root or factory.root, folder)
@@ -178,11 +178,11 @@ def propose_invariant_tests(factory: Factory, task: str, name: str) -> tuple[Age
     extension for their owners. It never touches the owned files: it writes proposals beside them.
     Returns {owned test path: proposed text}."""
     ws = tester_workspace(factory)
-    owned_tests = sorted({i.test.split("::")[0] for i in factory.invariants})
+    owned_tests = sorted({i.test.split("::")[0] for i in factory.rules})
     prompt = (
         f"The task that was just implemented:\n\n{task}\n\n"
         f"The owned property tests ({', '.join(owned_tests)}) do not exercise what this task adds, so the "
-        "invariants do not protect it yet. Propose an extension for their owners: write a full copy of "
+        "protected tests do not cover it yet. Propose an extension for their owners: write a full copy of "
         "each file you would change under `proposal/`, at the same path (for example "
         f"`proposal/{owned_tests[0]}`). Keep every existing invariant check exactly as it is; add the new "
         "operation to the random steps so that every invariant is checked after it too. Keep the "
@@ -210,13 +210,13 @@ class Review:
     gaps: list[dict] = field(default_factory=list)
 
 
-def _invariants(factory: Factory) -> str:
-    return "\n".join(f"- {i.id}: {i.statement} ({i.why})" for i in factory.invariants)
+def _rules(factory: Factory) -> str:
+    return "\n".join(f"- {i.id}: {i.statement} ({i.why})" for i in factory.rules)
 
 
 def review(factory: Factory, task: str, diff: str, gate_facts: str) -> Review:
     prompt = (
-        f"## Task\n\n{task}\n\n## Owned invariants\n\n{_invariants(factory)}\n\n"
+        f"## Task\n\n{task}\n\n## Rules the protected tests hold\n\n{_rules(factory)}\n\n"
         f"## What the gate measured\n\n{gate_facts}\n\n## The diff\n\n```diff\n{diff}\n```\n"
     )
     ws = Path(tempfile.mkdtemp(prefix="gate-review-"))
@@ -230,7 +230,7 @@ def explain_gaps(factory: Factory, task: str, diff: str, survivors: list[str]) -
     """Faults no independent test caught, translated by the reviewer into behaviors in words, so the
     tester can test them without seeing the code. A fault that changes no behavior is marked equivalent."""
     prompt = (
-        f"## Task\n\n{task}\n\n## Owned invariants\n\n{_invariants(factory)}\n\n"
+        f"## Task\n\n{task}\n\n## Rules the protected tests hold\n\n{_rules(factory)}\n\n"
         f"## The diff\n\n```diff\n{diff}\n```\n\n"
         "## Faults no independent test caught\n\n" + "\n".join(f"- {s}" for s in survivors) + "\n\n"
         "This time you do not write a review. For each fault, either describe the behavior a test must pin "
@@ -254,7 +254,7 @@ def seed_bugs(factory: Factory, task: str, files: dict[str, str], k: int) -> tup
     """An adversary who sees the finished code plants realistic bugs, to measure the factory."""
     shown = "\n\n".join(f"### {p}\n\n```python\n{t}\n```" for p, t in files.items())
     prompt = (
-        f"## Task\n\n{task}\n\n## Owned invariants\n\n{_invariants(factory)}\n\n## The code\n\n{shown}\n\n"
+        f"## Task\n\n{task}\n\n## Rules the protected tests hold\n\n{_rules(factory)}\n\n## The code\n\n{shown}\n\n"
         f"Plant {k} different bugs in the code that implements this task. Each is one small edit, the kind a "
         "rushed engineer or agent really makes: a wrong boundary, a forgotten case, a wrong rounding, state "
         "changed before a check, a check in the wrong place. Not syntax errors, not obvious sabotage, and the "

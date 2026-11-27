@@ -3,7 +3,7 @@ the gate in CI enforces the same rules for everyone, hooks or not.
 
 - SessionStart: Claude learns that this repo has a factory, what people own and how to ship.
 - PreToolUse: an agent never edits an owned file and never writes something that looks like a secret.
-  The first time a session reads or writes a path, Claude gets the rules for it as context (invariants,
+  The first time a session reads or writes a path, Claude gets the rules for it as context (protected tests,
   standards such as the design system) without having to ask: the guardrails do not depend on the agent
   calling a tool.
 - Stop: an agent that changed code is not done while an invariant is broken.
@@ -146,13 +146,13 @@ def stop(factory: Factory, data: dict) -> int:
         base = "HEAD"
     if not any(factory.is_source(f) for f in changed_files(factory.root, base)):
         return 0
-    failures, _ = run_suites(factory, factory.root, only=("invariants",))
+    failures, _ = run_suites(factory, factory.root, only=("protected",))
     if not failures:
         return 0
     lines = []
     for f in failures:
         m = re.match(r"(?:AssertionError: )?([A-Z]+-\d+):", f.message)
-        inv = factory.invariant(m.group(1)) if m else None
+        inv = factory.rule(m.group(1)) if m else None
         lines.append(f"- {inv.id}: {inv.statement} ({f.message})" if inv else f"- {f.test}: {f.message}")
     print(
         "You are not done: a protected test fails with your change.\n" + "\n".join(lines) +

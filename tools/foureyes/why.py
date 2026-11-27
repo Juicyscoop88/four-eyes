@@ -85,7 +85,7 @@ def why(factory: Factory, path: str, line: int) -> str:
             shutil.rmtree(work, ignore_errors=True)
         if pinned:
             out.append(f"- **Pinned by tests** (each fails when this line is broken, {len(mutants)} ways tried):")
-            for suite in ("invariants", "tester", "author"):
+            for suite in ("protected", "tester", "author"):
                 if suite in pinned:
                     names = sorted(pinned[suite])
                     more = f" and {len(names) - 4} more" if len(names) > 4 else ""

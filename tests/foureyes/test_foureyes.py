@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from foureyes.agents import stub_source
-from foureyes.check import invariant_of
+from foureyes.check import rule_of
 from foureyes.config import load
 from foureyes.hooks import pre_tool_use
 from foureyes.mutation import mutants_of
@@ -54,9 +54,9 @@ def test_tiers_and_ownership():
 
 
 def test_a_broken_invariant_is_named():
-    f = Failure("invariants", "test_never_overfilled", "AssertionError: ORD-1: filled 3 of 2")
-    assert invariant_of(factory, f).statement == "An order is never filled beyond its quantity."
-    assert invariant_of(factory, Failure("author", "t", "ORD-1: x")) is None
+    f = Failure("protected", "test_never_overfilled", "AssertionError: ORD-1: filled 3 of 2")
+    assert rule_of(factory, f).statement == "An order is never filled beyond its quantity."
+    assert rule_of(factory, Failure("author", "t", "ORD-1: x")) is None
 
 
 def decision(capsys, tool_input, tool="Edit"):
@@ -121,7 +121,7 @@ def test_mutants_reach_arithmetic_constants_and_rounding():
 
 
 def test_cards_travel_in_the_comment():
-    from foureyes.check import cards_from
+    from foureyes.report import cards_from
 
     cards = [{"where": "a.py:1", "why": "w", "question": "q?", "options": ["keep: x", "reject: y"]}]
     comment = "## FourEyes gate\n...\n<!-- four-eyes-cards " + json.dumps(cards) + " -->\n"
@@ -197,7 +197,7 @@ def test_a_venv_python_is_kept_as_its_link_not_the_system_python_behind_it(tmp_p
     (tmp_path / ".venv" / "bin" / "python").symlink_to(sys.executable)
     text = (ROOT / "factory.yaml").read_text()
     (tmp_path / "factory.yaml").write_text(text + "\npython: .venv/bin/python\n")
-    for file in yaml_list(text, "invariants"):
+    for file in yaml_list(text, "rules"):
         (tmp_path / file).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(ROOT / file, tmp_path / file)
     assert load(tmp_path).python == str(tmp_path / ".venv" / "bin" / "python")
@@ -399,7 +399,7 @@ def test_protected_tests_are_owned_and_block_without_any_yaml(tmp_path):
         subprocess.run(["git", *cmd], cwd=tmp_path, check=True)
     (tmp_path / "src/calc.py").write_text("def total(rows):\n    return sum(rows[1:])\n")
     f = load(tmp_path)
-    assert f.suites["invariants"] == "tests/protected" and f.is_owned("tests/protected/test_rows.py")
+    assert f.suites["protected"] == "tests/protected" and f.is_owned("tests/protected/test_rows.py")
     res = check(f, "main", None, False, log=lambda m: None)
     assert any("protected tests" in b for b in res.blocks)
     assert "Protected tests" in rules_for(f, "src/calc.py")
