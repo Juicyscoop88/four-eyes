@@ -16,7 +16,8 @@ import time
 from pathlib import Path
 
 from foureyes import agents, mutation
-from foureyes.check import author_of, check, facts, report
+from foureyes.check import check, facts
+from foureyes.report import author_of, report
 from foureyes.config import Factory
 from foureyes.diff import changed_lines, diff_text, git
 from foureyes.tests import checkout_copy, run_suites
@@ -138,7 +139,7 @@ class Pilot:
             "score": final.score, "mutants": len(final.counted), "equivalent": final.equivalent,
             "base": self.base,
             "caught": {s: final.caught(s) for s in ("author", "tester", "protected")},
-            "proposal": proposal, "cost_usd": round(sum(r.cost_usd for r in final.agent_runs), 3),
+            "proposal": final.proposal, "cost_usd": round(sum(r.cost_usd for r in final.agent_runs), 3),
             "minutes": round((time.monotonic() - self.started) / 60, 1), "steps": self.steps,
             "cards": final.cards(),
             "findings": final.review.findings if final.review else [],

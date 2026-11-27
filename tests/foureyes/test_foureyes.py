@@ -121,7 +121,7 @@ def test_mutants_reach_arithmetic_constants_and_rounding():
 
 
 def test_cards_travel_in_the_comment():
-    from foureyes.check import cards_from
+    from foureyes.report import cards_from
 
     cards = [{"where": "a.py:1", "why": "w", "question": "q?", "options": ["keep: x", "reject: y"]}]
     comment = "## FourEyes gate\n...\n<!-- four-eyes-cards " + json.dumps(cards) + " -->\n"

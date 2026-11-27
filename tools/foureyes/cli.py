@@ -6,7 +6,8 @@ import sys
 from pathlib import Path
 
 from foureyes import hooks
-from foureyes.check import check, report
+from foureyes.check import check
+from foureyes.report import report
 from foureyes.config import load
 from foureyes.diff import git
 
@@ -104,11 +105,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "decide":
         from foureyes.autopilot import Pilot
 
-        from foureyes.check import author_of
+        from foureyes.report import author_of
 
         who = args.by or author_of(factory.root)
         pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=lambda m: print(m, flush=True))
-        from foureyes.check import cards_from
+        from foureyes.report import cards_from
 
         cards = cards_from(Path(args.comment).read_text()) if args.comment else None
         path = pilot.decide(args.card, " ".join(args.answer), who, cards)
