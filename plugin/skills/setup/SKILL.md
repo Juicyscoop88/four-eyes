@@ -9,9 +9,9 @@ that colleagues depend on. Never make them feel judged: the tool works, you make
 goes into one branch and one pull request that the team reviews like any other change. The templates are at
 the end of this file.
 
-If the person is an engineer in a repo that is already set up (`factory.yaml` exists), call the MCP `status`,
-say in two sentences that setup is done for this repo and that `/four-eyes:ship` or simply working with
-Claude is what they want, and stop.
+If the person is an engineer in a repo that is already set up (`factory.yaml` exists), say in two sentences
+that setup is done for this repo and that working with Claude as usual, or `/four-eyes:ship` to hand a change
+over, is what they want, and stop.
 
 1. **Look before you ask.** Find out, without changing anything:
    - Is it a git repo, and does `origin` point to the company's GitHub? Who committed to it?
@@ -206,17 +206,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.6
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.7
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.6
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.7
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.6
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.7
     with: { setup: "SETUP" }
     secrets: inherit
 ```

@@ -70,7 +70,7 @@ def session_start(factory: Factory) -> int:
             f"{s.file} for {', '.join(s.paths)}" for s in factory.standards) + ". You get them when you touch those paths.")
     lines.append("- People work as they like: with you, by hand, or by handing a change to the factory with "
                  "`/four-eyes:ship <what and why>`. Code with them as usual when they ask you to; for a larger change "
-                 "offer the hand-over once. `rules_for`, `why` and `status` in the factory's MCP explain the rest.")
+                 "offer the hand-over once. `rules_for` and `why` in the `four-eyes` MCP explain the rest; the branch and the pull request say where a change stands.")
     return context("SessionStart", "\n".join(lines))
 
 
