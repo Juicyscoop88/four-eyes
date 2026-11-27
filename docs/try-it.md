@@ -195,3 +195,9 @@ Since v0.3.3 the gate reports tests that already fail on the base branch instead
 invariant still blocks), and each injected fault runs only the tests the gate counts, in parallel: on a repo with
 1700 tests the gate went from about 26 minutes to 2. Since v0.3.4 a change written by hand gets blind tests at the
 gate, and setup fits a mature repo (it keeps the team's agent rules possible and can correct its own draft).
+
+## From v0.3.4 to v0.3.5
+
+`/four-eyes:ship` shapes the issue with you before the factory starts: what, why, one example with numbers and
+the expected outcome, and up to three open questions with the answer it would assume. Nothing to change in a
+repo but the workflow pins (`@v0.3.5`).

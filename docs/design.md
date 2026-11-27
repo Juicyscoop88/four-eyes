@@ -143,7 +143,7 @@ fault ran the whole repo (the gate on one change: about 26 minutes, now 2, same 
 no blind tests; setup could not correct its own draft and named a standard that did not fit; locking all of
 `.github/` forbade the team's own rule for agents.
 
-- **Where work starts:** an issue (the form asks what, why and an example). Or code by hand as today, which
+- **Where work starts:** an issue. The tester writes its tests from the issue alone, so `/four-eyes:ship` shapes it with the person: what, why, one example with numbers and the expected outcome, and at most three open questions with the answer it would assume (skipped ones become assumption cards). The form on GitHub asks the same. Or code by hand as today, which
   gets blind tests and a review map on the pull request for free.
 - **Steering:** `/decide 2 reject`, `/decide A3 ...` in the pull request; or take the branch by hand and hand
   it back.

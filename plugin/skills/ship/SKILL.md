@@ -10,9 +10,20 @@ You do not implement this yourself. The factory does, and nobody checks their ow
 writes the code, a tester writes the tests without ever seeing it, a reviewer reads the diff
 without seeing the conversation, and the gate measures it all.
 
-1. **Issue.** Write the request as `issues/<short-name>.md`: a title line and two to four sentences in the
-   person's words, what should change and why. Show it to the person and wait for their go; this is where
-   they steer. Then commit it.
+1. **Issue, shaped with the person.** The tester will write tests from this issue alone, never seeing the
+   code, so it must say what "done" looks like. Help the person get there in one short round, in their
+   language and their words, never as a form:
+   - Write `issues/<short-name>.md`: a title line, then **What** (what should change, two or three
+     sentences), **Why** (who needs it and what goes wrong today: the result is checked against this) and
+     **Example** (one concrete case with numbers and the expected outcome, like "an order for 10, 4 filled,
+     changed to 12: it still needs 8"). If the person gave no example, propose one from what they said and
+     mark it as your proposal.
+   - Below it, list at most three **open questions** where the issue is silent and a test would have to
+     guess (an edge case, a limit, what happens on bad input), each with the answer you would assume.
+   - Show both and ask the person to confirm, correct the example, or answer any question. A question they
+     skip stays an assumption: the plan writes it as a card (A1, A2..) they can still change on the pull
+     request. Never ask more than one round; a short issue is fine.
+   Then commit it.
 2. **Autopilot.** Run `foureyes autopilot issues/<short-name>.md`. It works on the branch
    `factory/<short-name>` and takes a few minutes.
 3. **Report.** Read `.factory/runs/<short-name>.md`. Tell the person in a few lines whether the gate passed
