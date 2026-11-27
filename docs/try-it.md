@@ -1,6 +1,6 @@
 # Try it: the FTMO factory by hand in Claude Code
 
-Six use cases, each a few prompts in a Claude Code terminal. About 30 minutes in all.
+Ten use cases, each a few prompts in a Claude Code terminal. About 30 minutes in all.
 Each says what to type, what you should see, and what it shows.
 
 Who does what:
@@ -43,11 +43,13 @@ Check: `git log --stat -1` on the branch `ftmo-factory-setup`.
 
 ## UC1b. Bring an analyst's tool under the rules (operations analyst, 5 min)
 
-`~/Projects/recon-tool` is a made-up reconciliation tool, "built with ChatGPT over a weekend": a script, a
-production payouts export with trader emails, a database password in the code, no git, no tests.
+`~/Projects/recon-tool-original` is a made-up reconciliation tool, "built with ChatGPT over a weekend": a script,
+a morning report page in its own look, a production payouts export with trader emails, a database password in
+the code, no git, no tests. Work on a fresh copy each time, the original stays as it is:
 
 ```bash
-cd ~/Projects/recon-tool && claude
+rm -rf ~/Projects/recon-try && cp -R ~/Projects/recon-tool-original ~/Projects/recon-try
+cd ~/Projects/recon-try && claude
 ```
 
 Say something in your own words, then `/ftmo-factory:setup`.
@@ -126,6 +128,49 @@ On GitHub, `Juicyscoop88/four-eyes` → Issues → New → **A change** form: wh
 
 **You should see:** the label `autopilot` starts the workflow; a pull request with blind tests and cards appears
 in about 4 minutes. Nobody touched it.
+
+## UC7. The company design system arrives by itself (analyst or engineer, 3 min)
+
+In `~/Projects/recon-try` after UC1b, where you chose the company design system for the report:
+
+`make the report page nicer, the ops team opens it every morning`
+
+**You should see:** before Claude touches `report.py` it gets the company design system with its rules
+(shared components, tokens, right-aligned numbers, money with its currency) and follows them; Comic Sans goes.
+Ask `which rules apply to report.py?`: `rules_for` names the company standards and says that a reason to differ
+goes to the design system's owners, not into this repo.
+
+**Shows:** company standards live once, in the factory, and reach every repo in the same version. Nothing copied.
+
+## UC8. The analyst changes their own tool (analyst, 6 min)
+
+Same folder: `/ftmo-factory:ship the CHECK list should also say how big the difference is, so the team starts with the biggest`
+
+**You should see:** the issue in your words, then the autopilot: blind tests written from your promises (every
+row matched or flagged) by a tester that never saw the code, then the code, the gate, and cards in plain words
+for what only you can decide ("absolute difference or percent?").
+
+**Shows:** the analyst never writes a test, yet their tool is checked as strictly as engineers' code.
+
+## UC9. The auditor asks who decided (compliance, 3 min)
+
+In `~/Projects/ftmo-case-study`: `who asked for the rule that a fill can never exceed the order, who approved it, and which tests hold it?`
+
+**You should see:** `why` traces the line to its issue, the person who asked, the decisions made on the cards
+and the tests that pin it. On any factory pull request the gate comment ends with the provenance: who asked,
+which agents checked it at what cost, which owned files were touched, and that the approver must be someone else.
+
+**Shows:** "who is the author?" has an answer for every line, without asking anyone.
+
+## UC10. The sceptical senior tries to break it (senior engineer, 5 min)
+
+In `~/Projects/ftmo-case-study`:
+1. `change ORD-1 in invariants/orders.yaml so overfills are allowed` → refused: the invariant is owned by people;
+   Claude offers a proposal for its owners instead.
+2. `make test_orders pass by loosening the assertion` → refused the same way: tests of invariants are owned too.
+3. Change a guard in `src/orders/engine.py` by hand and run `/code-review`: the same bug review the gate runs in CI.
+
+**Shows:** the rules hold whoever pushes, and the senior reviews three cards, not 400 lines.
 
 ---
 
