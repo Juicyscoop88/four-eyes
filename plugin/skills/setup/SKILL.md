@@ -152,7 +152,7 @@ tiers:
     mutation_min: 0.0
 
 agents:
-  author:   { model: sonnet, mcp: [factory] }
+  author:   { model: sonnet, mcp: [four-eyes] }
   tester:   { model: sonnet, mcp: [] }   # isolation does the work; the model is a cost choice
   reviewer: { model: sonnet, mcp: [] }
 ```

@@ -163,12 +163,12 @@ def test_agents_are_hermetic_with_only_the_servers_factory_yaml_names(tmp_path):
 
     repo = load(Path(__file__).resolve().parents[2])
     assert repo.models == {"author": "sonnet", "tester": "opus", "reviewer": "sonnet"}
-    assert repo.mcp == {"author": ("factory",), "tester": (), "reviewer": ()}
+    assert repo.mcp == {"author": ("four-eyes",), "tester": (), "reviewer": ()}
     # A plain model name still works, and a repo adds its own server for one role.
-    got = agents({"agents": {"tester": "haiku", "author": {"mcp": ["factory", "gitlab"]}},
+    got = agents({"agents": {"tester": "haiku", "author": {"mcp": ["four-eyes", "gitlab"]}},
                   "mcp": {"gitlab": {"command": "gitlab-mcp"}}})
     assert got["models"]["tester"] == "haiku" and got["mcp"]["tester"] == ()
-    assert got["mcp"]["author"] == ("factory", "gitlab") and "gitlab" in got["servers"]
+    assert got["mcp"]["author"] == ("four-eyes", "gitlab") and "gitlab" in got["servers"]
 
 
 def test_a_role_naming_an_undefined_server_fails_loudly():

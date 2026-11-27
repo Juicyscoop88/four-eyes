@@ -46,7 +46,7 @@ agents:
   # The tester's model is a cost choice: isolation, not another model, is what catches bugs (docs/eval.md).
   # Hermetic: each role gets only the MCP servers named here, never the ones installed on the laptop or
   # runner it runs on. The author may ask FourEyes what applies; the tester and reviewer get nothing more.
-  author:   { model: sonnet, mcp: [factory] }
+  author:   { model: sonnet, mcp: [four-eyes] }
   tester:   { model: opus,   mcp: [] }
   reviewer: { model: sonnet, mcp: [] }
 

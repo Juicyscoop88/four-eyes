@@ -206,3 +206,5 @@ repo but the workflow pins (`@v0.3.5`).
 
 `/four-eyes:ship` starts only on a hand-over ("let the factory build it", "ship"). Asked to write or fix code,
 Claude does it with you as usual and offers the hand-over once for a larger change. Move the pins to `@v0.3.6`.
+The MCP server is now called `four-eyes`, like everything else: in `factory.yaml` write `mcp: [four-eyes]`
+where it said `mcp: [factory]`.

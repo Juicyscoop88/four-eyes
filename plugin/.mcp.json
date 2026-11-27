@@ -1,5 +1,5 @@
 {
   "mcpServers": {
-    "factory": { "command": "${CLAUDE_PLUGIN_ROOT}/bin/foureyes", "args": ["mcp"] }
+    "four-eyes": { "command": "${CLAUDE_PLUGIN_ROOT}/bin/foureyes", "args": ["mcp"] }
   }
 }

@@ -136,14 +136,14 @@ def agents(raw: dict) -> dict:
     installed on the computer or CI runner they happen to run on.
     """
     models, mcp = dict(ROLES), {role: () for role in ROLES}
-    mcp["author"] = ("factory",)
+    mcp["author"] = ("four-eyes",)
     for role, entry in raw.get("agents", {}).items():
         if isinstance(entry, str):
             models[role] = entry
         else:
             models[role] = entry.get("model", models.get(role, "sonnet"))
             mcp[role] = tuple(entry.get("mcp", []))
-    servers = {"factory": FOUREYES_SERVER, **raw.get("mcp", {})}
+    servers = {"four-eyes": FOUREYES_SERVER, **raw.get("mcp", {})}
     for role, names in mcp.items():
         unknown = [n for n in names if n not in servers]
         if unknown:
