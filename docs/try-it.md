@@ -87,10 +87,9 @@ Afterwards: `git checkout -- . && git clean -fd src tests` to drop the experimen
 
 ## UC3. Ask the factory, not a colleague (engineer, 3 min)
 
-Same session, three questions in plain words:
+Same session, two questions in plain words:
 1. `why does line 18 of src/orders/engine.py exist?` → the MCP tool `why`: the issue, who asked, the decision, the tests that pin it.
-2. `what is left on my branch before it can merge?` → `status`: changed files, their tiers, what the gate will ask for.
-3. `from now on every amount we show is rounded half-even, make that a standard for src/**` → `propose_standard`:
+2. `from now on every amount we show is rounded half-even, make that a standard for src/**` → `propose_standard`:
    writes `standards/<name>.md` and shows the line an owner adds to `factory.yaml`. The agent never edits it itself.
 
 **Shows:** the registry of standards grows from work, in a pull request, not from meetings.
@@ -208,3 +207,7 @@ repo but the workflow pins (`@v0.3.5`).
 Claude does it with you as usual and offers the hand-over once for a larger change. Move the pins to `@v0.3.6`.
 The MCP server is now called `four-eyes`, like everything else: in `factory.yaml` write `mcp: [four-eyes]`
 where it said `mcp: [factory]`.
+
+## From v0.3.6 to v0.3.7
+
+`status` is gone from the MCP (pins to `@v0.3.7`): nobody used it, the branch and the pull request already say where a change stands.

@@ -20,7 +20,7 @@ server = MCPServer(
     instructions=(
         "This repository runs the Four Eyes software factory: nobody, human or agent, checks their own work. "
         "Call rules_for before you change a file. Call why when someone asks why code is the way it is, "
-        "who asked for it or who decided. Call status when someone asks where their change stands. Call "
+        "who asked for it or who decided. Call "
         "propose_standard when people agree on how something should be done here from now on. "
         "The gate in CI gives the verdict; these tools only advise and explain."
     ),
@@ -58,38 +58,6 @@ def why(path: str, line: int) -> str:
     Returns the commit and its role (author agent, tester agent, person), who asked, the task, the decisions
     people made on it, the tests that fail when the line is broken, and the pull request with its approvals."""
     return _why(_factory(), path, line)
-
-
-@server.tool()
-def status() -> str:
-    """Call this when someone asks where their change stands: is it ready, what blocks it, what is left for a
-    person to decide. Reads the current branch: the factory's last gate report on it, or else what the gate
-    will demand of the files changed so far."""
-    f = _factory()
-    branch = git(f.root, "rev-parse", "--abbrev-ref", "HEAD").strip()
-    if branch.startswith("factory/"):
-        report = f.root / ".factory" / "runs" / f"{branch.removeprefix('factory/')}.md"
-        if report.exists():
-            return f"Branch `{branch}`, the factory's last gate report:\n\n{report.read_text()}"
-    from foureyes.check import strictest
-    from foureyes.diff import changed_files
-
-    try:
-        base = git(f.root, "merge-base", "HEAD", "main").strip()
-    except Exception:
-        base = "HEAD"
-    files = changed_files(f.root, base)
-    if not files:
-        return f"Branch `{branch}`: nothing changed against main yet."
-    tier = strictest(f, files)
-    owned = [x for x in files if f.is_owned(x)]
-    lines = [f"Branch `{branch}`: {len(files)} changed files, tier **{tier.name}** "
-             f"(independent tests must catch {tier.mutation_min:.0%} of injected faults)."]
-    if owned:
-        lines.append(f"Owned files changed, an owner must approve: {', '.join(owned)}.")
-    lines.append("The gate runs on the pull request in CI and posts its report there as a comment, with the "
-                 "decision cards (`gh pr view --comments` shows it). Push and open the pull request to get it.")
-    return "\n".join(lines)
 
 
 @server.tool()
