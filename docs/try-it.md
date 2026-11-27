@@ -249,3 +249,12 @@ with one line: write what, why and one example; the tester writes its tests from
 are never asked. Setup no longer proposes protected tests: it leaves an empty `tests/protected/` where a lead or
 senior moves a test once it matters. In the caller workflow add `types: [opened, synchronize, reopened, edited]`
 to `pull_request`, so a spec added later reruns the gate. Pins to `@v0.3.12`.
+
+## From v0.3.12 to v0.3.13
+
+Found by running Anna's whole path for real (setup, adoption request, repo by the adopters, pull request, gate):
+- Without `ANTHROPIC_API_KEY` the review job is skipped with a notice instead of failing.
+- Without a tester the gate says why ("no independent tests yet: the tester needs the key"), not only "0 of 13".
+- Setup asks a non-engineer at most who their lead is (and the design system for a screen); the money tier
+  and the owned paths it decides itself, for the adopters to review.
+- The key is best set once for the whole organisation. Pins to `@v0.3.13`.

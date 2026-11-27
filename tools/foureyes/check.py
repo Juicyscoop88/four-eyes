@@ -128,7 +128,10 @@ def check(
         if not res.failures and targets and tier.mutation_min > 0:
             log("gate: mutation testing the changed lines")
             res.mutants = mutation.run(factory, work, targets, paths=mutation_tests(factory, files))
-            if res.score < tier.mutation_min:
+            if res.score < tier.mutation_min and not with_agents and not res.caught(*INDEPENDENT):
+                # Nothing independent could catch anything: no tester ran. Say why, not just the number.
+                res.blocks.append(NO_TESTER)
+            elif res.score < tier.mutation_min:
                 res.blocks.append(
                     f"independent tests caught {res.caught(*INDEPENDENT)} of {len(res.counted)} injected faults, "
                     f"tier {tier.name} needs {tier.mutation_min:.0%}"
@@ -177,6 +180,10 @@ def mutation_tests(factory: Factory, files: list[str]) -> tuple[str, ...]:
 
 NO_SPEC = ("no task: the change says nowhere what it should do and why. Write it in the pull request description, "
            "with one example and its expected result; the tester writes its tests from it, without seeing the code")
+
+
+NO_TESTER = ("no independent tests yet: the tester writes them, and in CI it needs the repo's ANTHROPIC_API_KEY. "
+             "An admin adds it once, best for the whole organisation; then this check runs again")
 
 
 def has_spec(task: str | None) -> bool:
