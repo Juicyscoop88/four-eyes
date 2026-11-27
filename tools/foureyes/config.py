@@ -1,5 +1,6 @@
 """factory.yaml: the one file per repo the gate reads."""
 
+import shutil
 import sys
 from dataclasses import dataclass
 from fnmatch import fnmatch
@@ -54,7 +55,7 @@ class Factory:
     standards: list[Standard]
     source: str = "src"                 # the code the factory protects (stubbed for the tester, mutated by the gate)
     test_command: str = "uv run pytest" # what the author runs
-    python: str = ""                    # the interpreter for the suites; empty: the one running foureyes
+    python: str = ""                    # the interpreter for the suites (see `project_python`)
 
     def is_source(self, path: str) -> bool:
         return path.startswith(self.source.rstrip("/") + "/") and path.endswith(".py")
@@ -105,9 +106,19 @@ def load(root: Path) -> Factory:
         standards=[standard(root, x) for x in raw.get("standards", [])],
         source=raw.get("source", "src"),
         test_command=raw.get("test_command", "uv run pytest"),
-        python=str((root / raw["python"]).absolute()) if raw.get("python") else "",  # relative to the repo
+        python=str((root / raw["python"]).absolute()) if raw.get("python") else project_python(root),
         **agents(raw),
     )
+
+
+def project_python(root: Path) -> str:
+    """The project's interpreter when factory.yaml names none: the repo's own .venv if there is one, else the
+    `python` on PATH (in CI the runner's, where the project's setup installed it). Never the interpreter that runs
+    foureyes itself: the plugin and `uv tool` install it apart, without the project or pytest."""
+    for venv in (root / ".venv" / "bin" / "python", root / ".venv" / "Scripts" / "python.exe"):
+        if venv.exists():
+            return str(venv.absolute())
+    return shutil.which("python3") or shutil.which("python") or "python"
 
 
 def suites(raw: dict) -> dict:

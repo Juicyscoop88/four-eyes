@@ -258,3 +258,10 @@ Found by running Anna's whole path for real (setup, adoption request, repo by th
 - Setup asks a non-engineer at most who their lead is (and the design system for a screen); the money tier
   and the owned paths it decides itself, for the adopters to review.
 - The key is best set once for the whole organisation. Pins to `@v0.3.13`.
+
+## From v0.3.13 to v0.3.14
+
+Found by running case 2 for real: a project installed with pip, with no `python` in factory.yaml, had its
+suites run in the interpreter that runs foureyes (the plugin's own, without pytest or the project), so the
+Stop hook and the gate saw "no report". Now the suites run in the repo's `.venv` if there is one, else the
+`python` on PATH (in CI, the runner's). Pins to `@v0.3.14`.
