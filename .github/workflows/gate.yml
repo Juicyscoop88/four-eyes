@@ -38,6 +38,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ github.token }}   # the workflow's own token: no extra GitHub App to approve
           plugin_marketplaces: https://github.com/anthropics/claude-plugins-official.git
           plugins: code-review@claude-plugins-official
           prompt: /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }} --comment
