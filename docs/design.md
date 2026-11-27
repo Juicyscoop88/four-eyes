@@ -258,7 +258,7 @@ verdict. A senior stops repeating the same review; a junior gets better faster.
 
 - 15 planted bugs is a small sample, and the adversary is also Claude.
 - The tester needs a clear interface; the author writes signatures first.
-- Hooks cover Claude Code's file tools; a shell command is stopped only by the gate in CI.
+- Laptop guards are a convenience, the gate is the rule: hooks warn Claude early, a shell command can get past them, the gate in CI never lets it through.
 - The reviewer misses things. It narrows attention; approval stays human.
 - Invariants are only as good as their owners. The factory makes them cheap to propose, not correct.
 - Checked on our sample domain, two open-source libraries and one professional repo, all Python. Blind tests
