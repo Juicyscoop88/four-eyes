@@ -17,7 +17,7 @@ The roles, and what each may see:
 | Role | Model | Sees | Never sees |
 |---|---|---|---|
 | author | Sonnet | the repo, under the hooks; `rules_for` | owned files as writable |
-| tester | Opus (another model on purpose) | task, invariants, signatures | the implementation, the author's tests and chat |
+| tester | Opus (any model: isolation does the work, see the eval) | task, invariants, signatures | the implementation, the author's tests and chat |
 | reviewer | Sonnet | task, diff, invariants, the gate's numbers | the author's conversation |
 
 The tester is not a Claude Code subagent: a subagent shares the author's workspace. It runs in a copy of the

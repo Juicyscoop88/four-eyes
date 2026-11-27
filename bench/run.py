@@ -13,6 +13,7 @@ Run: uv run python bench/run.py [pr numbers]   (needs `claude` signed in, gh, an
 """
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -23,15 +24,32 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK = ROOT / "bench" / "work"
-REPO = WORK / "humanize"
-PY = WORK / "venv" / "bin" / "python"
 FOUREYES = ROOT / ".venv" / "bin" / "foureyes"
-UPSTREAM = "python-humanize/humanize"
-SKIPPED_TESTS = ["tests/test_i18n.py", "tests/test_benchmarks.py"]  # need compiled catalogs / a plugin; no bug here
 
-FACTORY = f"""# FourEyes on python-humanize (bench setup)
+# The repos of the bench. BENCH_REPO picks one (default humanize).
+PROFILES = {
+    "humanize": {
+        "upstream": "python-humanize/humanize", "venv": "venv", "source": "src", "pythonpath": "src",
+        "issues": "issues",
+        "skipped": ["tests/test_i18n.py", "tests/test_benchmarks.py"],  # compiled catalogs / a plugin; no bug here
+    },
+    "babel": {
+        "upstream": "python-babel/babel", "venv": "venv-babel", "source": "babel", "pythonpath": ".",
+        "issues": "issues-babel", "skipped": [],
+    },
+}
+NAME = os.environ.get("BENCH_REPO", "humanize")
+P = PROFILES[NAME]
+REPO = WORK / NAME
+PY = WORK / P["venv"] / "bin" / "python"
+UPSTREAM = P["upstream"]
+SKIPPED_TESTS = P["skipped"]
+ISSUES = ROOT / "bench" / P["issues"]
+RESULTS = ROOT / "bench" / ("results.json" if NAME == "humanize" else f"results-{NAME}.json")
+
+FACTORY = f"""# FourEyes on {UPSTREAM} (bench setup)
 owned: [factory.yaml]
-source: src
+source: {P["source"]}
 test_command: {PY} -m pytest
 python: {PY}
 suites:
@@ -40,7 +58,7 @@ suites:
   invariants: tests/invariants
 tiers:
   money:
-    paths: ["src/**"]
+    paths: ["{P["source"]}/**"]
     mutation_min: 0.8
   low:
     paths: ["**"]
@@ -48,16 +66,31 @@ tiers:
 """
 
 
+def prepare(t: Path, data_from: Path | None = None) -> None:
+    """What a checkout needs before its tests run: humanize a version file, babel its CLDR data.
+
+    babel's CLDR data is generated once in bench/work/babel by its own script (a person runs it:
+    `scripts/download_import_cldr.py`); every checkout links to it."""
+    if NAME == "humanize":
+        (t / "src/humanize/_version.py").write_text('__version__ = "0.0.0"\n')
+        return
+    for f in ("babel/locale-data", "babel/global.dat"):
+        if not (REPO / f).exists():
+            raise SystemExit(f"bench: {REPO / f} is missing; run babel's scripts/download_import_cldr.py there first")
+        if not (t / f).exists():
+            (t / f).symlink_to(REPO / f)
+
+
 def sh(*cmd, cwd=None, check=True) -> str:
     return subprocess.run(cmd, cwd=cwd, check=check, capture_output=True, text=True).stdout
 
 
-def tree(ref: str) -> Path:
+def tree(ref: str, data_from: Path | None = None) -> Path:
     """A throwaway copy of the upstream repo at ref, importable from source."""
     dest = Path(tempfile.mkdtemp(prefix="bench-"))
     sh("git", "worktree", "add", "-q", "--detach", str(dest / "t"), ref, cwd=REPO)
     t = dest / "t"
-    (t / "src/humanize/_version.py").write_text('__version__ = "0.0.0"\n')
+    prepare(t, data_from)
     return t
 
 
@@ -73,7 +106,7 @@ def failures(t: Path, files: list[str]) -> int | None:
         return 0
     out = subprocess.run(
         [str(PY), "-m", "pytest", "-q", "-p", "no:cacheprovider", *files],
-        cwd=t, capture_output=True, text=True, env={"PYTHONPATH": str(t / "src"), "PATH": "/usr/bin:/bin"},
+        cwd=t, capture_output=True, text=True, env={"PYTHONPATH": str(t / P["pythonpath"]), "PATH": "/usr/bin:/bin"},
     )
     if out.returncode in (2, 3, 4):  # interrupted: the tests do not even collect
         return None
@@ -90,26 +123,27 @@ def overlay(t: Path, src: Path | str, files: list[str], ref: str | None = None) 
             shutil.copy2(Path(src) / f, t / f)
 
 
-def setup(n: int) -> tuple[Path, str, str]:
+def setup(n: int, prefix: str = "pr") -> tuple[Path, str, str]:
     merge = json.loads(sh("gh", "pr", "view", str(n), "--repo", UPSTREAM, "--json", "mergeCommit"))["mergeCommit"]["oid"]
     sh("git", "fetch", "-q", "origin", merge, cwd=REPO, check=False)
-    wt = WORK / f"pr{n}"
+    wt = WORK / f"{prefix}{n}"
     if wt.exists():
         sh("git", "worktree", "remove", "--force", str(wt), cwd=REPO, check=False)
         shutil.rmtree(wt, ignore_errors=True)
     sh("git", "worktree", "prune", cwd=REPO)
     # A rerun starts from nothing: the autopilot would otherwise go on with the last run's branch.
-    for branch in sh("git", "branch", "--list", f"factory/pr{n}-*", "--format=%(refname:short)", cwd=REPO).split():
+    for branch in sh("git", "branch", "--list", f"factory/{prefix}{n}-*", "--format=%(refname:short)", cwd=REPO).split():
         sh("git", "branch", "-D", branch, cwd=REPO)
     sh("git", "worktree", "add", "-q", "--detach", str(wt), f"{merge}^1", cwd=REPO)
-    sh("git", "checkout", "-q", "-B", f"bench-main-{n}", cwd=wt)
+    sh("git", "checkout", "-q", "-B", f"bench-{prefix}-main-{n}", cwd=wt)
     sh("git", "branch", "-f", "main", "HEAD", cwd=wt, check=False)
     (wt / "factory.yaml").write_text(FACTORY)
-    (wt / "src/humanize/_version.py").write_text('__version__ = "0.0.0"\n')
+    prepare(wt)
     for f in SKIPPED_TESTS:
         (wt / f).unlink(missing_ok=True)
     sh("git", "add", "-A", cwd=wt)
-    sh("git", "add", "-f", "src/humanize/_version.py", cwd=wt)
+    if NAME == "humanize":
+        sh("git", "add", "-f", "src/humanize/_version.py", cwd=wt)
     sh("git", "-c", "user.name=bench", "-c", "user.email=bench@four-eyes.local", "commit", "-q", "-m", "bench setup", cwd=wt)
     return wt, merge, sh("git", "rev-parse", "HEAD", cwd=wt).strip()
 
@@ -134,7 +168,7 @@ def one(issue: Path) -> dict:
     result = {"pr": n, "issue": slug, "cost_usd": run.get("cost_usd"), "minutes": run.get("minutes"),
               "gate_passed": run.get("passed"), "blind_files": blind, "author_files": author}
 
-    t = tree(head)  # the autopilot's code with the maintainers' tests
+    t = tree(head, wt)  # the autopilot's code with the maintainers' tests
     try:
         overlay(t, None, hidden, ref=merge)
         f = failures(t, hidden)
@@ -142,7 +176,7 @@ def one(issue: Path) -> dict:
         result["hidden_failures"] = f
     finally:
         drop(t)
-    t = tree(f"{merge}^1")  # the buggy code
+    t = tree(f"{merge}^1", wt)  # the buggy code
     try:
         overlay(t, None, hidden, ref=merge)
         result["hidden_fail_on_buggy"] = bool(failures(t, hidden))
@@ -153,7 +187,7 @@ def one(issue: Path) -> dict:
         result["author_caught"] = bool(failures(t, author))
     finally:
         drop(t)
-    t = tree(merge)  # the maintainers' fix
+    t = tree(merge, wt)  # the maintainers' fix
     try:
         overlay(t, wt, blind)
         f = failures(t, blind)
@@ -216,12 +250,12 @@ def summary(results: list[dict]) -> str:
 
 if __name__ == "__main__":
     wanted = {int(a) for a in sys.argv[1:]}
-    issues = sorted(p for p in (ROOT / "bench" / "issues").glob("pr*.md")
+    issues = sorted(p for p in ISSUES.glob("pr*.md")
                     if not wanted or int(re.match(r"pr(\d+)", p.stem).group(1)) in wanted)
     with ThreadPoolExecutor(max_workers=3) as pool:
         fresh = list(pool.map(one, issues))
     # A rerun of some bugs replaces only their rows; the others keep their last result.
-    saved = ROOT / "bench" / "results.json"
+    saved = RESULTS
     by_pr = {r["pr"]: r for r in (json.loads(saved.read_text()) if saved.exists() else [])}
     by_pr.update({r["pr"]: r for r in fresh})
     results = sorted(by_pr.values(), key=lambda r: r["pr"])

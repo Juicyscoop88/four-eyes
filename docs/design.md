@@ -2,6 +2,12 @@
 
 > **People write issues. The factory does the rest, and nobody, human or agent, checks their own work.**
 
+**The bottleneck has moved from writing code to trusting it.** Agents already write more than people can
+read: the senior engineer says reviewing takes longer than writing, the early adopter's pull requests are
+approved unread, the team lead cannot tell whether anyone is faster. Faster writing makes all three worse.
+The factory makes people productive by spending their attention only where a person is needed: a few
+decisions per change, with evidence for everything else.
+
 Finance already has the rule: a payment is not approved by the person who entered it (four eyes). The factory
 applies it to code, whoever or whatever wrote it. Structured by the nine points of the brief, deep on three:
 the protocol (3), quality and governance (6), adoption (8). Everything below runs in the prototype unless it
@@ -46,7 +52,7 @@ The issue, as a person wrote it (UC8 from our use cases):
 | Step | Who | What happened (real run, 3.8 min, $0.81) |
 |---|---|---|
 | Plan | author agent | Wrote the task, the interface (`apply_execution`) and its assumptions |
-| Blind tests | **tester**, another model | Wrote tests in a copy of the repo where every function body is `raise NotImplementedError` |
+| Blind tests | **tester**, blind | Wrote tests in a copy of the repo where every function body is `raise NotImplementedError` |
 | Code | author agent | Implemented under the plugin's hooks until all suites were green |
 | Gate | the gate | All suites; 6 faults injected into the changed lines: tester's tests caught 6, author's own 5 |
 | Gaps | reviewer → tester | Faults nobody caught go to the reviewer, who rewrites them as behaviors in words; the tester adds tests, blind again. Loops until the tier's score is met |
@@ -66,9 +72,14 @@ The issue, as a person wrote it (UC8 from our use cases):
 A prompt that says "do not look at the code" is a wish. A workspace without the code is a guarantee. That is
 also why the tester is **not** a Claude Code subagent: a subagent shares the author's workspace.
 
-**Different models on purpose.** Same context isolation is not enough: the same model has the same blind
-spots. The tester runs on a different model from the author (in the prototype Opus and Sonnet; at FTMO,
-Gemini on the same Vertex AI account: another vendor, no new data processor).
+**What it sees matters, not who it is.** We expected a different model to matter (different blind spots).
+The eval says otherwise: a blind tester on the author's own model caught 15 of 15 planted bugs, the author's
+tests 5. Isolation does the work, so the tester's model is a cost choice per repo (Haiku caught 13 for
+$0.02), and another vendor (Gemini on the same Vertex AI account) stays an option, not a requirement.
+
+**Hermetic.** Each role gets only the MCP servers `factory.yaml` names, and no settings of the laptop or
+runner it runs on. Found on the bench: the author had loaded every server of the laptop (339 tools from 11
+servers). Hermetic, the same bug cost five times less, and nothing could leave through a tool nobody approved.
 
 ### Three parts, each once
 
@@ -87,11 +98,26 @@ more than their role may see.
 
 ## 4. People, day to day
 
-- **Engineer:** writes an issue, answers decision cards. Or writes by hand as today and gets blind tests and
-  a review map on the pull request for free.
-- **Reviewer:** starts from the map. Approval means "I judged these three points": what the audit needs.
+What each person gets is attention back, not speed:
+
+| Who | Today | With FourEyes |
+|---|---|---|
+| Senior engineer | reads 400 lines to trust them | answers the few cards only a person can decide (#479 on the bench: three questions) |
+| Early adopter | ships fast, tests from the same agent | keeps the speed; tests come from someone who never saw the code |
+| Team lead | setup lives in people's heads; no numbers | setup lives in the repo; time, cost and catches per change |
+| Long tasks | the next session starts from scratch | the task, progress and every step are commits on the branch |
+| Compliance | "who is the author?" | the person who asked plus the agent; an approver who is neither; `why` traces each decision |
+| Analyst | a weekend tool nobody knows of | an issue form, the same gate as engineers *(designed, not built)* |
+
+- **Where work starts:** an issue (the form asks what, why and an example). Or code by hand as today, which
+  gets blind tests and a review map on the pull request for free.
+- **Steering:** `/decide 2 reject`, `/decide A3 ...` in the pull request; or take the branch by hand and hand
+  it back.
 - **When it goes wrong:** a false block is overridden by the approver with a written reason. A bug that
   escapes becomes a new invariant (the reviewer proposed one unprompted in the run above).
+- **How we know it works for them** (the pilot's numbers, not a promise): a person's minutes per merged
+  change, defects that escape to production, the share of pull requests where the cards were enough, and the
+  false alarm rate (a question asked that a person did not need).
 
 ## 5. Delegate, review, own
 
