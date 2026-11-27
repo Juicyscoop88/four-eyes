@@ -32,7 +32,7 @@ cd ~/Projects/foureyes-try && claude
 
 **You should see:** Claude reads the repo and finds `src/humanize`, `tests`, the test command. It asks you one
 question at a time (which paths carry money or trust, which files only people change). It writes on a branch
-`ftmo-factory-setup`: `factory.yaml`, `standards/basics.md`, `.claude/settings.json` (Claude Code asks you first:
+`ftmo-factory-setup`: `factory.yaml`, `.claude/settings.json` (Claude Code asks you first:
 it protects `.claude/`), `.github/workflows/ftmo-factory.yml`, the issue form and `CODEOWNERS`. At the end it shows
 the brief every session will get.
 

@@ -27,8 +27,18 @@ class Invariant:
 
 @dataclass(frozen=True)
 class Standard:
+    """How things are done. A company standard ships with the factory (one version for every repo); a repo
+    standard is a file in the repo, for what only this repo does."""
     paths: tuple[str, ...]
-    file: str
+    file: str          # what people see: `standards/x.md`, or `company: x` for a company standard
+    source: Path
+
+    @property
+    def company(self) -> bool:
+        return self.file.startswith("company:")
+
+    def text(self) -> str:
+        return self.source.read_text()
 
 
 @dataclass(frozen=True)
@@ -92,12 +102,26 @@ def load(root: Path) -> Factory:
         suites=raw["suites"],
         tiers=tiers,
         invariants=invariants,
-        standards=[Standard(tuple(x["paths"]), x["file"]) for x in raw.get("standards", [])],
+        standards=[standard(root, x) for x in raw.get("standards", [])],
         source=raw.get("source", "src"),
         test_command=raw.get("test_command", "uv run pytest"),
         python=str((root / raw["python"]).absolute()) if raw.get("python") else "",  # relative to the repo
         **agents(raw),
     )
+
+
+COMPANY = Path(__file__).parent / "company"
+
+
+def standard(root: Path, entry: dict) -> Standard:
+    paths = tuple(entry["paths"])
+    if "company" in entry:
+        source = COMPANY / f"{entry['company']}.md"
+        if not source.exists():
+            known = ", ".join(sorted(p.stem for p in COMPANY.glob("*.md")))
+            raise ValueError(f"factory.yaml names the company standard `{entry['company']}`; there are: {known}")
+        return Standard(paths, f"company: {entry['company']}", source)
+    return Standard(paths, entry["file"], root / entry["file"])
 
 
 ROLES = {"author": "sonnet", "tester": "opus", "reviewer": "sonnet"}

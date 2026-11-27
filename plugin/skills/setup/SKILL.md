@@ -28,7 +28,11 @@ Claude is what they want, and stop.
 3. **Ask the person, one question at a time,** only what you could not find out:
    - where a mistake would hurt clients or money, and who approves those changes (the `money` tier);
    - what only people may change (configs, migrations, the rules below);
-   - for a frontend, where the design system is;
+   - for a frontend: is it an internal FTMO app? Recommend the company design system ("Internal apps should
+     look like one product, so colleagues do not learn a new screen. Use the company design system?"), with
+     the answers *company design system (Recommended)* and *keep our own look*. If the repo already has its
+     own design, never overwrite it: keeping it is a fine answer, made on purpose, and a reason to differ can
+     go to the design system's owners later as a proposal;
    - **what the tool or code promises**: "What must always be true, whatever the input? For example: every
      row is either matched or flagged, totals on both sides are equal." Ask for two to five such promises in
      the person's words. They become owned invariants that the gate checks on every change.
@@ -58,8 +62,10 @@ Claude is what they want, and stop.
      it yourself.
 5. **Write, on the same branch,** in this order (`factory.yaml` last: once it exists, the paths it
    names as owned are closed to agents, including `.github/`):
-   - `standards/basics.md` from the template. For a frontend, also `standards/design-system.md`: the design
-     system's rules in a few bullets, with a link to where it lives.
+   - Standards: the company's ship with the factory and are only named in `factory.yaml` (`company: basics`,
+     `company: design-system`, `company: money`), never copied, so every repo gets the same version and an
+     update reaches all of them. Write a `standards/<name>.md` only for what this repo does its own way
+     (its own look, if the person chose to keep it).
    - `.claude/settings.json`: merge in the template's `extraKnownMarketplaces` and `enabledPlugins`, keep
      everything already there. Everyone who clones the repo is then asked once to install the plugin, and Anthropic's
      `code-review` with it: `/code-review` before a push, the same review the gate runs in CI.
@@ -70,16 +76,19 @@ Claude is what they want, and stop.
    - `.github/CODEOWNERS`: the money paths and the owned paths with the team the person named.
    - `factory.yaml` from the template, filled with what you found and heard. Delete the comments that do
      not apply. `python` is the interpreter the project's setup creates (for uv: `.venv/bin/python`); the
-     test command runs with it (`.venv/bin/python -m pytest`). A design system goes under `standards:`.
+     test command runs with it (`.venv/bin/python -m pytest`).
    If a write is refused, tell the person which file and why. Never put drafts anywhere else.
 6. **Check it loads:** run `foureyes hook session-start < /dev/null`. It prints the brief every session will
    get; show the person the paths and tiers it names. Fix `factory.yaml` until it is right.
-7. **Commit and hand over.** Commit with a message that says what was set up. Tell the person in a few lines
-   what each file does and what is left for them:
-   - open the pull request (or ask you to, with `gh`);
-   - add the repo secrets `ANTHROPIC_API_KEY` (the reviewer and autopilot in CI) and, while the factory repo
-     is private, `FOUREYES_TOKEN` (a read-only token for it);
-   - create the label `autopilot`.
+7. **Commit and hand over, short.** Commit with a message that says what was set up. The checklist at the
+   start was the long part; the hand-over is at most six lines, no tables, no file-by-file tour:
+   - one line: what is done (for example "Set up on branch `ftmo-factory-setup`: rules, tests of your three
+     promises, made-up sample data instead of the export.");
+   - what is left for the person, numbered, one line each, at most three (for example: rotate the database
+     password; open the pull request, or say "open it" and you do it with `gh`);
+   - one line for the repo's admin if there is one: the repo secrets `ANTHROPIC_API_KEY` and, while the factory
+     repo is private, `FOUREYES_TOKEN`, and the label `autopilot`;
+   - one line: "Ask me about any file if you want the details."
 
 The gate's blind tests and mutation testing work on Python today. In another stack say so plainly: the
 guardrails while writing (the rules of each file, the standards) and the reviewer work; the gate runs the
@@ -111,9 +120,13 @@ python: .venv/bin/python          # the interpreter that runs the suites (relati
 # How things are done here. The agent gets them when it touches the paths, the reviewer checks them.
 standards:
   - paths: ["**"]
-    file: standards/basics.md
+    company: basics               # company standards ship with the factory: named here, never copied
   # - paths: ["apps/**", "web/**"]
-  #   file: standards/design-system.md
+  #   company: design-system      # internal apps look like one product
+  # - paths: ["src/payments/**"]
+  #   company: money
+  # - paths: ["web/**"]
+  #   file: standards/our-look.md # a repo standard: only what this repo does its own way
 
 suites:
   author: tests                   # written by whoever wrote the code (measured, never counted)
@@ -154,22 +167,6 @@ invariants:
 
 Then in `factory.yaml`: `invariants: [invariants/<name>.yaml]`, `suites.invariants: tests/invariants`, and
 `invariants/**` and `tests/invariants/**` under `owned`.
-
-### standards/basics.md
-
-```markdown
-# Basics
-
-How every change is made here, whoever writes it.
-
-- A change does one thing. Say in the pull request what and why, in a sentence a colleague understands.
-- Behavior comes with a test that fails without the change. Tests name the case they check.
-- Errors are handled where they happen, with a message a person can act on. Nothing is swallowed silently.
-- No secrets in code, config or tests: reference them by name from the secret store or the environment.
-- No new dependency without a reason in the pull request. Prefer what the repo already uses.
-- Inputs from outside (users, files, APIs) are validated before they are used.
-- Names say what things are. No dead code, no commented-out code, no TODO without an issue.
-```
 
 ### .claude/settings.json (merge into the existing file)
 

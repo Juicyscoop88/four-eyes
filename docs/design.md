@@ -92,7 +92,10 @@ servers). Hermetic, the same bug cost five times less, and nothing could leave t
 
 **Code decides, agents advise.** Rules come in two kinds in `factory.yaml`: *invariants* (never broken,
 property-tested, the gate blocks) and *standards* (how it is done here: a design system and optimistic UI
-for apps, money handling for the core; served to the agent by `rules_for`, checked by the reviewer). MCP
+for apps, money handling for the core; served to the agent by `rules_for`, checked by the reviewer).
+Standards come in two layers: *company* standards (basics, the design system, money) ship with the factory,
+one version for every repo, and a repo only names them, so an update reaches all repos and none drifts;
+*repo* standards are files for what only that repo does its own way, a choice made on purpose. MCP
 tools differ per role: the author gets `rules_for`; the tester and reviewer get none, so nothing shows them
 more than their role may see.
 

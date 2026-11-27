@@ -15,12 +15,14 @@ invariants:
 # Standards: how things are done here. Softer than invariants: the agent gets them as advice
 # (rules_for in the MCP server), the reviewer checks them, and what can be measured is measured.
 standards:
+  - paths: ["**"]
+    company: basics               # company standards ship with the factory, one version for every repo
   - paths: ["apps/**"]
-    file: standards/design-system.md
-  - paths: ["apps/**"]
-    file: standards/optimistic-ui.md
+    company: design-system
   - paths: ["src/**"]
-    file: standards/money.md
+    company: money
+  - paths: ["apps/**"]
+    file: standards/optimistic-ui.md   # a repo standard: only this repo does it this way
 
 # The three kinds of tests. The gate measures each one separately.
 suites:
