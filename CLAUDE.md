@@ -1,6 +1,6 @@
 # FTMO & OANDA case study: Design Your Software Factory
 
-Take-home for the AI Engineer role (Hiring Sprint #1). Brief: [brief.md](brief.md). Due Tue 2026-12-01, presented in Prague Thu 12-03 or Fri 12-04 (35 to 40 min plus discussion). Working notes: [docs/thinking.md](docs/thinking.md), [docs/use-cases.md](docs/use-cases.md).
+Case study for the AI Engineer role at FTMO & OANDA: design a software factory and build a working piece of it. The brief itself is not included. Working notes: [docs/thinking.md](docs/thinking.md), [docs/use-cases.md](docs/use-cases.md).
 
 ## The idea in one line
 

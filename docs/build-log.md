@@ -6,7 +6,7 @@ Agent: Claude Code (Opus 5.5), directed from a team chat. Times are wall clock.
 ## 2026-11-26
 
 **10:58 to 11:25: reading the brief (about 30 min)**
-- The brief arrived as a PDF in Gmail; I shared a screen recording of scrolling through it. The agent read the frames, cropped and upscaled them, and transcribed the full text into `brief.md`.
+- The brief arrived as a PDF in Gmail; I shared a screen recording of scrolling through it. The agent read the frames, cropped and upscaled them, and transcribed the full text into `brief.md` (kept private, not in this repo).
 - Reviewed: I read the brief myself in parallel.
 
 **11:25 to 12:30: design conversation (about 1 h)**
