@@ -201,3 +201,10 @@ gate, and setup fits a mature repo (it keeps the team's agent rules possible and
 `/four-eyes:ship` shapes the issue with you before the factory starts: what, why, one example with numbers and
 the expected outcome, and up to three open questions with the answer it would assume. Nothing to change in a
 repo but the workflow pins (`@v0.3.5`).
+
+## From v0.3.5 to v0.3.6
+
+`/four-eyes:ship` starts only on a hand-over ("let the factory build it", "ship"). Asked to write or fix code,
+Claude does it with you as usual and offers the hand-over once for a larger change. Move the pins to `@v0.3.6`.
+The MCP server is now called `four-eyes`, like everything else: in `factory.yaml` write `mcp: [four-eyes]`
+where it said `mcp: [factory]`.

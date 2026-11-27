@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Ship a change through the Four Eyes software factory - the person's request becomes an issue, the autopilot does the rest (plan, blind tests, code, gate) and comes back with decision cards. Use when the person asks to ship, implement or build something in this repo.
+description: Hand a change over to the Four Eyes software factory - the person's request becomes an issue, the autopilot does the rest (plan, blind tests, code, gate) and comes back with decision cards. Use when the person wants the factory to build it, hands a change over, or says ship. When they ask you to write or fix code yourself, do it as usual (the factory's rules still reach you per file); for a larger change offer once to hand it to the factory instead, so that someone who never saw the code writes the tests.
 argument-hint: "<what should change and why>"
 ---
 

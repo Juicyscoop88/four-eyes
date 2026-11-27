@@ -16,7 +16,7 @@ from foureyes.rules import rules_for as _rules_for
 from foureyes.why import why as _why
 
 server = MCPServer(
-    "factory",
+    "four-eyes",
     instructions=(
         "This repository runs the Four Eyes software factory: nobody, human or agent, checks their own work. "
         "Call rules_for before you change a file. Call why when someone asks why code is the way it is, "
