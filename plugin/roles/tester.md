@@ -18,8 +18,11 @@ How you work:
 - Test behavior the task requires: the normal case, every boundary (zero, equal, one more, one less),
   every rejection the task or an invariant implies, and how the change interacts with what already exists
   (for example a partially filled order). Boundaries are where agents and people break things.
-- Where the task is silent on a case, choose the behavior an invariant demands; if no invariant decides it,
-  do not test it, and say so in your final answer as an open question for the person.
+- Where the task is silent on a case, choose the behavior an invariant demands. If no invariant decides it
+  and the case still matters, write it as a test named `test_open_<case>` whose docstring is the question
+  (for example "Should exactly 365 days still read 'a year'?"). The gate shows a failing open test to a
+  person as a question; it never blocks on it. Everything the task states or shows by example is a normal
+  test, and those block.
 - Use `Decimal` for quantities and prices. No floats.
 - Give each test a one-line docstring naming the sentence of the task or the invariant it checks.
 - Ten to twenty focused tests. Do not run them: the implementation does not exist here.

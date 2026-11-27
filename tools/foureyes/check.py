@@ -41,10 +41,14 @@ class Result:
     equivalent: dict[str, str] = field(default_factory=dict)  # mutant id -> why no input tells it apart
     proposal: dict | None = None  # an extension of the owned invariant tests, for their owners
     assumptions: list[str] = field(default_factory=list)  # what the plan assumed where the issue was silent
+    open: list[Failure] = field(default_factory=list)  # the tester's open questions (test_open_*) the code answers otherwise
 
     def cards(self) -> list[dict]:
         """Every decision a person can make on this change, with ids: 1, 2, 3 from the reviewer, A1.. from the plan."""
         out = [{**c, "id": str(i)} for i, c in enumerate(self.review.map if self.review else [], 1)]
+        out += [{"id": f"Q{i}", "question": f"The tester asked, the code answers otherwise: {f.test}: {f.message}",
+                 "options": ["code: the code is right, the tester's test changes", "test: the test is right, the code changes"]}
+                for i, f in enumerate(self.open, 1)]
         out += [{"id": f"A{i}", "question": a, "options": ["keep"]} for i, a in enumerate(self.assumptions, 1)]
         return out
 
@@ -94,6 +98,9 @@ def check(
     try:
         log("gate: running the suites")
         res.failures, res.tests_run = run_suites(factory, work)
+        # The tester's own guesses where the task is silent are questions for a person, never a block.
+        res.open = [f for f in res.failures if f.suite == "tester" and is_open(f.test)]
+        res.failures = [f for f in res.failures if f not in res.open]
         broken = {inv.id: inv for f in res.failures if (inv := invariant_of(factory, f))}
         res.blocks += [f"{inv.id} broken: {inv.statement}" for inv in broken.values()]
         for suite in ("tester", "author", "other", "collection", "timeout"):
@@ -126,6 +133,10 @@ def check(
             for f in res.review.findings if f.get("severity") == "block"
         ]
     return res
+
+
+def is_open(test: str) -> bool:
+    return test.split("[")[0].rsplit("::", 1)[-1].startswith("test_open_")
 
 
 def assumptions_of(task: str) -> list[str]:
@@ -186,6 +197,13 @@ def report(factory: Factory, res: Result, head: str) -> str:
                 key = o.split(":")[0].strip()
                 out.append(f"- `/decide {i} {key}`: {o.split(':', 1)[1].strip() if ':' in o else o}")
             out.append("")
+    if res.open:
+        out.append("### The tester asked\n")
+        out.append("Where the issue is silent the tester guessed, and the code chose otherwise. Neither blocks; "
+                   "say which is right, for example `/decide Q1 code`.\n")
+        for i, f in enumerate(res.open, 1):
+            out.append(f"- **Q{i}** `{f.test}`: {f.message}")
+        out.append("")
     if res.review and res.review.summary:
         out += [f"> {res.review.summary}\n"]
 

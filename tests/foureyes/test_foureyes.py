@@ -145,3 +145,11 @@ def test_a_role_naming_an_undefined_server_fails_loudly():
 
     with pytest.raises(ValueError, match="neon"):
         agents({"agents": {"author": {"mcp": ["neon"]}}})
+
+
+def test_the_testers_open_questions_never_block():
+    from foureyes.check import is_open
+
+    assert is_open("tests/blind/test_x.py::test_open_exactly_365_days")
+    assert is_open("test_open_rounding[ru-1100]")
+    assert not is_open("tests/blind/test_x.py::test_rounds_up_to_next_year")
