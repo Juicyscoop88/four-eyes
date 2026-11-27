@@ -22,7 +22,8 @@ from foureyes.diff import changed_files, changed_lines, diff_text, git
 from foureyes.tests import Failure, base_copy, checkout_copy, run_suites
 
 INDEPENDENT = ("tester", "invariants")
-SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests"}
+SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests",
+               "invariants": "of the owned invariant tests"}
 
 
 @dataclass
@@ -108,8 +109,9 @@ def check(
             res.failures = [f for f in res.failures if f not in res.preexisting]
         broken = {inv.id: inv for f in res.failures if (inv := invariant_of(factory, f))}
         res.blocks += [f"{inv.id} broken: {inv.statement}" for inv in broken.values()]
-        for suite in ("tester", "author", "other", "collection", "timeout"):
-            n = sum(1 for f in res.failures if f.suite == suite)
+        for suite in ("tester", "author", "other", "collection", "timeout", "invariants"):
+            # an invariant test that names its invariant is blocked above, in words; any other one blocks here
+            n = sum(1 for f in res.failures if f.suite == suite and not (suite == "invariants" and invariant_of(factory, f)))
             if n:
                 res.blocks.append(f"{n} {SUITE_NAMES.get(suite, suite)} fail")
 
@@ -142,8 +144,10 @@ def check(
 
 def already_failing(factory: Factory, base: str, failures: list[Failure]) -> list[Failure]:
     """The failures that the base revision has too. A mature repo often has a red test nobody fixed yet; it is
-    reported, but it neither blocks this change nor sends its author to fix someone else's test."""
-    files = sorted({f.file for f in failures if f.suite not in ("collection", "timeout")})
+    reported, but it neither blocks this change nor sends its author to fix someone else's test. An owned invariant
+    is the exception: red on the base or not, a broken invariant always blocks."""
+    failures = [f for f in failures if f.suite not in ("collection", "timeout", "invariants")]
+    files = sorted({f.file for f in failures})
     if not files:
         return []
     work = base_copy(factory.root, base)

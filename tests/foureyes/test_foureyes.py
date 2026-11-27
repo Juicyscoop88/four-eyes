@@ -248,6 +248,18 @@ def test_a_test_that_failed_before_the_change_is_reported_and_never_blocks(tmp_p
     assert not any("author" in b for b in res.blocks)
 
 
+def test_a_broken_invariant_blocks_even_when_it_was_red_before(tmp_path):
+    from foureyes.check import check
+
+    root = small_repo(tmp_path, {
+        "src/calc.py": "def double(x):\n    return x * 2\n",
+        "tests/invariants/test_inv.py": "def test_inv():\n    assert False, 'red on main'\n",
+    })
+    (root / "src/calc.py").write_text("def double(x):\n    return x * 2 + 0\n")
+    res = check(load(root), "main", None, False, log=lambda m: None)
+    assert [f.test for f in res.failures] == ["test_inv"] and not res.preexisting and res.blocks
+
+
 def test_a_test_this_change_breaks_still_blocks(tmp_path):
     from foureyes.check import check
 
