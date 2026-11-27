@@ -200,17 +200,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.1
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.2
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer; FOUREYES_TOKEN while the factory repo is private
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.1
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.2
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.1
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.2
     with: { setup: "SETUP" }
     secrets: inherit
 ```

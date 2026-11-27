@@ -142,3 +142,9 @@ in about 4 minutes. Nobody touched it.
 The factory's MCP server is now called `factory`, and setup writes `.github/workflows/ftmo-factory.yml`. A repo set
 up with v0.3.0: in `factory.yaml` change `mcp: [foureyes]` to `mcp: [factory]`, rename
 `.github/workflows/foureyes.yml` to `ftmo-factory.yml` and move its pins to `@v0.3.1`.
+
+## From v0.3.1 to v0.3.2
+
+Company standards ship with the factory. In `factory.yaml` replace `file: standards/basics.md` with
+`company: basics` (and a copied design system with `company: design-system`), delete those copies from
+`standards/`, and move the workflow pins to `@v0.3.2`.
