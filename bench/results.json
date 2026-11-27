@@ -82,14 +82,14 @@
   {
     "pr": 334,
     "issue": "pr334-naturaldelta-inf",
-    "cost_usd": 0.088,
-    "minutes": 0.7,
-    "gate_passed": false,
+    "cost_usd": 0.519,
+    "minutes": 2.2,
+    "gate_passed": true,
     "blind_files": [
       "tests/blind/test_pr334_naturaldelta_inf.py"
     ],
     "author_files": [
-      "tests/unit/test_naturaldelta_infinity.py"
+      "tests/unit/test_naturaldelta_inf.py"
     ],
     "fixed": true,
     "hidden_failures": 0,
@@ -97,23 +97,27 @@
     "tester_caught": true,
     "author_caught": true,
     "tester_agrees_with_maintainers": false,
-    "tester_disagreements": 3
+    "tester_disagreements": 2
   },
   {
     "pr": 346,
     "issue": "pr346-intword-carry",
-    "cost_usd": null,
-    "minutes": null,
-    "gate_passed": null,
-    "blind_files": [],
-    "author_files": [],
-    "fixed": false,
-    "hidden_failures": 1,
+    "cost_usd": 0.579,
+    "minutes": 2.8,
+    "gate_passed": true,
+    "blind_files": [
+      "tests/blind/test_pr346_intword_carry.py"
+    ],
+    "author_files": [
+      "tests/unit/test_intword_carry.py"
+    ],
+    "fixed": true,
+    "hidden_failures": 0,
     "hidden_fail_on_buggy": true,
-    "tester_caught": false,
-    "author_caught": false,
-    "tester_agrees_with_maintainers": true,
-    "tester_disagreements": 0
+    "tester_caught": true,
+    "author_caught": true,
+    "tester_agrees_with_maintainers": false,
+    "tester_disagreements": 1
   },
   {
     "pr": 354,
@@ -158,14 +162,14 @@
   {
     "pr": 392,
     "issue": "pr392-intcomma-big-int",
-    "cost_usd": null,
-    "minutes": null,
-    "gate_passed": null,
+    "cost_usd": 0.623,
+    "minutes": 2.9,
+    "gate_passed": true,
     "blind_files": [
       "tests/blind/test_pr392_intcomma_big_int.py"
     ],
     "author_files": [
-      "tests/unit/test_intcomma_big_int.py"
+      "tests/test_number.py"
     ],
     "fixed": true,
     "hidden_failures": 0,
@@ -173,24 +177,26 @@
     "tester_caught": true,
     "author_caught": true,
     "tester_agrees_with_maintainers": false,
-    "tester_disagreements": 9
+    "tester_disagreements": 6
   },
   {
     "pr": 479,
     "issue": "pr479-far-future",
-    "cost_usd": null,
-    "minutes": null,
-    "gate_passed": null,
+    "cost_usd": 1.549,
+    "minutes": 6.4,
+    "gate_passed": false,
     "blind_files": [
       "tests/blind/test_pr479_far_future.py"
     ],
-    "author_files": [],
+    "author_files": [
+      "tests/unit/test_far_future.py"
+    ],
     "fixed": false,
-    "hidden_failures": 3,
+    "hidden_failures": 2,
     "hidden_fail_on_buggy": true,
     "tester_caught": true,
-    "author_caught": false,
+    "author_caught": true,
     "tester_agrees_with_maintainers": false,
-    "tester_disagreements": 21
+    "tester_disagreements": 10
   }
 ]

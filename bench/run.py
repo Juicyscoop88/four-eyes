@@ -165,6 +165,21 @@ def one(issue: Path) -> dict:
     return result
 
 
+FINDINGS = """## What it taught us
+
+- **No wrong fix passed the gate.** #479 is the one bug not fixed. The gate blocked it and asked a person three
+  questions (thousands separator, `minimum_unit`, year rounding), and the maintainers' hidden tests confirm the
+  code was not right yet. A factory that stops and asks is the behavior we want.
+- **Hermetic agents are about five times cheaper.** The first runs cost about $3 a bug: the author loaded every MCP
+  server of the laptop it ran on (339 tools from 11 servers). With only the servers `factory.yaml` names, the same
+  kind of bug costs $0.52 to $0.62 (#334, #346, #392). The rows above $2.80 are from before the change.
+- **"Tester agrees" is low on purpose.** The blind tester writes expectations for edge cases the issue leaves open.
+  Where they differ from the maintainers' later choice, they are questions for a person, not bugs.
+- **Found by the bench, fixed in the factory:** the plan must write its task (it once wrote none), and a rerun
+  starts from a fresh branch.
+"""
+
+
 def summary(results: list[dict]) -> str:
     n = len(results)
 
@@ -195,7 +210,7 @@ def summary(results: list[dict]) -> str:
             f"| {yes[r.get('tester_agrees_with_maintainers')]} | {r.get('minutes') or '?'} | ${r.get('cost_usd') or 0:.2f} |"
         )
     cost = sum(r.get("cost_usd") or 0 for r in results)
-    lines += ["", f"Total cost ${cost:.2f}."]
+    lines += ["", f"Total cost ${cost:.2f}.", "", FINDINGS]
     return "\n".join(lines) + "\n"
 
 
