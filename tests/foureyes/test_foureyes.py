@@ -426,3 +426,20 @@ def test_without_a_tester_the_gate_says_why_not_just_zero(tmp_path):
     (root / "src/calc.py").write_text("def double(x):\n    return x * 2\n\n\ndef triple(x):\n    return x * 3\n")
     task = "Add triple(x), which returns three times x. Example: triple(2) is 6."
     assert NO_TESTER in check(load(root), "main", task, False, log=lambda m: None).blocks
+
+
+def test_the_suites_run_in_the_projects_python_not_the_tools(tmp_path, monkeypatch):
+    # Found on a real run: a pip project with no python in factory.yaml ran its suites in the interpreter that
+    # runs foureyes (the plugin's own), without pytest or the project, and every check said "no report".
+    from foureyes.config import project_python
+
+    (tmp_path / ".venv/bin").mkdir(parents=True)
+    (tmp_path / ".venv/bin/python").write_text("")
+    assert project_python(tmp_path) == str(tmp_path / ".venv/bin/python")
+    (tmp_path / ".venv/bin/python").unlink()
+    bindir = tmp_path / "runner-bin"
+    bindir.mkdir()
+    (bindir / "python3").write_text("#!/bin/sh\n")
+    (bindir / "python3").chmod(0o755)
+    monkeypatch.setenv("PATH", str(bindir))
+    assert project_python(tmp_path) == str(bindir / "python3")  # the runner's, never sys.executable

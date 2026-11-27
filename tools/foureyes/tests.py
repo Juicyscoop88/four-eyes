@@ -3,7 +3,6 @@
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -63,13 +62,13 @@ def run_suites(
     env = {**os.environ, "PYTHONPATH": str(workdir / factory.source), "PYTHONDONTWRITEBYTECODE": "1"}
     try:
         subprocess.run(
-            [factory.python or sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={report}", *ignore, *folders],
+            [factory.python, "-m", "pytest", "-q", "-p", "no:cacheprovider", f"--junitxml={report}", *ignore, *folders],
             cwd=workdir, env=env, capture_output=True, text=True, timeout=timeout,
         )
     except subprocess.TimeoutExpired:
         return [Failure("timeout", "all", f"tests did not finish in {timeout} s")], 0
     if not report.exists():
-        return [Failure("collection", "all", "pytest wrote no report")], 0
+        return [Failure("collection", "all", f"pytest wrote no report: is pytest installed for {factory.python}?")], 0
     failures, total = [], 0
     for case in ET.parse(report).getroot().iter("testcase"):
         total += 1
