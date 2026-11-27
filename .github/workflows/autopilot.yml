@@ -30,7 +30,7 @@ jobs:
           TOKEN: ${{ secrets.FOUREYES_TOKEN }}
         run: |
           if [ -d tools/foureyes ]; then uv sync --frozen; echo "FE=uv run foureyes" >> "$GITHUB_ENV"; exit 0; fi
-          # FourEyes from its own repo (private: a read-only token as the secret FOUREYES_TOKEN)
+          # FourEyes from its own repo (public; a private fork sets a read-only token as the secret FOUREYES_TOKEN)
           [ -n "$TOKEN" ] && git config --global url."https://x-access-token:$TOKEN@github.com/".insteadOf "https://github.com/"
           uv tool install "$SOURCE" && echo "FE=foureyes" >> "$GITHUB_ENV"
       - name: the project's own setup

@@ -91,8 +91,8 @@ Claude is what they want, and stop.
      promises, made-up sample data instead of the export.");
    - what is left for the person, numbered, one line each, at most three (for example: rotate the database
      password; open the pull request, or say "open it" and you do it with `gh`);
-   - one line for the repo's admin if there is one: the repo secrets `ANTHROPIC_API_KEY` and, while the factory
-     repo is private, `FOUREYES_TOKEN`, and the label `autopilot`;
+   - one line for the repo's admin if there is one: the repo secret `ANTHROPIC_API_KEY` and the label
+     `autopilot`;
    - one line: "Ask me about any file if you want the details."
 
 The gate's blind tests and mutation testing work on Python today. In another stack say so plainly: the
@@ -208,7 +208,7 @@ jobs:
     if: github.event_name == 'pull_request'
     uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.4
     with: { setup: "SETUP" }
-    secrets: inherit   # ANTHROPIC_API_KEY for the reviewer; FOUREYES_TOKEN while the factory repo is private
+    secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
     uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.4
