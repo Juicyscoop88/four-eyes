@@ -2,6 +2,6 @@
   "extraKnownMarketplaces": {
     "foureyes": { "source": { "source": "directory", "path": "." } }
   },
-  "enabledPlugins": { "four-eyes@foureyes": true },
+  "enabledPlugins": { "four-eyes@foureyes": true, "code-review@claude-plugins-official": true },
   "env": { "FOUREYES_FROM": "." }
 }

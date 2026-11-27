@@ -18,7 +18,7 @@ The roles, and what each may see:
 |---|---|---|---|
 | author | Sonnet | the repo, under the hooks; `rules_for` | owned files as writable |
 | tester | Opus (any model: isolation does the work, see the eval) | task, invariants, signatures | the implementation, the author's tests and chat |
-| reviewer | Sonnet | task, diff, invariants, the gate's numbers | the author's conversation |
+| reviewer | Sonnet | task, diff, invariants, the gate's numbers; makes the decision cards (general bug review is Anthropic's `code-review`) | the author's conversation |
 
 The tester is not a Claude Code subagent: a subagent shares the author's workspace. It runs in a copy of the
 repo where every function body is `raise NotImplementedError`.
@@ -27,7 +27,7 @@ repo where every function body is `raise NotImplementedError`.
 
 | Workflow | When | What |
 |---|---|---|
-| `gate` | every pull request | the gate with the reviewer and gitleaks; the report and its cards as a comment by the CI bot |
+| `gate` | every pull request | the gate with the reviewer and gitleaks; the report and its cards as a comment by the CI bot. Bugs and CLAUDE.md: Anthropic's `code-review` plugin, inline comments (not rebuilt) |
 | `autopilot` | an issue is labeled `autopilot` | the whole path, then a pull request |
 | `decide` | someone with write access comments `/decide 1 reject` | the answer becomes a test, then code, then the gate again |
 

@@ -83,7 +83,8 @@ In `~/Projects/ftmo-case-study`, by hand or with Claude, outside the factory:
 2. Wait for the `gate` check (about 3 min).
 
 **You should see:** a comment by the CI bot: suites, injected faults caught per suite (your own tests measured,
-not counted), and the review map with the lines that need a person. Then `/decide 1 <answer>` as a PR comment.
+not counted), and the review map with the lines that need a person. Separately, Anthropic's `code-review`
+leaves inline comments on real bugs (none if it finds none). Locally the same: `/code-review` before you push. Then `/decide 1 <answer>` as a PR comment.
 
 **Shows:** whoever writes it, the same gate. Local hooks can be bypassed, CI cannot.
 
