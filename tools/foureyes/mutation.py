@@ -6,7 +6,10 @@ least one of its tests fails.
 """
 
 import ast
+import os
+import queue
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -139,17 +142,42 @@ def mutants_of(path: str, source: str, lines: set[int]) -> list[Mutant]:
         n += 1
 
 
-def run(factory: Factory, workdir: Path, targets: dict[str, set[int]]) -> list[Mutant]:
-    """Mutate each changed line of each target file in workdir, one mutant at a time."""
+def run(
+    factory: Factory, workdir: Path, targets: dict[str, set[int]], paths: tuple[str, ...] = (), workers: int = 0,
+) -> list[Mutant]:
+    """Mutate each changed line of each target file, one mutant per copy at a time, several copies at once.
+
+    `paths` are the tests that run against each mutant (empty: every suite). The gate passes only the tests whose
+    verdict it uses, so a mutant costs seconds, not a run of the whole repo."""
     mutants = []
     for path, lines in targets.items():
-        original = (workdir / path).read_text()
-        for m in mutants_of(path, original, lines):
-            (workdir / path).write_text(m.source)
-            failures, _ = run_suites(factory, workdir)
+        mutants += mutants_of(path, (workdir / path).read_text(), lines)
+    for i, m in enumerate(mutants, 1):
+        m.id = f"M{i}"
+    if not mutants:
+        return mutants
+    workers = max(1, min(workers or os.cpu_count() or 1, 8, len(mutants)))
+    copies = [workdir] + [Path(shutil.copytree(workdir, f"{workdir}-m{i}", symlinks=True)) for i in range(1, workers)]
+    free: queue.Queue[Path] = queue.Queue()
+    for c in copies:
+        free.put(c)
+
+    def one(m: Mutant) -> None:
+        copy = free.get()
+        original = (copy / m.path).read_text()
+        try:
+            (copy / m.path).write_text(m.source)
+            failures, _ = run_suites(factory, copy, paths=paths)
             m.caught_by = {f.suite for f in failures}
-            m.id = f"M{len(mutants) + 1}"
-            mutants.append(m)
-        (workdir / path).write_text(original)
-    shutil.rmtree(workdir / ".hypothesis", ignore_errors=True)
+        finally:
+            (copy / m.path).write_text(original)
+            free.put(copy)
+
+    try:
+        with ThreadPoolExecutor(workers) as pool:
+            list(pool.map(one, mutants))
+    finally:
+        for c in copies[1:]:
+            shutil.rmtree(c, ignore_errors=True)
+        shutil.rmtree(workdir / ".hypothesis", ignore_errors=True)
     return mutants

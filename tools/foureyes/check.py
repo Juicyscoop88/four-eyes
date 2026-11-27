@@ -19,10 +19,11 @@ from pathlib import Path
 from foureyes import agents, mutation
 from foureyes.config import Factory
 from foureyes.diff import changed_files, changed_lines, diff_text, git
-from foureyes.tests import Failure, checkout_copy, run_suites
+from foureyes.tests import Failure, base_copy, checkout_copy, run_suites
 
 INDEPENDENT = ("tester", "invariants")
-SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests"}
+SUITE_NAMES = {"tester": "of the tester's tests", "author": "of the author's own tests", "other": "other tests",
+               "invariants": "of the owned invariant tests"}
 
 
 @dataclass
@@ -42,6 +43,7 @@ class Result:
     proposal: dict | None = None  # an extension of the owned invariant tests, for their owners
     assumptions: list[str] = field(default_factory=list)  # what the plan assumed where the issue was silent
     open: list[Failure] = field(default_factory=list)  # the tester's open questions (test_open_*) the code answers otherwise
+    preexisting: list[Failure] = field(default_factory=list)  # red on the base already: not this change's, never a block
 
     def cards(self) -> list[dict]:
         """Every decision a person can make on this change, with ids: 1, 2, 3 from the reviewer, A1.. from the plan."""
@@ -101,10 +103,15 @@ def check(
         # The tester's own guesses where the task is silent are questions for a person, never a block.
         res.open = [f for f in res.failures if f.suite == "tester" and is_open(f.test)]
         res.failures = [f for f in res.failures if f not in res.open]
+        if res.failures:
+            log("gate: tests fail, checking which already failed on the base")
+            res.preexisting = already_failing(factory, base, res.failures)
+            res.failures = [f for f in res.failures if f not in res.preexisting]
         broken = {inv.id: inv for f in res.failures if (inv := invariant_of(factory, f))}
         res.blocks += [f"{inv.id} broken: {inv.statement}" for inv in broken.values()]
-        for suite in ("tester", "author", "other", "collection", "timeout"):
-            n = sum(1 for f in res.failures if f.suite == suite)
+        for suite in ("tester", "author", "other", "collection", "timeout", "invariants"):
+            # an invariant test that names its invariant is blocked above, in words; any other one blocks here
+            n = sum(1 for f in res.failures if f.suite == suite and not (suite == "invariants" and invariant_of(factory, f)))
             if n:
                 res.blocks.append(f"{n} {SUITE_NAMES.get(suite, suite)} fail")
 
@@ -115,7 +122,7 @@ def check(
         }
         if not res.failures and targets and tier.mutation_min > 0:
             log("gate: mutation testing the changed lines")
-            res.mutants = mutation.run(factory, work, targets)
+            res.mutants = mutation.run(factory, work, targets, paths=mutation_tests(factory, files))
             if res.score < tier.mutation_min:
                 res.blocks.append(
                     f"independent tests caught {res.caught(*INDEPENDENT)} of {len(res.counted)} injected faults, "
@@ -133,6 +140,34 @@ def check(
             for f in res.review.findings if f.get("severity") == "block"
         ]
     return res
+
+
+def already_failing(factory: Factory, base: str, failures: list[Failure]) -> list[Failure]:
+    """The failures that the base revision has too. A mature repo often has a red test nobody fixed yet; it is
+    reported, but it neither blocks this change nor sends its author to fix someone else's test. An owned invariant
+    is the exception: red on the base or not, a broken invariant always blocks."""
+    failures = [f for f in failures if f.suite not in ("collection", "timeout", "invariants")]
+    files = sorted({f.file for f in failures})
+    if not files:
+        return []
+    work = base_copy(factory.root, base)
+    try:
+        present = tuple(f for f in files if (work / f).is_file())
+        if not present:
+            return []
+        red, _ = run_suites(factory, work, paths=present)
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    before = {f.key for f in red}
+    return [f for f in failures if f.key in before]
+
+
+def mutation_tests(factory: Factory, files: list[str]) -> tuple[str, ...]:
+    """What runs against each mutant: the tests whose verdict the gate uses. The independent suites count; the
+    author's own tests of this change are measured. The rest of the repo's tests cost time and decide nothing."""
+    independent = tuple(factory.suites[n] for n in INDEPENDENT if n in factory.suites)
+    own = tuple(f for f in files if f.endswith(".py") and factory.suite_of(f) == "author" and (factory.root / f).exists())
+    return independent + own
 
 
 def is_open(test: str) -> bool:
@@ -169,6 +204,7 @@ def invariant_of(factory: Factory, failure: Failure):
 def facts(res: Result) -> str:
     lines = [f"Tier: {res.tier}. Tests run: {res.tests_run}, failed: {len(res.failures)}."]
     lines += [f"- failed {f.suite}: {f.test}: {f.message}" for f in res.failures]
+    lines += [f"- already failing on the base, not caused by this change: {f.test}: {f.message}" for f in res.preexisting]
     if res.mutants:
         lines.append(f"Mutation: {len(res.counted)} faults injected into the changed lines.")
         for suite in ("author", "tester", "invariants"):
@@ -219,6 +255,11 @@ def report(factory: Factory, res: Result, head: str) -> str:
         label = f"**{inv.id}** {inv.statement} *Why it matters:* {inv.why}" if inv else f"`{f.test}`"
         out.append(f"- {f.suite}: {label}\n  `{f.message}`")
     if res.failures:
+        out.append("")
+    if res.preexisting:
+        out.append(f"{len(res.preexisting)} more already failed on the base branch. They are not this change's and do "
+                   "not block it; they are the repo's to fix:\n")
+        out += [f"- `{f.test}` (`{f.file}`): `{f.message}`" for f in res.preexisting]
         out.append("")
 
     if res.mutants:

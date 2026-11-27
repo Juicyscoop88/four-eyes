@@ -112,20 +112,19 @@ class Pilot:
             behaviors = [g["behavior"] for g in gaps.gaps if not g.get("equivalent") and g.get("behavior")]
             self.step(f"reviewer turns {len(res.survivors)} survivors into {len(behaviors)} behaviors to test",
                       gaps.run, equivalent=[g["id"] for g in gaps.gaps if g.get("equivalent")])
-            if behaviors:
-                run, written = agents.write_blind_tests(self.f, self.task(), self.name, behaviors)
-                self.commit("tester", f"Blind tests for what the gate found untested ({self.slug}, round {rnd})")
-                self.step("tester adds tests, blind again", run, files=written)
+            if not behaviors:
+                break  # every survivor changes no behavior: nothing to test, and another round would find the same
+            run, written = agents.write_blind_tests(self.f, self.task(), self.name, behaviors)
+            self.commit("tester", f"Blind tests for what the gate found untested ({self.slug}, round {rnd})")
+            self.step("tester adds tests, blind again", run, files=written)
         return equivalent
 
     def finish(self, equivalent: dict[str, str]) -> Path:
         root = self.f.root
-        final = check(self.f, self.base, self.task(), False, equivalent, log=lambda m: None)
-        uncovered = final.counted and final.caught("invariants") < len(final.counted) / 2
-        proposal = self.propose(final) if self.f.invariants and uncovered else None
-
+        # One gate run with the reviewer: every run repeats the mutation testing, the slowest part of the gate.
         final = check(self.f, self.base, self.task(), True, equivalent, log=lambda m: None)
-        final.proposal = proposal
+        uncovered = final.counted and final.caught("invariants") < len(final.counted) / 2
+        final.proposal = self.propose(final) if self.f.invariants and uncovered else None
         final.agent_runs = self.runs + final.agent_runs
         self.step("gate with the reviewer: " + ("passed" if final.passed else "blocked"), final.review.run if final.review else None)
 
@@ -236,7 +235,8 @@ class Pilot:
                 return None
             targets = {f: changed_lines(self.f.root, self.base, f) for f in res.files
                        if self.f.is_source(f) and (self.f.root / f).exists()}
-            after = [m for m in mutation.run(self.f, work, targets) if m.id not in res.equivalent]
+            only_invariants = (self.f.suites["invariants"],)  # only their catches are counted here
+            after = [m for m in mutation.run(self.f, work, targets, paths=only_invariants) if m.id not in res.equivalent]
         finally:
             shutil.rmtree(work, ignore_errors=True)
         dest = f".factory/proposals/{self.slug}/{path}"

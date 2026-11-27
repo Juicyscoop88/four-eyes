@@ -211,3 +211,80 @@ def test_a_company_standard_ships_with_the_factory_and_an_unknown_one_fails_loud
     assert design.company and "Design system" in design.text()   # nothing copied into the repo
     with pytest.raises(ValueError, match="design-sytem.*basics, design-system, money"):
         standard(tmp_path, {"paths": ["apps/**"], "company": "design-sytem"})
+
+
+def small_repo(tmp_path: Path, files: dict[str, str]) -> Path:
+    """A git repo with a factory.yaml, the given files committed on `main`."""
+    import subprocess
+
+    (tmp_path / "factory.yaml").write_text(
+        "owned: [factory.yaml]\nsource: src\n"
+        "suites: {author: tests, tester: tests/blind, invariants: tests/invariants}\n"
+        "tiers: {money: {paths: ['src/**'], mutation_min: 0.5}, low: {paths: ['**'], mutation_min: 0.0}}\n"
+    )
+    for path, text in files.items():
+        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / path).write_text(text)
+    for cmd in (["init", "-q", "-b", "main"], ["add", "-A"],
+                ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base"]):
+        subprocess.run(["git", *cmd], cwd=tmp_path, check=True)
+    return tmp_path
+
+
+def test_a_test_that_failed_before_the_change_is_reported_and_never_blocks(tmp_path):
+    # A mature repo often carries a red test nobody fixed yet. It blocked every pull request and sent the
+    # autopilot's author off to fix someone else's test (pandas_market_calendars, a time zone test).
+    from foureyes.check import check
+
+    root = small_repo(tmp_path, {
+        "src/calc.py": "def double(x):\n    return x * 2\n",
+        "tests/test_old.py": "def test_red_before():\n    assert False, 'red on main'\n",
+    })
+    (root / "src/calc.py").write_text("def double(x):\n    return x * 2\n\n\ndef triple(x):\n    return x * 3\n")
+    (root / "tests/test_calc.py").write_text("from calc import triple\n\n\ndef test_triple():\n    assert triple(2) == 6\n")
+    res = check(load(root), "main", None, False, log=lambda m: None)
+    assert [f.test for f in res.preexisting] == ["test_red_before"]
+    assert not res.failures
+    assert not any("author" in b for b in res.blocks)
+
+
+def test_a_broken_invariant_blocks_even_when_it_was_red_before(tmp_path):
+    from foureyes.check import check
+
+    root = small_repo(tmp_path, {
+        "src/calc.py": "def double(x):\n    return x * 2\n",
+        "tests/invariants/test_inv.py": "def test_inv():\n    assert False, 'red on main'\n",
+    })
+    (root / "src/calc.py").write_text("def double(x):\n    return x * 2 + 0\n")
+    res = check(load(root), "main", None, False, log=lambda m: None)
+    assert [f.test for f in res.failures] == ["test_inv"] and not res.preexisting and res.blocks
+
+
+def test_a_test_this_change_breaks_still_blocks(tmp_path):
+    from foureyes.check import check
+
+    root = small_repo(tmp_path, {
+        "src/calc.py": "def double(x):\n    return x * 2\n",
+        "tests/test_calc.py": "from calc import double\n\n\ndef test_double():\n    assert double(2) == 4\n",
+    })
+    (root / "src/calc.py").write_text("def double(x):\n    return x + 2 + 1\n")
+    res = check(load(root), "main", None, False, log=lambda m: None)
+    assert [f.test for f in res.failures] == ["test_double"] and not res.preexisting
+    assert res.blocks
+
+
+def test_each_mutant_runs_only_the_tests_the_gate_uses(tmp_path):
+    # Every mutant ran the whole repo (1700 tests, 50 s each): 32 mutants took 25 minutes. Only the independent
+    # suites count and the change's own tests are measured; the rest of the repo decides nothing.
+    from foureyes.check import check
+
+    root = small_repo(tmp_path, {
+        "src/calc.py": "def double(x):\n    return x * 2\n",
+        # The rest of the repo: had it run against a mutant, it would show up as a catch by the author's suite.
+        "tests/test_rest_of_repo.py": "def test_always_red():\n    assert False\n",
+    })
+    (root / "src/calc.py").write_text("def double(x):\n    return x * 2\n\n\ndef triple(x):\n    return x * 3\n")
+    (root / "tests/blind").mkdir()
+    (root / "tests/blind/test_triple.py").write_text("from calc import triple\n\n\ndef test_triple():\n    assert triple(2) == 6\n")
+    res = check(load(root), "main", None, False, log=lambda m: None)
+    assert len(res.mutants) == 2 and all(m.caught_by == {"tester"} for m in res.mutants)

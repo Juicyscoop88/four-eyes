@@ -18,6 +18,11 @@ class Failure:
     suite: str
     test: str
     message: str
+    file: str = ""  # the test's module as a path, so a failure can be matched on another checkout
+
+    @property
+    def key(self) -> tuple[str, str]:
+        return self.file, self.test
 
 
 def checkout_copy(root: Path) -> Path:
@@ -32,14 +37,26 @@ def checkout_copy(root: Path) -> Path:
     return dest
 
 
+def base_copy(root: Path, base: str) -> Path:
+    """A throwaway copy of the base revision, to tell a test this change broke from one that was red before it."""
+    dest = Path(tempfile.mkdtemp(prefix="gate-base-"))
+    archive = subprocess.run(["git", "archive", base], cwd=root, capture_output=True, check=True).stdout
+    subprocess.run(["tar", "-x", "-C", str(dest)], input=archive, check=True)
+    return dest
+
+
 def run_suites(
-    factory: Factory, workdir: Path, only: tuple[str, ...] = (), timeout: int = 180
+    factory: Factory, workdir: Path, only: tuple[str, ...] = (), timeout: int = 180, paths: tuple[str, ...] = (),
 ) -> tuple[list[Failure], int]:
-    """Run every suite present in workdir (or only the named ones). Returns the failures and how many tests ran."""
-    folders = [f for n, f in factory.suites.items() if (workdir / f).exists() and (not only or n in only)]
-    nested = [f for f in factory.suites.values() if any(f != g and f.startswith(g.rstrip("/") + "/") for g in folders)]
-    ignore = [f"--ignore={f}" for f in nested if f not in folders]
-    folders = [f for f in folders if not any(f != g and f.startswith(g.rstrip("/") + "/") for g in folders)]
+    """Run every suite present in workdir (or only the named ones, or exactly the given test paths).
+    Returns the failures and how many tests ran."""
+    if paths:
+        folders, ignore = [p for p in paths if (workdir / p).exists()], []
+    else:
+        folders = [f for n, f in factory.suites.items() if (workdir / f).exists() and (not only or n in only)]
+        nested = [f for f in factory.suites.values() if any(f != g and f.startswith(g.rstrip("/") + "/") for g in folders)]
+        ignore = [f"--ignore={f}" for f in nested if f not in folders]
+        folders = [f for f in folders if not any(f != g and f.startswith(g.rstrip("/") + "/") for g in folders)]
     if not folders:
         return [], 0
     report = workdir / ".gate-junit.xml"
@@ -64,6 +81,6 @@ def run_suites(
         path = case.get("classname", "").replace(".", "/")
         suite = factory.suite_of(path + ".py") or "other"
         message = (problem.get("message") or problem.text or "").strip().splitlines()
-        failures.append(Failure(suite, case.get("name", "?"), message[0] if message else ""))
+        failures.append(Failure(suite, case.get("name", "?"), message[0] if message else "", path + ".py"))
     report.unlink()
     return failures, total
