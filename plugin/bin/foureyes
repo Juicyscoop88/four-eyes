@@ -5,4 +5,16 @@ SRC="${FOUREYES_FROM:-git+https://github.com/Juicyscoop88/four-eyes@v0.2.0}"
 if [ -d "$SRC" ]; then
   exec uv run --quiet --project "$SRC" python -m foureyes "$@"
 fi
-exec uvx --quiet --from "$SRC" foureyes "$@"
+# One install per pinned version, made on first use: the hooks run on every file Claude reads, so no
+# resolving on each call.
+VENV="${XDG_CACHE_HOME:-$HOME/.cache}/foureyes/$(printf %s "$SRC" | cksum | cut -d' ' -f1)"
+if [ ! -x "$VENV/bin/foureyes" ]; then
+  mkdir -p "$(dirname "$VENV")"
+  until mkdir "$VENV.lock" 2>/dev/null; do sleep 1; done
+  trap 'rmdir "$VENV.lock" 2>/dev/null' EXIT
+  if [ ! -x "$VENV/bin/foureyes" ]; then
+    { uv venv --quiet "$VENV" && uv pip install --quiet --python "$VENV/bin/python" "$SRC"; } >&2 || { rm -rf "$VENV"; exit 1; }
+  fi
+  rmdir "$VENV.lock"; trap - EXIT
+fi
+exec "$VENV/bin/foureyes" "$@"
