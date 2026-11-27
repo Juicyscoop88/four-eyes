@@ -228,3 +228,10 @@ once, in the factory (`tools/foureyes/company/company.yaml`, printed by `foureye
 who adopts self-built tools, where requests go. Setup no longer asks the builder who approves; it asks for
 their lead (the business owner), prepares everything locally, and with their yes files one adoption request.
 The adopters create the repo; the next session pushes the branch and opens the pull request. Pins to `@v0.3.9`.
+
+## From v0.3.9 to v0.3.10
+
+Protected tests instead of invariants: in `factory.yaml` the suite `protected: tests/protected` (or keep
+`invariants:`, both work), and `tests/protected/**` under `owned`. No YAML or ids needed: a protected test is an
+ordinary test that people own, a failing one always blocks, and no agent edits it. Setup proposes the rules
+itself from what the tool does and asks only to confirm. Pins to `@v0.3.10`.

@@ -376,3 +376,30 @@ def test_the_company_says_once_who_adopts_a_self_built_tool(capsys):
     assert main(["company"]) == 0
     company = yaml.safe_load(capsys.readouterr().out)
     assert company["org"] and company["adopters"].startswith("@") and "/" in company["requests"]
+
+
+def test_protected_tests_are_owned_and_block_without_any_yaml(tmp_path):
+    # Leaner than named invariants: a folder of tests people own. No YAML, no ids: a failing one blocks.
+    import subprocess
+
+    from foureyes.check import check
+    from foureyes.rules import rules_for
+
+    (tmp_path / "factory.yaml").write_text(
+        "owned: [factory.yaml, tests/protected/**]\nsource: src\n"
+        "suites: {author: tests, tester: tests/blind, protected: tests/protected}\n"
+        "tiers: {money: {paths: ['src/**'], mutation_min: 0.0}}\n"
+    )
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/calc.py").write_text("def total(rows):\n    return sum(rows)\n")
+    (tmp_path / "tests/protected").mkdir(parents=True)
+    (tmp_path / "tests/protected/test_rows.py").write_text(
+        "from calc import total\n\n\ndef test_no_row_is_dropped():\n    assert total([1, 2, 3]) == 6\n")
+    for cmd in (["init", "-q", "-b", "main"], ["add", "-A"], ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "base"]):
+        subprocess.run(["git", *cmd], cwd=tmp_path, check=True)
+    (tmp_path / "src/calc.py").write_text("def total(rows):\n    return sum(rows[1:])\n")
+    f = load(tmp_path)
+    assert f.suites["invariants"] == "tests/protected" and f.is_owned("tests/protected/test_rows.py")
+    res = check(f, "main", None, False, log=lambda m: None)
+    assert any("protected tests" in b for b in res.blocks)
+    assert "Protected tests" in rules_for(f, "src/calc.py")

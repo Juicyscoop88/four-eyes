@@ -99,7 +99,7 @@ def load(root: Path) -> Factory:
     return Factory(
         root=root,
         owned=raw.get("owned", []),
-        suites=raw["suites"],
+        suites=suites(raw["suites"]),
         tiers=tiers,
         invariants=invariants,
         standards=[standard(root, x) for x in raw.get("standards", [])],
@@ -108,6 +108,15 @@ def load(root: Path) -> Factory:
         python=str((root / raw["python"]).absolute()) if raw.get("python") else "",  # relative to the repo
         **agents(raw),
     )
+
+
+def suites(raw: dict) -> dict:
+    """The suites by role. `protected` (tests people own, no agent changes them) is the name people use; the gate
+    counts it as the owned suite, the one first called `invariants`."""
+    out = dict(raw)
+    if "protected" in out:
+        out["invariants"] = out.pop("protected")
+    return out
 
 
 COMPANY = Path(__file__).parent / "company"

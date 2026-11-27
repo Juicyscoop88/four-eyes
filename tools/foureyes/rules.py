@@ -14,7 +14,7 @@ def rules_for(factory: Factory, path: str) -> str:
     out.append(f"The gate: {gate}. Tests come from the tester, who never sees the code; your own tests do not count.\n")
     invariants = [i for i in factory.invariants if any(matches(path, p) for p in i.paths)]
     if invariants:
-        out.append("## Invariants (never broken; the gate blocks)\n")
+        out.append("## Rules the protected tests hold (the gate blocks when one breaks)\n")
         out += [f"- **{i.id}** {i.statement} *Why:* {i.why}" for i in invariants]
         out.append("")
     standards = [s for s in factory.standards if any(matches(path, p) for p in s.paths)]
@@ -25,6 +25,10 @@ def rules_for(factory: Factory, path: str) -> str:
         else:
             out.append(f"## Standard: {s.file} (how it is done in this repo; the reviewer checks it)\n")
         out.append(s.text().split("\n", 1)[1].strip() + "\n")
-    if not invariants and not standards:
-        out.append("No invariants or standards apply here beyond the gate.")
+    protected = factory.suites.get("invariants")
+    if protected:
+        out.append(f"## Protected tests (`{protected}`)\n\nOwned by people: never edit or delete them to make a check "
+                   "pass. If one fails, fix the code; if it looks wrong, tell the person.\n")
+    if not invariants and not standards and not protected:
+        out.append("No protected tests or standards apply here beyond the gate.")
     return "\n".join(out)
