@@ -235,3 +235,9 @@ Protected tests instead of invariants: in `factory.yaml` the suite `protected: t
 `invariants:`, both work), and `tests/protected/**` under `owned`. No YAML or ids needed: a protected test is an
 ordinary test that people own, a failing one always blocks, and no agent edits it. Setup proposes the rules
 itself from what the tool does and asks only to confirm. Pins to `@v0.3.10`.
+
+## From v0.3.10 to v0.3.11
+
+Cleanup, no change in behavior: one name inside and out (the `protected` suite, named `rules:`; a factory.yaml
+with `invariants:` still works), the report in its own module, the CLI as a table of commands. Fixed: the
+autopilot's run record referred to an undefined proposal. Pins to `@v0.3.11`.
