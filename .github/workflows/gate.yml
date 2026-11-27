@@ -7,7 +7,7 @@ on:
   workflow_call:  # other repos call this same workflow: their factory.yaml, this repo's gate
     inputs:
       setup: { type: string, default: "", description: "the project's own setup, for example `uv sync` or `pip install -e .[test]`" }
-      foureyes: { type: string, default: "git+https://github.com/Juicyscoop88/four-eyes@v0.3.2" }
+      foureyes: { type: string, default: "git+https://github.com/Juicyscoop88/four-eyes@v0.3.3" }
 
 permissions:
   contents: read

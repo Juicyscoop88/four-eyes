@@ -193,3 +193,9 @@ up with v0.3.0: in `factory.yaml` change `mcp: [foureyes]` to `mcp: [factory]`, 
 Company standards ship with the factory. In `factory.yaml` replace `file: standards/basics.md` with
 `company: basics` (and a copied design system with `company: design-system`), delete those copies from
 `standards/`, and move the workflow pins to `@v0.3.2`.
+
+## From v0.3.2 to v0.3.3
+
+Nothing to change in a repo but the workflow pins (`@v0.3.3`). The gate reports tests that already fail on
+the base branch instead of blocking on them (a failing invariant still blocks), and each injected fault runs
+only the tests the gate counts, in parallel: on a repo with 1700 tests the gate went from about 26 minutes to 2.

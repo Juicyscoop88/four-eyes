@@ -1,6 +1,6 @@
 {
   "name": "ftmo-factory",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "The FTMO software factory. Four eyes for agents: nobody, human or agent, checks their own work. The rules of each file while you write, /ftmo-factory:ship from an issue to a pull request, /ftmo-factory:setup to put a repo on the factory (once, by its lead).",
   "author": {
     "name": "FTMO software factory"
