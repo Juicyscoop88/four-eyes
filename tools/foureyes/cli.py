@@ -1,4 +1,4 @@
-"""gate: the FourEyes command. The same on a laptop (/ship) and in CI."""
+"""foureyes: the Four Eyes command. The same on a laptop and in CI: one small function per command."""
 
 import argparse
 import os
@@ -7,8 +7,8 @@ from pathlib import Path
 
 from foureyes import hooks
 from foureyes.check import check
-from foureyes.report import report
 from foureyes.config import load
+from foureyes.report import report
 from foureyes.diff import git
 
 
@@ -60,80 +60,95 @@ def main(argv: list[str] | None = None) -> int:
     h.add_argument("event", choices=["session-start", "pre-tool-use", "stop"])
 
     args = p.parse_args(argv)
+    return COMMANDS[args.cmd](args)
 
-    if args.cmd == "company":
-        from foureyes.config import COMPANY
 
-        print((COMPANY / "company.yaml").read_text(), end="")
-        return 0
+def log(message: str) -> None:
+    print(message, flush=True)
 
-    if args.cmd == "summary":
-        from foureyes.summary import fetch, summarize
 
-        print(summarize(fetch(args.days), args.days), end="")
-        return 0
-
-    if args.cmd == "mcp":
-        from foureyes.mcp_server import main as serve
-
-        serve()
-        return 0
-
-    if args.cmd == "hook":
-        # The plugin is a person's, the repo may not use FourEyes: then its hooks stay silent.
-        import subprocess
-
-        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
-        root = Path(top or Path.cwd())
-        if not (root / "factory.yaml").exists():
-            # Not on Four Eyes yet: silent, except one line at the start of a session, so Claude can offer setup
-            # once when the person builds something others will depend on.
-            if args.event == "session-start":
-                return hooks.context("SessionStart", hooks.NOT_SET_UP)
-            return 0
-        return hooks.handle(load(root), args.event, sys.stdin.read())
-
+def cmd_check(args) -> int:
     factory = load(repo_root())
-
-    if args.cmd == "autopilot":
-        from foureyes.autopilot import Pilot
-
-        path = Pilot(factory, Path(args.issue).resolve(), log=lambda m: print(m, flush=True)).run(args.rounds)
-        print(f"autopilot: report in {path.relative_to(factory.root)}")
-        return 0
-
-    if args.cmd == "decide":
-        from foureyes.autopilot import Pilot
-
-        from foureyes.report import author_of
-
-        who = args.by or author_of(factory.root)
-        pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=lambda m: print(m, flush=True))
-        from foureyes.report import cards_from
-
-        cards = cards_from(Path(args.comment).read_text()) if args.comment else None
-        path = pilot.decide(args.card, " ".join(args.answer), who, cards)
-        print(f"decide: report in {path.relative_to(factory.root)}")
-        return 0
-
-    if args.cmd == "eval":
-        import json as _json
-
-        from foureyes.eval import evaluate, summary
-
-        testers = args.testers.split(",")
-        results = [evaluate(factory, t, args.bugs, testers, log=lambda m: print(m, flush=True)) for t in args.tasks]
-        out = factory.root / "docs" / "eval.md"
-        out.write_text(summary(results, testers))
-        (factory.root / "docs" / "eval.json").write_text(_json.dumps(results, indent=2))
-        print(out.read_text())
-        return 0
-
     res = check(factory, args.base, read_task(args.task), args.agents, log=lambda m: print(m, file=sys.stderr))
     text = report(factory, res, git(factory.root, "rev-parse", "HEAD").strip())
     Path(factory.root / args.report).write_text(text)
     print(text)
     return 0 if res.passed else 1
+
+
+def cmd_autopilot(args) -> int:
+    from foureyes.autopilot import Pilot
+
+    factory = load(repo_root())
+    path = Pilot(factory, Path(args.issue).resolve(), log=log).run(args.rounds)
+    print(f"autopilot: report in {path.relative_to(factory.root)}")
+    return 0
+
+
+def cmd_decide(args) -> int:
+    from foureyes.autopilot import Pilot
+    from foureyes.report import author_of, cards_from
+
+    factory = load(repo_root())
+    pilot = Pilot(factory, factory.root / "issues" / f"{args.slug}.md", log=log)
+    cards = cards_from(Path(args.comment).read_text()) if args.comment else None
+    path = pilot.decide(args.card, " ".join(args.answer), args.by or author_of(factory.root), cards)
+    print(f"decide: report in {path.relative_to(factory.root)}")
+    return 0
+
+
+def cmd_eval(args) -> int:
+    import json
+
+    from foureyes.eval import evaluate, summary
+
+    factory = load(repo_root())
+    testers = args.testers.split(",")
+    results = [evaluate(factory, t, args.bugs, testers, log=log) for t in args.tasks]
+    out = factory.root / "docs" / "eval.md"
+    out.write_text(summary(results, testers))
+    (factory.root / "docs" / "eval.json").write_text(json.dumps(results, indent=2))
+    print(out.read_text())
+    return 0
+
+
+def cmd_company(args) -> int:
+    from foureyes.config import COMPANY
+
+    print((COMPANY / "company.yaml").read_text(), end="")
+    return 0
+
+
+def cmd_summary(args) -> int:
+    from foureyes.summary import fetch, summarize
+
+    print(summarize(fetch(args.days), args.days), end="")
+    return 0
+
+
+def cmd_mcp(args) -> int:
+    from foureyes.mcp_server import main as serve
+
+    serve()
+    return 0
+
+
+def cmd_hook(args) -> int:
+    # The plugin is a person's, the repo may not use Four Eyes: then its hooks stay silent, except one line at the
+    # start of a session, so Claude can offer setup once when the person builds something others depend on.
+    import subprocess
+
+    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
+    root = Path(top or Path.cwd())
+    if not (root / "factory.yaml").exists():
+        return hooks.context("SessionStart", hooks.NOT_SET_UP) if args.event == "session-start" else 0
+    return hooks.handle(load(root), args.event, sys.stdin.read())
+
+
+COMMANDS = {
+    "check": cmd_check, "autopilot": cmd_autopilot, "decide": cmd_decide, "eval": cmd_eval,
+    "company": cmd_company, "summary": cmd_summary, "mcp": cmd_mcp, "hook": cmd_hook,
+}
 
 
 if __name__ == "__main__":
