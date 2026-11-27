@@ -88,8 +88,15 @@ AUTHOR_HOOKS = {"hooks": {
 
 
 def json_block(text: str) -> dict:
+    """The agent's answer as data: a ```json block, or else the outermost {...} in its text (a model sometimes
+    writes a sentence before or after the object)."""
     block = re.search(r"```json\s*(\{.*?\})\s*```", text, re.S)
-    return json.loads(block.group(1) if block else text)
+    if block:
+        return json.loads(block.group(1))
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < start:
+        raise ValueError(f"the agent answered without the JSON it was asked for: {text[:200]!r}")
+    return json.loads(text[start:end + 1])
 
 
 # ---- author ---------------------------------------------------------------------------------

@@ -443,3 +443,11 @@ def test_the_suites_run_in_the_projects_python_not_the_tools(tmp_path, monkeypat
     (bindir / "python3").chmod(0o755)
     monkeypatch.setenv("PATH", str(bindir))
     assert project_python(tmp_path) == str(bindir / "python3")  # the runner's, never sys.executable
+
+
+def test_an_agents_json_with_a_sentence_around_it_is_still_read():
+    # Found by /decide on a real pull request: the reviewer wrote a line before its JSON, and the run crashed.
+    from foureyes.agents import json_block
+
+    assert json_block('```json\n{"a": 1}\n```') == {"a": 1}
+    assert json_block('Here is the review:\n{"a": {"b": 2}}\nThat is all.') == {"a": {"b": 2}}

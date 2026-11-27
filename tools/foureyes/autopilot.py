@@ -147,15 +147,26 @@ class Pilot:
         self.commit("factory", f"Gate report for {self.slug}: " + ("passed" if final.passed else "blocked"))
         return out / f"{self.slug}.md"
 
-    def decide(self, card: str, answer: str, decided_by: str, cards: list[dict] | None = None, max_rounds: int = 4) -> Path:
+    def decide(self, card: str, answer: str, decided_by: str, cards: list[dict] | None = None, max_rounds: int = 4,
+               branch: str = "", description: str = "") -> Path:
         """A person answered a decision card. The answer becomes a blind test first, then code.
 
         cards: the cards as the person saw them (from the gate's last comment); else the autopilot's own."""
         root = self.f.root
-        git(root, "checkout", "-q", f"factory/{self.slug}")
-        record = json.loads((root / ".factory" / "runs" / f"{self.slug}.json").read_text())
+        git(root, "checkout", "-q", branch or f"factory/{self.slug}")
+        # A pull request the autopilot did not make (by hand, or someone's own agent) has no run record and no
+        # task file: its task is the pull request's description, its cards the gate's last comment.
+        run_file = root / ".factory" / "runs" / f"{self.slug}.json"
+        record = json.loads(run_file.read_text()) if run_file.exists() else {}
+        if not (root / self.task_path).exists():
+            if not description:
+                raise SystemExit("decide: no task file and no pull request description to take the task from")
+            (root / self.task_path).parent.mkdir(parents=True, exist_ok=True)
+            (root / self.task_path).write_text(description.strip() + "\n")
         self.base = git(root, "merge-base", "HEAD", "main").strip()
-        pool = cards or record["cards"]
+        pool = cards or record.get("cards", [])
+        if not pool:
+            raise SystemExit("decide: no decision cards to answer")
         q = next((c for c in pool if c.get("id") == card), None)
         if q is None and card.isdigit() and "id" not in pool[0]:
             q = pool[int(card) - 1]  # cards recorded before they had ids

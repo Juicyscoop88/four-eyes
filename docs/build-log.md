@@ -3,12 +3,13 @@
 The brief asks for: what was delegated, what was reviewed, what was written by hand, what went wrong, and how much time was spent.
 Agent: Claude Code (Opus 5.5), directed from a team chat. Times are wall clock.
 
-**Time, in short.** About 4 hours of my own attention, spread over two days (26 and 27 November, about 12 hours
-of wall clock) with breaks and other projects in between: the agents worked unattended while I was away. The
-prototype ran within the first afternoon (design, the gate, the autopilot, the eval). The rest went into
-checking it where I wanted certainty rather than an impression: real bugs in someone else's code, planted bugs,
-an analyst's tool, a professional's repo. What I cut: deployment (the team's pipeline, on purpose), stacks
-other than Python, a hosted dashboard.
+**Time, in short.** About 7 hours of my own attention over two days (26 and 27 November, longer in wall clock),
+with breaks and other projects in between: the agents often worked unattended while I was away. The prototype
+ran within the first afternoon (design, the gate, the autopilot, the eval). The extra hours went into checking
+it where I wanted certainty rather than an impression (real bugs in someone else's code, planted bugs, a
+professional's repo, three cases run end to end on GitHub) and into cutting the design down after each of those
+runs showed what was too much. What I cut: deployment (the team's pipeline, on purpose), stacks other than
+Python, a hosted dashboard, invariants as a separate concept.
 
 ## 2026-11-26
 
@@ -71,3 +72,23 @@ other than Python, a hosted dashboard.
 - Delegated: setup, a hand-made fix, a colleague's agent and the autopilot on `pandas_market_calendars` (1700 tests, its own CI, CODEOWNERS and AGENTS.md, a test red on main); the fixes and their tests (v0.3.3, v0.3.4).
 - Ran: setup kept the team's CODEOWNERS, CI and AGENTS.md, wrote the lead's four promises as invariants and checked each by planting its bug; it found a real bug (two calendars not found by their own name) and the red test. The gate caught a flaw in the senior's own test (green alone, red in the full suite). A colleague's agent handed in code it had never run (2 of 8 of its tests red); the most useful output was a card on a choice it made silently (do trading halts count as open minutes?). The autopilot's blind tests caught 84% of injected faults and the bug I planted.
 - Went wrong: the test red on main blocked every pull request and sent the autopilot's author to fix it; each of 32 faults ran the whole repo, 25 minutes; the autopilot repeated mutation when nothing was left to test (stopped by hand at 38 minutes); a hand-made change got no blind tests although design.md said so; setup named the money standard for session times and then could not correct factory.yaml; locking all of `.github/` forbade the team's own AGENTS.md rule (plans in `.github/plans/`). All fixed; the gate on the same change now takes 2 minutes with the same score. I also tried to answer the gate's cards on my own pull request; Claude Code refused, as it should: nobody approves their own work.
+
+**2026-11-27 15:00 to 19:30: leaner, and every case run for real (delegated, decided by me)**
+- Decided by me, after reading the page as a reviewer would: the core is the gate on the pull request; the plugin
+  feeds it. Invariants guessed at setup were bad design: nobody knows in advance what must never break. They
+  became *protected tests*, an empty folder a lead fills when something mattered, and the requirement moved to
+  the spec: a change to risky code without a what, why and example is stopped, because the tester writes its
+  tests from it. A non-engineer's tool is adopted by engineering: the company names its adopters once; the
+  builder is asked only who their lead is. `status` left the MCP (nobody used it). The MCP stays, because FTMO
+  engineers use more than one agent tool.
+- Delegated: v0.3.8 to v0.3.15 (team summary, setup offered in plain folders, adoption, protected tests, spec
+  first, a cleanup that found an undefined variable in the autopilot, `/decide` on any pull request), and the
+  page rewritten around three cases from the brief, each step quoting it.
+- Ran for real, on public test repos: Anna's weekend tool from her laptop to an adoption request, a repo made by
+  "engineering", a pull request and the gate: 5 of 18 blind tests failed on three real money bugs. Petra's
+  agent PR on a copy of pandas_market_calendars: 2 failing tests and three decisions the agent had made silently.
+  `/decide` on that PR: the answer became a blind test, then code.
+- Went wrong, each found only by running it for real: without the key the review job failed red instead of
+  saying so; a first PR without a tester only said "0 of 13"; a pip project's tests ran in the plugin's own
+  Python (the Stop hook blocked an agent for a test that did not exist); `/decide` worked only on the
+  autopilot's own branches; a reviewer's answer with a sentence before its JSON crashed the run. All fixed.

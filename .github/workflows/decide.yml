@@ -9,7 +9,7 @@ on:
   workflow_call:  # other repos call this same workflow: their factory.yaml, this repo's gate
     inputs:
       setup: { type: string, default: "", description: "the project's own setup, for example `uv sync` or `pip install -e .[test]`" }
-      foureyes: { type: string, default: "git+https://github.com/Juicyscoop88/four-eyes@v0.3.14" }
+      foureyes: { type: string, default: "git+https://github.com/Juicyscoop88/four-eyes@v0.3.15" }
 
 permissions:
   contents: write
@@ -54,13 +54,16 @@ jobs:
           COMMENT: ${{ github.event.comment.body }}
           WHO: ${{ github.event.comment.user.login }}
           FACTORY_REQUESTED_BY: ${{ github.event.issue.user.login }}
+          FACTORY_TASK: ${{ github.event.issue.body }}
         run: |
-          slug="${REF#factory/}"
+          # An autopilot branch is factory/<slug>; any other pull request is decided on its own branch, its
+          # description as the task.
+          case "$REF" in factory/*) slug="${REF#factory/}"; branch="";; *) slug="$(echo "$REF" | tr '/' '-')"; branch="$REF";; esac
           # The cards the person saw: the last gate comment on this pull request.
           gh api "repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/comments" --paginate \
             --jq '[.[] | select(.body | contains("four-eyes-cards"))] | last | .body' > "$RUNNER_TEMP/cards.md"
           echo "$COMMENT" | grep '^/decide ' | while read -r _ card answer; do
-            $FE decide "$slug" "$card" $answer --by "$WHO" --comment "$RUNNER_TEMP/cards.md"
+            $FE decide "$slug" "$card" $answer --by "$WHO" --comment "$RUNNER_TEMP/cards.md" --branch "$branch"
           done
           git push origin "HEAD:$REF"
           gh pr comment ${{ github.event.issue.number }} --body-file gate-report.md
