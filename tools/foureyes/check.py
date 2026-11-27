@@ -43,6 +43,7 @@ class Result:
     proposal: dict | None = None  # an extension of the owned invariant tests, for their owners
     assumptions: list[str] = field(default_factory=list)  # what the plan assumed where the issue was silent
     open: list[Failure] = field(default_factory=list)  # the tester's open questions (test_open_*) the code answers otherwise
+    blind_written: list[str] = field(default_factory=list)  # blind tests the gate's tester wrote for a hand-made change
     preexisting: list[Failure] = field(default_factory=list)  # red on the base already: not this change's, never a block
 
     def cards(self) -> list[dict]:
@@ -96,8 +97,19 @@ def check(
     if res.owned_changed:
         res.blocks.append(f"owned files changed, owner approval required: {', '.join(res.owned_changed)}")
 
+    targets = {
+        f: changed_lines(factory.root, base, f)
+        for f in files
+        if factory.is_source(f) and (factory.root / f).exists()
+    }
     work = checkout_copy(factory.root)
     try:
+        if with_agents and task and targets and not any(factory.suite_of(f) == "tester" for f in files):
+            # Written by hand or by someone's own agent: nobody independent tested it yet. The tester writes blind
+            # tests from the pull request's description into the gate's copy; the branch stays as it is.
+            log("gate: no blind tests in this change, the tester writes them without seeing the code")
+            run, res.blind_written = agents.write_blind_tests(factory, task, "this_change", dest_root=work)
+            res.agent_runs.append(run)
         log("gate: running the suites")
         res.failures, res.tests_run = run_suites(factory, work)
         # The tester's own guesses where the task is silent are questions for a person, never a block.
@@ -115,11 +127,6 @@ def check(
             if n:
                 res.blocks.append(f"{n} {SUITE_NAMES.get(suite, suite)} fail")
 
-        targets = {
-            f: changed_lines(factory.root, base, f)
-            for f in files
-            if factory.is_source(f) and (factory.root / f).exists()
-        }
         if not res.failures and targets and tier.mutation_min > 0:
             log("gate: mutation testing the changed lines")
             res.mutants = mutation.run(factory, work, targets, paths=mutation_tests(factory, files))
@@ -250,6 +257,10 @@ def report(factory: Factory, res: Result, head: str) -> str:
         out.append("\n</details>\n")
 
     out.append(f"### Tests\n\n{res.tests_run} tests ran, {len(res.failures)} failed.\n")
+    if res.blind_written:
+        out.append("This change came without blind tests, so the gate's tester wrote them from the description, "
+                   f"without seeing the code: {', '.join(f'`{w}`' for w in res.blind_written)}. They ran in the gate's "
+                   "copy only; the branch is unchanged.\n")
     for f in res.failures:
         inv = invariant_of(factory, f)
         label = f"**{inv.id}** {inv.statement} *Why it matters:* {inv.why}" if inv else f"`{f.test}`"
