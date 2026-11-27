@@ -27,8 +27,8 @@ server = MCPServer(
 )
 
 
-NOT_SET_UP = ("This repository does not run FourEyes yet (no factory.yaml). `/four-eyes:init` puts it on the "
-              "factory: a person runs it and reviews the pull request it makes.")
+NOT_SET_UP = ("This repository does not run FourEyes yet (no factory.yaml). `/ftmo-factory:setup` puts it on the "
+              "factory: the repo's lead runs it once and reviews the pull request it makes.")
 
 
 def _root() -> Path:

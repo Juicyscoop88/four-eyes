@@ -1,10 +1,14 @@
 ---
-name: init
-description: Put this repository on the FourEyes factory - factory.yaml, standards, the plugin for everyone who clones it, the gate in CI and the issue form. Use when the person asks to set up, install, enable or add FourEyes to a repo.
+name: setup
+description: Set up this repository for the FTMO software factory, once per repo - factory.yaml, standards, the plugin for everyone who clones it, the gate in CI and the issue form. For a team lead or the platform team; engineers never need it. Use when the person asks to set up, install, enable or add the factory to a repo.
 ---
 
-You set FourEyes up in this repository for the person. Everything goes into one branch and one pull request
-that the team reviews like any other change. The templates are at the end of this file.
+You set the factory up in this repository, once, for a team lead or the platform team. Engineers who clone
+the repo later get everything without being asked anything. Everything goes into one branch and one pull
+request that the team reviews like any other change. The templates are at the end of this file.
+
+If the person seems to be an engineer who just wants to work, tell them in two sentences that this is a
+one-time setup for the repo's lead, and that `/ftmo-factory:ship` or simply working with Claude is what they want.
 
 1. **Already on it?** If `factory.yaml` exists, say so, call the FourEyes MCP `status` and stop.
 2. **Look before you ask.** Find the language and package manager (`pyproject.toml`, `package.json`, ...), the
@@ -16,18 +20,19 @@ that the team reviews like any other change. The templates are at the end of thi
    - which files only people may change (configs, migrations, invariants);
    - for a frontend, where the design system is.
 
-   Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. The person
-   may not know FourEyes, so each question reads on its own, like a good form:
-   - `question`: a real question in full sentences: one sentence of context in plain words, then the question
-     itself, ending with "?". No FourEyes terms. For example: "A mistake in some files costs more than in
-     others. FourEyes checks those files more strictly: the tests must catch 80 % of planted bugs instead of
-     50 %, and a named team approves every change. Which files in this repo should get the stricter check?"
-   - `header`: a short label of two or three words ("Risky files").
-   - `options`: two to four. `label` a few words, `description` what follows from picking it. The recommended
-     one goes first and its label ends with "(Recommended)".
+   Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. Ask about
+   what the person knows (their product, their clients, their team), never about the factory's mechanics, and
+   say in the same breath what the answer is for:
+   - `question`: one or two plain sentences ending with "?", purpose first. For example: "Where would a mistake
+     hurt clients or money? Changes there will always need a senior's approval, and their tests will be
+     stricter." Never percentages, tiers or other factory terms in the question; never a bare word.
+   - `header`: a short label of two or three words ("Client risk").
+   - `options`: two to four. `label` in the person's words ("Payout calculations"), `description` the paths
+     it means and what follows (the numbers, such as "tests must catch 80 % of planted bugs instead of 50 %",
+     belong here, for whoever is curious). The recommended one goes first, its label ends with "(Recommended)".
    Write in the language the person uses with you in this conversation or in their CLAUDE.md; English if
-   there is nothing to go by. Never put a question only into the answers, and never a bare word as the question.
-4. **Write, on a branch `foureyes-init`,** in this order (`factory.yaml` last: once it exists, the paths it
+   there is nothing to go by.
+4. **Write, on a branch `ftmo-factory-setup`,** in this order (`factory.yaml` last: once it exists, the paths it
    names as owned are closed to agents, including `.github/`):
    - `standards/basics.md` from the template. For a frontend, also `standards/design-system.md`: the design
      system's rules in a few bullets, with a link to where it lives.
@@ -130,9 +135,9 @@ How every change is made here, whoever writes it.
 ```json
 {
   "extraKnownMarketplaces": {
-    "foureyes": { "source": { "source": "github", "repo": "Juicyscoop88/four-eyes" } }
+    "ftmo-factory": { "source": { "source": "github", "repo": "Juicyscoop88/four-eyes" } }
   },
-  "enabledPlugins": { "four-eyes@foureyes": true, "code-review@claude-plugins-official": true }
+  "enabledPlugins": { "ftmo-factory@ftmo-factory": true, "code-review@claude-plugins-official": true }
 }
 ```
 
@@ -157,17 +162,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.2.2
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.0
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer; FOUREYES_TOKEN while the FourEyes repo is private
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.2.2
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.0
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.2.2
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.0
     with: { setup: "SETUP" }
     secrets: inherit
 ```

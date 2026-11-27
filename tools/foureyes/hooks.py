@@ -68,7 +68,7 @@ def session_start(factory: Factory) -> int:
     if factory.standards:
         lines.append("- Standards (how it is done here): " + "; ".join(
             f"{s.file} for {', '.join(s.paths)}" for s in factory.standards) + ". You get them when you touch those paths.")
-    lines.append("- To have the factory build something, the person says `/four-eyes:ship <what and why>`; "
+    lines.append("- To have the factory build something, the person says `/ftmo-factory:ship <what and why>`; "
                  "`rules_for`, `why` and `status` in the FourEyes MCP explain the rest.")
     return context("SessionStart", "\n".join(lines))
 
