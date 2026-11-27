@@ -403,3 +403,15 @@ def test_protected_tests_are_owned_and_block_without_any_yaml(tmp_path):
     res = check(f, "main", None, False, log=lambda m: None)
     assert any("protected tests" in b for b in res.blocks)
     assert "Protected tests" in rules_for(f, "src/calc.py")
+
+
+def test_a_risky_change_without_a_task_is_asked_for_one(tmp_path):
+    # The tester writes its tests from the task alone, so the gate asks for the what and why before anything else.
+    from foureyes.check import NO_SPEC, check
+
+    root = small_repo(tmp_path, {"src/calc.py": "def double(x):\n    return x * 2\n"})
+    (root / "src/calc.py").write_text("def double(x):\n    return x * 2\n\n\ndef triple(x):\n    return x * 3\n")
+    assert NO_SPEC in check(load(root), "main", None, False, log=lambda m: None).blocks
+    assert NO_SPEC in check(load(root), "main", "fix", False, log=lambda m: None).blocks
+    task = "Add triple(x), which returns three times x. Example: triple(2) is 6."
+    assert NO_SPEC not in check(load(root), "main", task, False, log=lambda m: None).blocks

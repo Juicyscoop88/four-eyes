@@ -241,3 +241,11 @@ itself from what the tool does and asks only to confirm. Pins to `@v0.3.10`.
 Cleanup, no change in behavior: one name inside and out (the `protected` suite, named `rules:`; a factory.yaml
 with `invariants:` still works), the report in its own module, the CLI as a table of commands. Fixed: the
 autopilot's run record referred to an undefined proposal. Pins to `@v0.3.11`.
+
+## From v0.3.11 to v0.3.12
+
+Spec first. A change to risky code without a task (an empty or one-line pull request description) is blocked
+with one line: write what, why and one example; the tester writes its tests from it. Docs and low-risk paths
+are never asked. Setup no longer proposes protected tests: it leaves an empty `tests/protected/` where a lead or
+senior moves a test once it matters. In the caller workflow add `types: [opened, synchronize, reopened, edited]`
+to `pull_request`, so a spec added later reruns the gate. Pins to `@v0.3.12`.
