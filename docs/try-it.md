@@ -41,6 +41,27 @@ clones this repo later is asked once to install it. Nothing is copied from our r
 
 Check: `git log --stat -1` on the branch `ftmo-factory-setup`.
 
+## UC1b. Bring an analyst's tool under the rules (operations analyst, 5 min)
+
+`~/Projects/recon-tool` is a made-up reconciliation tool, "built with ChatGPT over a weekend": a script, a
+production payouts export with trader emails, a database password in the code, no git, no tests.
+
+```bash
+cd ~/Projects/recon-tool && claude
+```
+
+Say something in your own words, then `/ftmo-factory:setup`.
+
+**You should see:** a checklist in plain words before anything changes: the password, the client data on a
+laptop, no git, no tests, and a real bug (a bank row missing from the export is silently dropped: neither
+matched nor on the CHECK list). Then questions about what you know: where a mistake hurts money, who approves,
+and **what the tool must always promise** ("every row is either matched or flagged"). Those promises become
+owned invariants with tests on a made-up sample; the exports leave the repo; the password goes to the secret
+manager, with a note that it must be rotated.
+
+**Shows:** the analyst does not become an engineer. They say what the tool promises; the factory checks it as
+strictly as engineers' code, and engineering finally knows the tool exists.
+
 ## UC2. Guardrails while you write (engineer, 5 min)
 
 ```bash

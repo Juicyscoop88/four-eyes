@@ -1,25 +1,37 @@
 ---
 name: setup
-description: Set up this repository for the FTMO software factory, once per repo - factory.yaml, standards, the plugin for everyone who clones it, the gate in CI and the issue form. For a team lead or the platform team; engineers never need it. Use when the person asks to set up, install, enable or add the factory to a repo.
+description: Bring a repo or a folder under the FTMO software factory, whatever state it is in - an engineering repo, or a tool a non-engineer built with AI that runs on a laptop. Finds what is missing (repo, owner, secrets, production data, tests, what the tool promises), fixes what it can and shows exactly how to do the rest. Once per repo. Use when the person asks to set up, install, enable, adopt or add the factory, or to bring their tool under the company's rules.
 ---
 
-You set the factory up in this repository, once, for a team lead or the platform team. Engineers who clone
-the repo later get everything without being asked anything. Everything goes into one branch and one pull
-request that the team reviews like any other change. The templates are at the end of this file.
+You bring this repo or folder under the factory, once. The person may be a team lead setting up an
+engineering repo, or a non-engineer (an analyst, an ops person) whose tool, built with AI, already runs and
+that colleagues depend on. Never make them feel judged: the tool works, you make it safe to keep. Everything
+goes into one branch and one pull request that the team reviews like any other change. The templates are at
+the end of this file.
 
-If the person seems to be an engineer who just wants to work, tell them in two sentences that this is a
-one-time setup for the repo's lead, and that `/ftmo-factory:ship` or simply working with Claude is what they want.
+If the person is an engineer in a repo that is already set up (`factory.yaml` exists), call the MCP `status`,
+say in two sentences that setup is done for this repo and that `/ftmo-factory:ship` or simply working with
+Claude is what they want, and stop.
 
-1. **Already on it?** If `factory.yaml` exists, say so, call the FourEyes MCP `status` and stop.
-2. **Look before you ask.** Find the language and package manager (`pyproject.toml`, `package.json`, ...), the
-   source folder, the test folder and the command that runs the tests, any frontend (apps, web, ui), a design
-   system or style guide, `CLAUDE.md`, `.github/CODEOWNERS` and the CI it uses. Read the README.
-3. **Ask the person, one question at a time,** each with two or three answers to pick, only what you could not
-   find out:
-   - which paths carry money or trust (they become the `money` tier) and which team approves them;
-   - which files only people may change (configs, migrations, invariants);
-   - for a frontend, where the design system is.
-
+1. **Look before you ask.** Find out, without changing anything:
+   - Is it a git repo, and does `origin` point to the company's GitHub? Who committed to it?
+   - Language, package manager, source folder, tests and the command that runs them, any frontend and design
+     system, `CLAUDE.md`, `.github/CODEOWNERS`, CI. Read the README.
+   - **Secrets in the code or in files** (`.env`, keys, passwords, connection strings).
+   - **Production data in the folder** (exports: `.csv`, `.xlsx`, `.parquet`, database dumps) or code that
+     reads such files or connects to production with a person's own credentials.
+   - Where it runs today (a laptop, a cron on someone's machine) and who uses it, if the README says.
+2. **Show what you found as a short checklist**, in plain words, each line ✅ or ⚠️ with one sentence why it
+   matters. For example: "⚠️ The tool reads `export_2026-11.csv`, a production export, from this folder. A
+   copy of client data on a laptop is the riskiest part; tests will run on a small made-up sample instead."
+   Then say what you will fix in the branch and what the person must do themselves.
+3. **Ask the person, one question at a time,** only what you could not find out:
+   - where a mistake would hurt clients or money, and who approves those changes (the `money` tier);
+   - what only people may change (configs, migrations, the rules below);
+   - for a frontend, where the design system is;
+   - **what the tool or code promises**: "What must always be true, whatever the input? For example: every
+     row is either matched or flagged, totals on both sides are equal." Ask for two to five such promises in
+     the person's words. They become owned invariants that the gate checks on every change.
    Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. Ask about
    what the person knows (their product, their clients, their team), never about the factory's mechanics, and
    say in the same breath what the answer is for:
@@ -32,7 +44,19 @@ one-time setup for the repo's lead, and that `/ftmo-factory:ship` or simply work
      belong here, for whoever is curious). The recommended one goes first, its label ends with "(Recommended)".
    Write in the language the person uses with you in this conversation or in their CLAUDE.md; English if
    there is nothing to go by.
-4. **Write, on a branch `ftmo-factory-setup`,** in this order (`factory.yaml` last: once it exists, the paths it
+4. **Create the branch `ftmo-factory-setup` and fix what is missing there:**
+   - Secrets: move them out of the code to environment variables read by name, add `.env` and the like to
+     `.gitignore`, and tell the person which secrets to put into the company's secret manager. If a secret is
+     already in git history, say so plainly: it must be rotated.
+   - Production data: remove the exports from the repo and add them to `.gitignore`; write a small made-up
+     sample with the same columns in `tests/data/` for the tests. If the tool must read production, it reads
+     through a read-only connection named in config, never a file on a laptop; say who grants that access.
+   - Promises: write them as `invariants/<name>.yaml` (template below), each with a property test in
+     `tests/invariants/` that runs on the sample data. The approver reviews these tests in the pull request.
+   - No git repo, or no company remote: `git init` here, and tell the person the exact command to create the
+     repo on the company's GitHub (`gh repo create <org>/<name> --private --source . --push`); never create
+     it yourself.
+5. **Write, on the same branch,** in this order (`factory.yaml` last: once it exists, the paths it
    names as owned are closed to agents, including `.github/`):
    - `standards/basics.md` from the template. For a frontend, also `standards/design-system.md`: the design
      system's rules in a few bullets, with a link to where it lives.
@@ -48,9 +72,9 @@ one-time setup for the repo's lead, and that `/ftmo-factory:ship` or simply work
      not apply. `python` is the interpreter the project's setup creates (for uv: `.venv/bin/python`); the
      test command runs with it (`.venv/bin/python -m pytest`). A design system goes under `standards:`.
    If a write is refused, tell the person which file and why. Never put drafts anywhere else.
-5. **Check it loads:** run `foureyes hook session-start < /dev/null`. It prints the brief every session will
+6. **Check it loads:** run `foureyes hook session-start < /dev/null`. It prints the brief every session will
    get; show the person the paths and tiers it names. Fix `factory.yaml` until it is right.
-6. **Commit and hand over.** Commit with a message that says what was set up. Tell the person in a few lines
+7. **Commit and hand over.** Commit with a message that says what was set up. Tell the person in a few lines
    what each file does and what is left for them:
    - open the pull request (or ask you to, with `gh`);
    - add the repo secrets `ANTHROPIC_API_KEY` (the reviewer and autopilot in CI) and, while the FourEyes repo
@@ -113,6 +137,23 @@ agents:
   tester:   { model: sonnet, mcp: [] }   # isolation does the work; the model is a cost choice
   reviewer: { model: sonnet, mcp: [] }
 ```
+
+### invariants/<name>.yaml (only when the person named promises)
+
+```yaml
+# What this tool promises, in its owner's words. Owned by people, never edited by an agent.
+domain: reconciliation
+paths: ["src/**"]          # the code these promises hold for
+owners: ["@<the approver>"]
+invariants:
+  - id: REC-1
+    statement: Every row is either matched or flagged, never dropped.
+    why: A dropped row is a payment nobody looks at.
+    test: tests/invariants/test_reconciliation.py::test_every_row_matched_or_flagged
+```
+
+Then in `factory.yaml`: `invariants: [invariants/<name>.yaml]`, `suites.invariants: tests/invariants`, and
+`invariants/**` and `tests/invariants/**` under `owned`.
 
 ### standards/basics.md
 
