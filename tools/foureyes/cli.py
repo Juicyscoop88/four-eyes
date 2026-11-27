@@ -48,12 +48,21 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
     d.add_argument("--comment", help="a file with the gate comment the person answered (its cards are used)")
 
+    m = sub.add_parser("summary", help="the team's last days in numbers, from the gate reports on the pull requests")
+    m.add_argument("--days", type=int, default=7)
+
     sub.add_parser("mcp", help="run the factory's MCP server on stdio (Claude Code starts it from the plugin)")
 
     h = sub.add_parser("hook", help="Claude Code hooks of the plugin (read the event on stdin)")
     h.add_argument("event", choices=["session-start", "pre-tool-use", "stop"])
 
     args = p.parse_args(argv)
+
+    if args.cmd == "summary":
+        from foureyes.summary import fetch, summarize
+
+        print(summarize(fetch(args.days), args.days), end="")
+        return 0
 
     if args.cmd == "mcp":
         from foureyes.mcp_server import main as serve
@@ -68,6 +77,10 @@ def main(argv: list[str] | None = None) -> int:
         top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
         root = Path(top or Path.cwd())
         if not (root / "factory.yaml").exists():
+            # Not on Four Eyes yet: silent, except one line at the start of a session, so Claude can offer setup
+            # once when the person builds something others will depend on.
+            if args.event == "session-start":
+                return hooks.context("SessionStart", hooks.NOT_SET_UP)
             return 0
         return hooks.handle(load(root), args.event, sys.stdin.read())
 

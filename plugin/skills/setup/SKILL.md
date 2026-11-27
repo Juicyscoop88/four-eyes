@@ -75,6 +75,10 @@ over, is what they want, and stop.
      everything already there. Everyone who clones the repo is then asked once to install the plugin, and Anthropic's
      `code-review` with it: `/code-review` before a push, the same review the gate runs in CI.
      Claude Code asks the person before it writes in `.claude/`; that is expected.
+   - `CLAUDE.md`: append the section "Working with agents here" from the template (create the file if there
+     is none; never rewrite what the team wrote). It is how long work stays on track: small pull requests
+     merged along the way, progress written down, the gate as the check. Skip it if the team's file already
+     says the same.
    - `.github/workflows/four-eyes.yml` from the template, `SETUP` replaced by the project's own setup command
      (for uv: `uv sync`; for pip: `pip install -e .[test]`).
    - `.github/ISSUE_TEMPLATE/four-eyes.yml` from the issue form template.
@@ -174,6 +178,20 @@ invariants:
 Then in `factory.yaml`: `invariants: [invariants/<name>.yaml]`, `suites.invariants: tests/invariants`, and
 `invariants/**` and `tests/invariants/**` under `owned`.
 
+### CLAUDE.md, the section to append
+
+```markdown
+## Working with agents here
+
+- Long work goes in small pull requests merged along the way, each one change with its why. Never one big
+  pull request at the end.
+- Write progress down where the next session finds it: the pull request description, or the task file of
+  `/four-eyes:ship`. A new session reads it first.
+- The gate in CI is the check, whoever wrote the code: blind tests, the invariants, and the questions only a
+  person can answer. Run `/code-review` before a push if you like; it does not replace the gate.
+- Hand a larger change to the factory with `/four-eyes:ship <what and why>`, or work with Claude as usual.
+```
+
 ### .claude/settings.json (merge into the existing file)
 
 ```json
@@ -206,17 +224,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.7
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.8
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.7
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.8
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.7
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.8
     with: { setup: "SETUP" }
     secrets: inherit
 ```
