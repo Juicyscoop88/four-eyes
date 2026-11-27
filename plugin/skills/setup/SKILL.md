@@ -16,7 +16,10 @@ Claude is what they want, and stop.
 1. **Look before you ask.** Find out, without changing anything:
    - Is it a git repo, and does `origin` point to the company's GitHub? Who committed to it?
    - Language, package manager, source folder, tests and the command that runs them, any frontend and design
-     system, `CLAUDE.md`, `.github/CODEOWNERS`, CI. Read the README.
+     system, `CLAUDE.md`, `AGENTS.md`, `.github/CODEOWNERS`, CI, linters. Read the README.
+   - **The team's own rules for agents** (`CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`): they stay as they are.
+     Note every place they tell an agent to write (plans in `.github/plans/`, a changelog in `docs/`): those
+     paths must not become owned, or the factory forbids what the team asks for.
    - **Secrets in the code or in files** (`.env`, keys, passwords, connection strings).
    - **Production data in the folder** (exports: `.csv`, `.xlsx`, `.parquet`, database dumps) or code that
      reads such files or connects to production with a person's own credentials.
@@ -60,12 +63,14 @@ Claude is what they want, and stop.
    - No git repo, or no company remote: `git init` here, and tell the person the exact command to create the
      repo on the company's GitHub (`gh repo create <org>/<name> --private --source . --push`); never create
      it yourself.
-5. **Write, on the same branch,** in this order (`factory.yaml` last: once it exists, the paths it
-   names as owned are closed to agents, including `.github/`):
+5. **Write, on the same branch,** in this order (`factory.yaml` last: once it is committed, the paths it
+   names as owned are closed to agents; until the commit you may still correct it):
    - Standards: the company's ship with the factory and are only named in `factory.yaml` (`company: basics`,
      `company: design-system`, `company: money`), never copied, so every repo gets the same version and an
      update reaches all of them. Write a `standards/<name>.md` only for what this repo does its own way
-     (its own look, if the person chose to keep it).
+     (its own look, if the person chose to keep it). Read a company standard before you name it, and name it
+     only where its rules fit the code: `company: money` is for code that computes prices, amounts or
+     balances, not for every path in the money tier (session times or configs carry risk but no amounts).
    - `.claude/settings.json`: merge in the template's `extraKnownMarketplaces` and `enabledPlugins`, keep
      everything already there. Everyone who clones the repo is then asked once to install the plugin, and Anthropic's
      `code-review` with it: `/code-review` before a push, the same review the gate runs in CI.
@@ -79,7 +84,7 @@ Claude is what they want, and stop.
      test command runs with it (`.venv/bin/python -m pytest`).
    If a write is refused, tell the person which file and why. Never put drafts anywhere else.
 6. **Check it loads:** run `foureyes hook session-start < /dev/null`. It prints the brief every session will
-   get; show the person the paths and tiers it names. Fix `factory.yaml` until it is right.
+   get; show the person the paths and tiers it names. Fix `factory.yaml` until it is right, then commit.
 7. **Commit and hand over, short.** Commit with a message that says what was set up. The checklist at the
    start was the long part; the hand-over is at most six lines, no tables, no file-by-file tour:
    - one line: what is done (for example "Set up on branch `ftmo-factory-setup`: rules, tests of your three
@@ -106,7 +111,8 @@ Never commit a secret, and never enable anything outside this repository.
 
 owned:
   - factory.yaml
-  - .github/**
+  - .github/workflows/**          # CI: the gate itself
+  - .github/CODEOWNERS            # who approves
   # - invariants/**          # if this repo has invariants
   # - tests/invariants/**
 

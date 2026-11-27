@@ -97,6 +97,12 @@ def test_hook_keeps_agents_off_owned_files(capsys):
     assert decision(capsys, {"command": "ls"}, "Bash") == "allow"
 
 
+def test_a_new_owned_file_can_be_drafted_until_it_is_committed(capsys):
+    # Setup wrote factory.yaml, saw a wrong line and could not fix it: the file was locked the moment it existed.
+    assert decision(capsys, {"file_path": str(ROOT / "invariants/a_new_draft.yaml"), "content": "x"}, "Write") == "allow"
+    assert decision(capsys, {"file_path": str(ROOT / "factory.yaml"), "new_string": "x"}) == "deny"
+
+
 def test_hook_blocks_secrets(capsys):
     key = "AKIA" + "ABCDEFGHIJKLMNOP"
     assert decision(capsys, {"file_path": str(ROOT / "src/x.py"), "content": f"KEY = '{key}'"}, "Write") == "deny"
