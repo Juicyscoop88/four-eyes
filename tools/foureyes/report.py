@@ -25,13 +25,14 @@ def report(factory: Factory, res: Result, head: str) -> str:
 
     if res.review and res.review.map:
         out.append("### Decide only these\n")
-        out.append("Reply with one line per card, for example `/decide 1 keep`, or `/decide 1 <your own answer>`. "
-                   "Each answer becomes a blind test first, then code.\n")
+        out.append("Answer each in one sentence in the pull request description, the spec (in Claude Code just say it): "
+                   "the gate runs again and the tester checks your answer. On a pull request the autopilot made, "
+                   "reply `/decide 1 keep` instead and it changes the code itself.\n")
         for i, p in enumerate(res.review.map, 1):
             out.append(f"**{i}. {p.get('question') or p['why']}**  \n`{p['where']}`: {p['why']}")
             for o in p.get("options", []):
                 key = o.split(":")[0].strip()
-                out.append(f"- `/decide {i} {key}`: {o.split(':', 1)[1].strip() if ':' in o else o}")
+                out.append(f"- **{key}**: {o.split(':', 1)[1].strip() if ':' in o else o}")
             out.append("")
     if res.open:
         out.append("### The tester asked\n")
