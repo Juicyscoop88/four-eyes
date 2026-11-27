@@ -1,4 +1,4 @@
-# FourEyes: a software factory for FTMO & OANDA
+# Four Eyes: a software factory for FTMO & OANDA
 
 > **People write issues. The factory does the rest, and nobody, human or agent, checks their own work.**
 
@@ -58,8 +58,17 @@ The issue, as a person wrote it (UC8 from our use cases):
 | Gaps | reviewer → tester | Faults nobody caught go to the reviewer, who rewrites them as behaviors in words; the tester adds tests, blind again. Loops until the tier's score is met |
 | Invariants | tester → owners | The owned invariants caught 0 of 6: the tester proposed an extension; the gate measured it before an owner sees it |
 | Review | **reviewer**, empty workspace | **Proposed a new owned invariant on its own: "an execution is applied at most once"** |
-| Decide | **person** | Three decision cards in the pull request comment, each with answers to pick *(turning an answer into a change: being built)* |
+| Decide | **person** | Three decision cards in the pull request comment, each with answers to pick (`/decide 2 reject`: the answer becomes a blind test first, then code) |
 | Merge | **another person** | CODEOWNERS for money paths; then their own pipeline |
+
+### After the merge: production stays the team's
+
+Four Eyes ends at an approved merge, on purpose. Deploying is the team's existing pipeline, with its own
+approvals, feature flags and rollback: a factory that agents drive should not hold production credentials in a
+regulated firm, and nobody here would trust one that did. What crosses into production is the record: for any
+line running there, `why` goes back to the commit, its role, the person who asked, the decisions on the cards,
+the tests that fail when the line breaks and the approvals. A bug that escapes comes back as an issue and, when
+it broke a promise, as a new owned invariant.
 
 ### The protocol: isolation is physical
 
@@ -87,7 +96,7 @@ servers). Hermetic, the same bug cost five times less, and nothing could leave t
    running it again gives the same answer. Any CI runs it; it is one command.
 2. **The path:** issue → autopilot → pull request with decision cards → `/decide`. The same autopilot from
    an issue label in CI or from `/ship` on a laptop.
-3. **The guide:** the plugin, with hooks (local guards) and the FourEyes MCP for people and agents in
+3. **The guide:** the plugin, with hooks (local guards) and the Four Eyes MCP for people and agents in
    Claude: `rules_for(path)` (owners, tier, invariants, standards) and `why(path, line)`.
 
 **Code decides, agents advise.** Rules come in two kinds in `factory.yaml`: *invariants* (never broken,
@@ -101,14 +110,14 @@ more than their role may see.
 
 **General bug review is not rebuilt.** Anthropic's `code-review` plugin runs on every pull request through
 the official `claude-code-action` (several agents, each finding validated before it is posted, inline comments),
-and the same `/code-review` is enabled for every engineer locally. FourEyes' reviewer does only what the factory
+and the same `/code-review` is enabled for every engineer locally. Four Eyes' reviewer does only what the factory
 knows: the task, the owned invariants, the gate's numbers, the decision cards.
 
 ## 4. People, day to day
 
 What each person gets is attention back, not speed:
 
-| Who | Today | With FourEyes |
+| Who | Today | With Four Eyes |
 |---|---|---|
 | Senior engineer | reads 400 lines to trust them | answers the few cards only a person can decide (#479 on the bench: three questions) |
 | Early adopter | ships fast, tests from the same agent | keeps the speed; tests come from someone who never saw the code |
@@ -116,6 +125,23 @@ What each person gets is attention back, not speed:
 | Long tasks | the next session starts from scratch | the task, progress and every step are commits on the branch |
 | Compliance | "who is the author?" | the person who asked plus the agent; an approver who is neither; `why` traces each decision |
 | Analyst | a weekend tool nobody knows of | setup adopts it (secrets, client data, tests of what it promises), then `ship` or the issue form |
+
+**Tried on a professional's repo, not only on ours.** On
+[pandas_market_calendars](https://github.com/rsheftel/pandas_market_calendars) (exchange trading hours, 1700
+tests, its own CI, CODEOWNERS and AGENTS.md, a test already red on main), alone, as four people:
+- *the lead's setup* kept the team's CODEOWNERS, CI and AGENTS.md, turned four promises into owned invariants
+  (each test checked by planting its bug) and found a real bug: two calendars not found by their own name;
+- *the senior's fix by hand*: the gate caught a flaw in the senior's own test (green alone, red in the full
+  suite), and its card asked the right question: which calendars does the guarantee cover?
+- *a colleague's agent* handed in code it had never run; the most useful output was a card on a choice it made
+  silently: do trading halts count as open minutes for the risk desk's limits?
+- *the autopilot*: blind tests caught 84% of injected faults (27 of 32) and the bug I planted.
+
+For the analyst the factory adds structure; for the senior it takes work away. The run also found six
+problems in the factory, all fixed the same day: a test red on main blocked every pull request; each injected
+fault ran the whole repo (the gate on one change: about 26 minutes, now 2, same score); a hand-made change got
+no blind tests; setup could not correct its own draft and named a standard that did not fit; locking all of
+`.github/` forbade the team's own rule for agents.
 
 - **Where work starts:** an issue (the form asks what, why and an example). Or code by hand as today, which
   gets blind tests and a review map on the pull request for free.
@@ -235,3 +261,6 @@ verdict. A senior stops repeating the same review; a junior gets better faster.
 - Hooks cover Claude Code's file tools; a shell command is stopped only by the gate in CI.
 - The reviewer misses things. It narrows attention; approval stays human.
 - Invariants are only as good as their owners. The factory makes them cheap to propose, not correct.
+- Checked on our sample domain, two open-source libraries and one professional repo, all Python. Blind tests
+  and mutation work on Python only; another stack gets the guardrails, the reviewer and its own test suite.
+- It stops at an approved merge: deployment is the team's pipeline (see "After the merge").

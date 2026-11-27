@@ -3,6 +3,13 @@
 The brief asks for: what was delegated, what was reviewed, what was written by hand, what went wrong, and how much time was spent.
 Agent: Claude Code (Opus 5.5), directed from a team chat. Times are wall clock.
 
+**Time, in short.** About 4 hours of my own attention, spread over two days (26 and 27 November, about 12 hours
+of wall clock) with breaks and other projects in between: the agents worked unattended while I was away. The
+prototype ran within the first afternoon (design, the gate, the autopilot, the eval). The rest went into
+checking it where I wanted certainty rather than an impression: real bugs in someone else's code, planted bugs,
+an analyst's tool, a professional's repo. What I cut: deployment (the team's pipeline, on purpose), stacks
+other than Python, a hosted dashboard.
+
 ## 2026-11-26
 
 **10:58 to 11:25: reading the brief (about 30 min)**
