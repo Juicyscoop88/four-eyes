@@ -1,4 +1,7 @@
-# FourEyes: a software factory prototype
+# Four Eyes: a software factory prototype
+
+*A case study designed for FTMO & OANDA as part of a job application. Not affiliated with or endorsed by FTMO or OANDA.
+Everything here runs on public or made-up data.*
 
 > **People write issues. The factory does the rest, and nobody, human or agent, checks their own work.**
 
