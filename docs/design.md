@@ -35,7 +35,7 @@ portal, not a deploy system (it ends at merge; their pipelines stay theirs), and
 | 3 | **Team lead** | One plugin for the team; honest numbers per change (cost, catches, time) |
 | 3 | **Long tasks** | Progress file and one commit per step; any session or person continues from the branch |
 | 4 | **Platform engineer** | Agents in their own workspaces with their own short-lived identity *(OIDC designed, key in the prototype)* |
-| 5 | **Operations analyst** | The paved road *(designed, not built)* |
+| 5 | **Operations analyst** | Setup adopts their tool: their promises become owned invariants, the same gate as engineers |
 
 Compliance and the senior engineer come first: in a regulated trading firm they can block everything else,
 and one mechanism (the gate) serves both. Left alone: how people write code, IDEs, deploy pipelines.
@@ -115,7 +115,7 @@ What each person gets is attention back, not speed:
 | Team lead | setup lives in people's heads; no numbers | setup lives in the repo; time, cost and catches per change |
 | Long tasks | the next session starts from scratch | the task, progress and every step are commits on the branch |
 | Compliance | "who is the author?" | the person who asked plus the agent; an approver who is neither; `why` traces each decision |
-| Analyst | a weekend tool nobody knows of | an issue form, the same gate as engineers *(designed, not built)* |
+| Analyst | a weekend tool nobody knows of | setup adopts it (secrets, client data, tests of what it promises), then `ship` or the issue form |
 
 - **Where work starts:** an issue (the form asks what, why and an example). Or code by hand as today, which
   gets blind tests and a review map on the pull request for free.
@@ -181,11 +181,24 @@ when that line is broken (found by breaking it), and the pull request with its a
 
 `money` (orders, risk, payouts): invariants, mutation floor 80%, senior approver. `standard`: 50%. `low`: no floor.
 
-## 7. Apps by non-engineers *(designed, not built)*
+## 7. Apps by non-engineers
 
-The analyst starts from a template app that already contains the way to production: the gate, hosting, data
-only through a read-only masked API. Pushing deploys to an internal sandbox; production needs an engineer's
-approval. The template is the process; engineering knows the app exists because the factory built it.
+The analyst does not become an engineer. They say what their tool promises; the factory checks it as strictly
+as engineers' code, and engineering learns the tool exists because it arrives as a pull request.
+
+**Built: setup adopts a tool in any state.** `/ftmo-factory:setup` is the same skill for a lead's repo and an
+analyst's folder. Run on a made-up weekend tool (a payout reconciliation script, a production export with
+trader emails, a database password in the code, no git, no tests), it first showed a checklist in plain
+Czech: the password ("rotate it, deleting it from the code does not fix copies already sent"), client data on
+a laptop, no git and no tests, and a bug planted on purpose that it found on its own (a bank row missing from
+the export was neither matched nor on the CHECK list, so a payout could vanish without a trace). Then it asked
+what the analyst knows: where a mistake hurts clients or money, who approves, and what the tool must always
+promise ("every row is either matched or flagged"). The promises became owned invariants with property tests
+on a made-up sample, the exports left the repo, the password went to the secret manager. For a tool with a
+page, it recommends the company design system and keeps the analyst's own look if they choose to.
+
+**Designed, not built:** a template app that already contains the way to production (hosting, data only
+through a read-only masked API, pushes to an internal sandbox, production after an engineer's approval).
 
 ## 8. Adoption without a mandate (deep)
 
