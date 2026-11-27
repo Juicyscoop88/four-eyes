@@ -415,3 +415,14 @@ def test_a_risky_change_without_a_task_is_asked_for_one(tmp_path):
     assert NO_SPEC in check(load(root), "main", "fix", False, log=lambda m: None).blocks
     task = "Add triple(x), which returns three times x. Example: triple(2) is 6."
     assert NO_SPEC not in check(load(root), "main", task, False, log=lambda m: None).blocks
+
+
+def test_without_a_tester_the_gate_says_why_not_just_zero(tmp_path):
+    # Anna's first pull request, run for real: no key in the new repo, so no tester, and the gate only said
+    # "caught 0 of 13, needs 80%". It now says what is missing and who adds it.
+    from foureyes.check import NO_TESTER, check
+
+    root = small_repo(tmp_path, {"src/calc.py": "def double(x):\n    return x * 2\n"})
+    (root / "src/calc.py").write_text("def double(x):\n    return x * 2\n\n\ndef triple(x):\n    return x * 3\n")
+    task = "Add triple(x), which returns three times x. Example: triple(2) is 6."
+    assert NO_TESTER in check(load(root), "main", task, False, log=lambda m: None).blocks

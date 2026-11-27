@@ -35,7 +35,11 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
    matters. For example: "⚠️ The tool reads `export_2026-11.csv`, a production export, from this folder. A
    copy of client data on a laptop is the riskiest part; tests will run on a small made-up sample instead."
    Then say what you will fix in the branch and what the person must do themselves.
-3. **Ask the person, one question at a time,** only what you could not find out:
+3. **Ask the person, one question at a time,** only what you could not find out. For a tool outside the
+   company's organisation, built by someone who is not an engineer, ask at most: who their lead is, and the
+   design system question if it has a page or screen. Decide the money tier yourself from the code (where it
+   computes or moves money) and keep the default owned paths; the adopters review both in the pull request.
+   Never ask them what only people may change, or anything else about the factory. For an engineering repo:
    - where a mistake would cost money or hurt clients, and who approves those changes (the `money` tier). For
      a tool outside the company's organisation, do not ask who approves: the `adopters` do, by design. Ask
      instead who the person's lead is, the tool's business owner ("Who is your lead? They will own the tool
@@ -104,8 +108,8 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
      does, made-up sample data instead of the export.");
    - what is left for the person, numbered, one line each, at most three (for example: rotate the database
      password; open the pull request, or say "open it" and you do it with `gh`);
-   - one line for the repo's admin if there is one: the repo secret `ANTHROPIC_API_KEY` and the label
-     `autopilot`;
+   - one line for the repo's admin if there is one: the secret `ANTHROPIC_API_KEY` (best once for the whole
+     organisation, so every repo has it) and the label `autopilot`;
    - one line: "Ask me about any file if you want the details."
 
 8. **Engineering adopts it (only for a tool outside the company's organisation).** After the hand-over, ask
@@ -235,17 +239,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.12
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.13
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.12
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.13
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.12
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.13
     with: { setup: "SETUP" }
     secrets: inherit
 ```
