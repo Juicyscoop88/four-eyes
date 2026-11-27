@@ -365,3 +365,14 @@ def test_a_repo_without_four_eyes_gets_one_offer_of_setup(tmp_path, capsys, monk
     monkeypatch.setattr("sys.stdin", __import__("io").StringIO("{}"))
     assert main(["hook", "pre-tool-use"]) == 0
     assert capsys.readouterr().out == ""
+
+
+def test_the_company_says_once_who_adopts_a_self_built_tool(capsys):
+    # Anna does not know who in engineering should own her tool; the company decided it once, in the factory.
+    import yaml
+
+    from foureyes.cli import main
+
+    assert main(["company"]) == 0
+    company = yaml.safe_load(capsys.readouterr().out)
+    assert company["org"] and company["adopters"].startswith("@") and "/" in company["requests"]

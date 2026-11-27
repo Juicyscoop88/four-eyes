@@ -1,0 +1,6 @@
+# The company, once, for every repo: shipped with the factory like the company standards, never copied.
+# A company that adopts Four Eyes edits this file in its fork of the factory.
+org: ftmo                              # the company's GitHub organisation: a repo there is "in engineering"
+adopters: "@ftmo/internal-tools"       # who adopts a tool someone built themselves: creates the repo, gives the
+                                       # builder access, approves changes to its money paths
+requests: ftmo/internal-tools          # where an adoption request goes, as an issue

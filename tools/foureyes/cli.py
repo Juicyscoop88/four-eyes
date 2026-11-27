@@ -48,6 +48,8 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--by", default=os.environ.get("FACTORY_REQUESTED_BY"))
     d.add_argument("--comment", help="a file with the gate comment the person answered (its cards are used)")
 
+    sub.add_parser("company", help="the company's settings: its GitHub organisation and who adopts self-built tools")
+
     m = sub.add_parser("summary", help="the team's last days in numbers, from the gate reports on the pull requests")
     m.add_argument("--days", type=int, default=7)
 
@@ -57,6 +59,12 @@ def main(argv: list[str] | None = None) -> int:
     h.add_argument("event", choices=["session-start", "pre-tool-use", "stop"])
 
     args = p.parse_args(argv)
+
+    if args.cmd == "company":
+        from foureyes.config import COMPANY
+
+        print((COMPANY / "company.yaml").read_text(), end="")
+        return 0
 
     if args.cmd == "summary":
         from foureyes.summary import fetch, summarize

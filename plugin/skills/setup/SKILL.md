@@ -9,9 +9,16 @@ that colleagues depend on. Never make them feel judged: the tool works, you make
 goes into one branch and one pull request that the team reviews like any other change. The templates are at
 the end of this file.
 
-If the person is an engineer in a repo that is already set up (`factory.yaml` exists), say in two sentences
-that setup is done for this repo and that working with Claude as usual, or `/four-eyes:ship` to hand a change
-over, is what they want, and stop.
+If the repo is already set up (`factory.yaml` exists):
+- It has no `origin` in the company's organisation yet (an adoption is pending, see step 8): check whether the
+  adopters created the repo (`gh repo view <org>/<name>`). If they did, add it as `origin`, push the branch
+  `four-eyes-setup` and open its pull request; say in one line who reviews it. If not yet, say the request is
+  waiting and link it.
+- Otherwise say in two sentences that setup is done and that working with Claude as usual, or
+  `/four-eyes:ship` to hand a change over, is what they want, and stop.
+
+Run `foureyes company` first: it prints the company's GitHub organisation (`org`), who adopts tools people
+built themselves (`adopters`) and where their requests go (`requests`). Never ask a person for these.
 
 1. **Look before you ask.** Find out, without changing anything:
    - Is it a git repo, and does `origin` point to the company's GitHub? Who committed to it?
@@ -29,7 +36,10 @@ over, is what they want, and stop.
    copy of client data on a laptop is the riskiest part; tests will run on a small made-up sample instead."
    Then say what you will fix in the branch and what the person must do themselves.
 3. **Ask the person, one question at a time,** only what you could not find out:
-   - where a mistake would hurt clients or money, and who approves those changes (the `money` tier);
+   - where a mistake would cost money or hurt clients, and who approves those changes (the `money` tier). For
+     a tool outside the company's organisation, do not ask who approves: the `adopters` do, by design. Ask
+     instead who the person's lead is, the tool's business owner ("Who is your lead? They will own the tool
+     from the business side."), as a GitHub handle or a name;
    - what only people may change (configs, migrations, the rules below);
    - for a frontend: is it an internal FTMO app? Recommend the company design system ("Internal apps should
      look like one product, so colleagues do not learn a new screen. Use the company design system?"), with
@@ -60,9 +70,8 @@ over, is what they want, and stop.
      through a read-only connection named in config, never a file on a laptop; say who grants that access.
    - Promises: write them as `invariants/<name>.yaml` (template below), each with a property test in
      `tests/invariants/` that runs on the sample data. The approver reviews these tests in the pull request.
-   - No git repo, or no company remote: `git init` here, and tell the person the exact command to create the
-     repo on the company's GitHub (`gh repo create <org>/<name> --private --source . --push`); never create
-     it yourself.
+   - No git repo: `git init` here. No remote in the company's organisation: leave it local; step 8 asks the
+     adopters for the repo. Never create a repo or invite anyone yourself.
 5. **Write, on the same branch,** in this order (`factory.yaml` last: once it is committed, the paths it
    names as owned are closed to agents; until the commit you may still correct it):
    - Standards: the company's ship with the factory and are only named in `factory.yaml` (`company: basics`,
@@ -82,7 +91,8 @@ over, is what they want, and stop.
    - `.github/workflows/four-eyes.yml` from the template, `SETUP` replaced by the project's own setup command
      (for uv: `uv sync`; for pip: `pip install -e .[test]`).
    - `.github/ISSUE_TEMPLATE/four-eyes.yml` from the issue form template.
-   - `.github/CODEOWNERS`: the money paths and the owned paths with the team the person named.
+   - `.github/CODEOWNERS`: the money paths and the owned paths with the team the person named; for an adopted
+     tool, the `adopters`, and the business owner on the invariants (they own what the tool promises).
    - `factory.yaml` from the template, filled with what you found and heard. Delete the comments that do
      not apply. `python` is the interpreter the project's setup creates (for uv: `.venv/bin/python`); the
      test command runs with it (`.venv/bin/python -m pytest`).
@@ -98,6 +108,16 @@ over, is what they want, and stop.
    - one line for the repo's admin if there is one: the repo secret `ANTHROPIC_API_KEY` and the label
      `autopilot`;
    - one line: "Ask me about any file if you want the details."
+
+8. **Engineering adopts it (only for a tool outside the company's organisation).** After the hand-over, ask
+   once: "Engineering should know about this tool. Shall I ask <adopters> to adopt it? They create the repo,
+   give you access and approve changes to its money part." On their yes, open one issue in `requests`
+   (`gh issue create --repo <requests>`), titled "Adoption: <what the tool does, in their words>", with: who
+   built it and who uses it, the business owner, the checklist of step 2 with what is fixed and what is left,
+   the promises, and the repo name you suggest (`<org>/<name>`). Show the link. If the issue cannot be
+   created (no access), write the same text to `ADOPTION-REQUEST.md` (ignored by git) and tell them to send
+   it to the adopters. That request is the only thing you send: never create the repo, invite or push.
+   When the adopters have created the repo, the next session finishes it (see the top of this file).
 
 The gate's blind tests and mutation testing work on Python today. In another stack say so plainly: the
 guardrails while writing (the rules of each file, the standards) and the reviewer work; the gate runs the
