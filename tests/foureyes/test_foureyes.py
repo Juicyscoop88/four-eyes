@@ -156,12 +156,12 @@ def test_agents_are_hermetic_with_only_the_servers_factory_yaml_names(tmp_path):
 
     repo = load(Path(__file__).resolve().parents[2])
     assert repo.models == {"author": "sonnet", "tester": "opus", "reviewer": "sonnet"}
-    assert repo.mcp == {"author": ("foureyes",), "tester": (), "reviewer": ()}
+    assert repo.mcp == {"author": ("factory",), "tester": (), "reviewer": ()}
     # A plain model name still works, and a repo adds its own server for one role.
-    got = agents({"agents": {"tester": "haiku", "author": {"mcp": ["foureyes", "gitlab"]}},
+    got = agents({"agents": {"tester": "haiku", "author": {"mcp": ["factory", "gitlab"]}},
                   "mcp": {"gitlab": {"command": "gitlab-mcp"}}})
     assert got["models"]["tester"] == "haiku" and got["mcp"]["tester"] == ()
-    assert got["mcp"]["author"] == ("foureyes", "gitlab") and "gitlab" in got["servers"]
+    assert got["mcp"]["author"] == ("factory", "gitlab") and "gitlab" in got["servers"]
 
 
 def test_a_role_naming_an_undefined_server_fails_loudly():
@@ -178,3 +178,25 @@ def test_the_testers_open_questions_never_block():
     assert is_open("tests/blind/test_x.py::test_open_exactly_365_days")
     assert is_open("test_open_rounding[ru-1100]")
     assert not is_open("tests/blind/test_x.py::test_rounds_up_to_next_year")
+
+
+def test_a_venv_python_is_kept_as_its_link_not_the_system_python_behind_it(tmp_path):
+    # uv makes .venv/bin/python a link to the interpreter it was built from. Following that link loses
+    # the venv (and its pytest), so the gate saw a broken invariant where the code was fine.
+    import shutil
+    import sys
+
+    (tmp_path / ".venv" / "bin").mkdir(parents=True)
+    (tmp_path / ".venv" / "bin" / "python").symlink_to(sys.executable)
+    text = (ROOT / "factory.yaml").read_text()
+    (tmp_path / "factory.yaml").write_text(text + "\npython: .venv/bin/python\n")
+    for file in yaml_list(text, "invariants"):
+        (tmp_path / file).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / file, tmp_path / file)
+    assert load(tmp_path).python == str(tmp_path / ".venv" / "bin" / "python")
+
+
+def yaml_list(text: str, key: str) -> list[str]:
+    import yaml
+
+    return yaml.safe_load(text).get(key, [])
