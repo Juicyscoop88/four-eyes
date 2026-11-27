@@ -16,7 +16,7 @@ Two repos:
 - **`~/Projects/ftmo-case-study`**: the factory's own repo, already on it (orders domain, invariants, standards).
 - **`~/Projects/foureyes-try`**: a fresh clone of python-humanize, not on the factory yet. For installing.
 
-Needs: `claude` signed in, `uv`, `gh` signed in (the factory repo is private, git reads it with your login).
+Needs: `claude` signed in, `uv`, `gh` signed in (for the pull requests). The factory repo is public, nothing to sign in for.
 
 ---
 
