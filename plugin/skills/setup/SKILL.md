@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Bring a repo or a folder under the Four Eyes software factory, whatever state it is in - an engineering repo, or a tool a non-engineer built with AI that runs on a laptop. Finds what is missing (repo, owner, secrets, production data, tests, what the tool promises), fixes what it can and shows exactly how to do the rest. Once per repo. Use when the person asks to set up, install, enable, adopt or add the factory, or to bring their tool under the company's rules.
+description: Bring a repo or a folder under the Four Eyes software factory, whatever state it is in - an engineering repo, or a tool a non-engineer built with AI that runs on a laptop. Finds what is missing (repo, owner, secrets, production data, tests), fixes what it can and shows exactly how to do the rest. Once per repo. Use when the person asks to set up, install, enable, adopt or add the factory, or to bring their tool under the company's rules.
 ---
 
 You bring this repo or folder under the factory, once. The person may be a team lead setting up an
@@ -46,13 +46,6 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
      the answers *company design system (Recommended)* and *keep our own look*. If the repo already has its
      own design, never overwrite it: keeping it is a fine answer, made on purpose, and a reason to differ can
      go to the design system's owners later as a proposal;
-   - **the rules the tool must never break.** Do not ask the person to invent them: someone who built a tool
-     with AI rarely knows. Propose them yourself, from what the code does, what its users rely on and any bug
-     you found, in their words: "Your tool matches bank rows to payouts. I would make sure this always holds:
-     every bank row is matched or flagged, never dropped. Today one row is dropped silently. Keep it as a
-     rule?" One question per rule, two or three at most, each with the answers *yes, keep it (Recommended)*,
-     *not quite* (they say how) and *no*. An engineer's repo may have them written down already: read the
-     README and tests first. The confirmed rules become protected tests: tests people own, which no agent changes, checked on every change.
    Ask each with the AskUserQuestion tool, one question per call, so the person clicks an answer. Ask about
    what the person knows (their product, their clients, their team), never about the factory's mechanics, and
    say in the same breath what the answer is for:
@@ -72,9 +65,10 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
    - Production data: remove the exports from the repo and add them to `.gitignore`; write a small made-up
      sample with the same columns in `tests/data/` for the tests. If the tool must read production, it reads
      through a read-only connection named in config, never a file on a laptop; say who grants that access.
-   - The confirmed rules: one test each in `tests/protected/` (template below), running on the sample data.
-     Its docstring says the rule and why it matters, in the person's words. The approver reviews them in
-     the pull request.
+   - `tests/protected/README.md` from the template, nothing else in it: an empty place where a lead or senior
+     later moves a test that must never break. Never propose or write protected tests yourself: nobody knows
+     in advance what must never break, they are decided when it matters.
+   - Tests for what the tool does today, so a change can be reviewed: a few, on the sample data.
    - No git repo: `git init` here. No remote in the company's organisation: leave it local; step 8 asks the
      adopters for the repo. Never create a repo or invite anyone yourself.
 5. **Write, on the same branch,** in this order (`factory.yaml` last: once it is committed, the paths it
@@ -97,7 +91,7 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
      (for uv: `uv sync`; for pip: `pip install -e .[test]`).
    - `.github/ISSUE_TEMPLATE/four-eyes.yml` from the issue form template.
    - `.github/CODEOWNERS`: the money paths and the owned paths with the team the person named; for an adopted
-     tool, the `adopters`, and the business owner on `tests/protected/` (they own what the tool must always do).
+     tool, the `adopters`, and the business owner on `tests/protected/` (they decide what must never break).
    - `factory.yaml` from the template, filled with what you found and heard. Delete the comments that do
      not apply. `python` is the interpreter the project's setup creates (for uv: `.venv/bin/python`); the
      test command runs with it (`.venv/bin/python -m pytest`).
@@ -106,8 +100,8 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
    get; show the person the paths and tiers it names. Fix `factory.yaml` until it is right, then commit.
 7. **Commit and hand over, short.** Commit with a message that says what was set up. The checklist at the
    start was the long part; the hand-over is at most six lines, no tables, no file-by-file tour:
-   - one line: what is done (for example "Set up on branch `four-eyes-setup`: rules, tests of your three
-     promises, made-up sample data instead of the export.");
+   - one line: what is done (for example "Set up on branch `four-eyes-setup`: rules, tests of what the tool
+     does, made-up sample data instead of the export.");
    - what is left for the person, numbered, one line each, at most three (for example: rotate the database
      password; open the pull request, or say "open it" and you do it with `gh`);
    - one line for the repo's admin if there is one: the repo secret `ANTHROPIC_API_KEY` and the label
@@ -119,7 +113,7 @@ built themselves (`adopters`) and where their requests go (`requests`). Never as
    give you access and approve changes to its money part." On their yes, open one issue in `requests`
    (`gh issue create --repo <requests>`), titled "Adoption: <what the tool does, in their words>", with: who
    built it and who uses it, the business owner, the checklist of step 2 with what is fixed and what is left,
-   the promises, and the repo name you suggest (`<org>/<name>`). Show the link. If the issue cannot be
+   the tests, and the repo name you suggest (`<org>/<name>`). Show the link. If the issue cannot be
    created (no access), write the same text to `ADOPTION-REQUEST.md` (ignored by git) and tell them to send
    it to the adopters. That request is the only thing you send: never create the repo, invite or push.
    When the adopters have created the repo, the next session finishes it (see the top of this file).
@@ -183,17 +177,13 @@ agents:
   reviewer: { model: sonnet, mcp: [] }
 ```
 
-### tests/protected/test_<what>.py (one test per confirmed rule)
+### tests/protected/README.md
 
-```python
-"""Rules this tool must never break. Owned by people (CODEOWNERS); an agent never edits this file."""
+```markdown
+# Protected tests
 
-
-def test_every_bank_row_is_matched_or_flagged():
-    """Every bank row is matched or flagged to check, never dropped.
-
-    Why: a dropped row is a payment nobody looks at. (Confirmed by <the person>, <date>.)"""
-    ...
+A lead or senior moves a test here when it must never break, usually after it mattered once. These tests are
+owned by people (CODEOWNERS): no agent edits or deletes them, and a failing one always blocks the merge.
 ```
 
 ### CLAUDE.md, the section to append
@@ -201,6 +191,9 @@ def test_every_bank_row_is_matched_or_flagged():
 ```markdown
 ## Working with agents here
 
+- Every change starts from a short spec: what, why, and one example with its expected result, in the issue or
+  the pull request description. The tester writes its tests from it without seeing the code; the gate asks
+  for it when it is missing.
 - Long work goes in small pull requests merged along the way, each one change with its why. Never one big
   pull request at the end.
 - Write progress down where the next session finds it: the pull request description, or the task file of
@@ -229,7 +222,7 @@ def test_every_bank_row_is_matched_or_flagged():
 name: four-eyes
 
 on:
-  pull_request:
+  pull_request: { types: [opened, synchronize, reopened, edited] }   # edited: a spec added later reruns the gate
   issues: { types: [labeled] }
   issue_comment: { types: [created] }
 
@@ -242,17 +235,17 @@ permissions:
 jobs:
   gate:
     if: github.event_name == 'pull_request'
-    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.11
+    uses: Juicyscoop88/four-eyes/.github/workflows/gate.yml@v0.3.12
     with: { setup: "SETUP" }
     secrets: inherit   # ANTHROPIC_API_KEY for the reviewer
   autopilot:
     if: github.event_name == 'issues'
-    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.11
+    uses: Juicyscoop88/four-eyes/.github/workflows/autopilot.yml@v0.3.12
     with: { setup: "SETUP" }
     secrets: inherit
   decide:
     if: github.event_name == 'issue_comment'
-    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.11
+    uses: Juicyscoop88/four-eyes/.github/workflows/decide.yml@v0.3.12
     with: { setup: "SETUP" }
     secrets: inherit
 ```

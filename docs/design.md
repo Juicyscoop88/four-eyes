@@ -16,7 +16,7 @@ says *designed, not built*.
 ---
 
 
-*Wording: "protected tests" are tests people own and no agent may change; a failing one always blocks. The
+*Wording: "protected tests" are tests people own and no agent may change; a failing one always blocks. A lead or senior decides which, when it matters; setup never guesses them. What every change needs instead is a spec (what, why, one example): the tester writes its tests from it, and the gate asks for it when it is missing. The
 first versions called them owned invariants and kept each as a named rule in a YAML file; that stays optional
 (the sample domain here uses it), a folder of protected tests is enough.*
 

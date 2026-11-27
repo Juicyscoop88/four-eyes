@@ -89,6 +89,9 @@ def check(
     log(f"gate: {len(files)} changed files, tier {tier.name}")
 
     res.owned_changed = [f for f in files if factory.is_owned(f)]
+    if tier.mutation_min > 0 and any(factory.is_source(f) for f in files) and not has_spec(task):
+        # Independent tests are written from the task alone: a change to risky code without one cannot be checked.
+        res.blocks.append(NO_SPEC)
     if res.owned_changed:
         res.blocks.append(f"owned files changed, owner approval required: {', '.join(res.owned_changed)}")
 
@@ -170,6 +173,15 @@ def mutation_tests(factory: Factory, files: list[str]) -> tuple[str, ...]:
     independent = tuple(factory.suites[n] for n in INDEPENDENT if n in factory.suites)
     own = tuple(f for f in files if f.endswith(".py") and factory.suite_of(f) == "author" and (factory.root / f).exists())
     return independent + own
+
+
+NO_SPEC = ("no task: the change says nowhere what it should do and why. Write it in the pull request description, "
+           "with one example and its expected result; the tester writes its tests from it, without seeing the code")
+
+
+def has_spec(task: str | None) -> bool:
+    """Enough of a task to test against: a few sentences, not an empty or one-word description."""
+    return bool(task) and len(" ".join(task.split())) >= 40
 
 
 def is_open(test: str) -> bool:
