@@ -60,7 +60,13 @@ def test_a_broken_invariant_is_named():
 
 
 def decision(capsys, tool_input, tool="Edit"):
-    pre_tool_use(factory, {"tool_name": tool, "tool_input": tool_input})
+    import uuid
+
+    path = tool_input.get("file_path")
+    if path:  # a path already read in this session: only the rules of owned files and secrets apply
+        pre_tool_use(factory, {"tool_name": "Read", "tool_input": {"file_path": path}, "session_id": "t"})
+        capsys.readouterr()
+    pre_tool_use(factory, {"tool_name": tool, "tool_input": tool_input, "session_id": "t"})
     out = capsys.readouterr().out
     return json.loads(out)["hookSpecificOutput"].get("permissionDecision", "allow") if out else "allow"
 
@@ -69,13 +75,21 @@ def test_the_first_touch_of_a_path_brings_its_rules(capsys):
     import uuid
 
     session = uuid.uuid4().hex
+    read = {"tool_name": "Read", "tool_input": {"file_path": str(ROOT / "src/orders/model.py")}, "session_id": session}
+    pre_tool_use(factory, read)
+    first = json.loads(capsys.readouterr().out)["hookSpecificOutput"]["additionalContext"]
+    assert "ORD-1" in first and "money.md" in first
     edit = {"tool_name": "Edit", "tool_input": {"file_path": str(ROOT / "src/orders/model.py"), "new_string": "x"},
             "session_id": session}
     pre_tool_use(factory, edit)
-    first = json.loads(capsys.readouterr().out)["hookSpecificOutput"]["additionalContext"]
-    assert "ORD-1" in first and "money.md" in first
-    pre_tool_use(factory, edit)
-    assert capsys.readouterr().out == ""  # once per path and session, not on every edit
+    assert capsys.readouterr().out == ""  # read first: the edit goes through, the rules came once
+    new = {"tool_name": "Write", "tool_input": {"file_path": str(ROOT / "src/orders/new.py"), "content": "x"},
+           "session_id": session}
+    pre_tool_use(factory, new)
+    out = json.loads(capsys.readouterr().out)["hookSpecificOutput"]
+    assert out["permissionDecision"] == "deny" and "money.md" in out["permissionDecisionReason"]
+    pre_tool_use(factory, new)
+    assert capsys.readouterr().out == ""  # the second attempt, with the rules known, goes through
 
 
 def test_hook_keeps_agents_off_owned_files(capsys):

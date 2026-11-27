@@ -83,14 +83,19 @@ def first_touch(session: str, path: str) -> bool:
 
 
 def pre_tool_use(factory: Factory, data: dict) -> int:
-    if data.get("tool_name") not in WRITE_TOOLS:
+    tool = data.get("tool_name")
+    if tool not in WRITE_TOOLS and tool != "Read":
         return 0
     tool_input = data.get("tool_input", {})
     target = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
     try:
         rel = Path(target).resolve().relative_to(factory.root.resolve()).as_posix()
     except ValueError:
-        rel = target
+        return 0  # outside the repo: not the factory's business
+    session = data.get("session_id", "")
+    if tool == "Read":
+        # Claude reads a file before it changes it: the rules arrive with the file, before any edit.
+        return context("PreToolUse", rules_for(factory, rel)) if first_touch(session, rel) else 0
     if factory.is_owned(rel):
         return deny(
             f"{rel} is owned by people (factory.yaml: owned). An agent never edits it. "
@@ -104,8 +109,9 @@ def pre_tool_use(factory: Factory, data: dict) -> int:
                 f"This looks like a {name}. Secrets never go into the repo: reference it from "
                 "Secret Manager (or an environment variable) by name, never by value."
             )
-    if first_touch(data.get("session_id", ""), rel):
-        return context("PreToolUse", rules_for(factory, rel))
+    if first_touch(session, rel):
+        # A file written without being read first (a new one): the rules come first, then the edit again.
+        return deny(rules_for(factory, rel) + "\n\nThese rules apply to this path. Make the change again with them in mind.")
     return 0
 
 
