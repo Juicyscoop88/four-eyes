@@ -15,6 +15,14 @@ that the team reviews like any other change. The templates are at the end of thi
    - which paths carry money or trust (they become the `money` tier) and which team approves them;
    - which files only people may change (configs, migrations, invariants);
    - for a frontend, where the design system is.
+
+   The person may not know FourEyes. Before each question, say in one or two plain sentences, in the
+   person's language and without FourEyes' terms, what it is about and what the answer changes. Title the
+   question in plain words ("Where does a mistake cost the most?", not "Money tier"). For example: "Some code
+   is riskier than the rest: a mistake there costs money or trust. FourEyes is stricter there: its tests must
+   catch at least 80 % of planted bugs instead of 50 %, a named team approves the merge, and Claude gets the
+   money rules whenever it opens such a file." Each answer says in a few words what follows from it, and
+   one is marked as your recommendation with the reason.
 4. **Write, on a branch `foureyes-init`,** in this order (`factory.yaml` last: once it exists, the paths it
    names as owned are closed to agents, including `.github/`):
    - `standards/basics.md` from the template. For a frontend, also `standards/design-system.md`: the design
